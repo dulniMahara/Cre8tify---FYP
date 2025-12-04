@@ -28,7 +28,8 @@ app.get('/', (req, res) => {
 app.use('/api/users', require('./routes/userRoutes'));
 // Use the design routes for anything starting with /api/designs
 app.use('/api/designs', require('./routes/designRoutes'));
-
+// Use the admin routes for anything starting with /api/admin
+app.use('/api/admin', require('./routes/adminRoutes'));
 // --- Error Handling Middleware ---
 // This must be placed after routes
 app.use(errorHandler);
