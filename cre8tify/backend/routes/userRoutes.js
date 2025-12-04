@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-// Import the registerUser function from the controller
-const { registerUser } = require('../controllers/userController'); 
+// Import both functions from the controller
+const { registerUser, loginUser } = require('../controllers/userController'); 
 
-// POST request to the URL /api/users/register will run registerUser
+// POST request to /api/users/register
 router.post('/register', registerUser);
 
-// We will add the login route here later...
+// POST request to /api/users/login (NEW)
+router.post('/login', loginUser); 
 
 module.exports = router;

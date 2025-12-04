@@ -1,6 +1,15 @@
-const asyncHandler = require('express-async-handler'); // Helper to handle async errors
-const bcrypt = require('bcryptjs'); // For password hashing
-const User = require('../models/User'); // Import the User Model
+const asyncHandler = require('express-async-handler');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken'); // Import JWT
+const User = require('../models/User'); 
+
+// --- Helper Function: Generate JWT ---
+const generateToken = (id) => {
+    // Uses the secret key from the .env file
+    return jwt.sign({ id }, process.env.JWT_SECRET, {
+        expiresIn: '30d', // Token expires in 30 days
+    });
+};
 
 // @desc    Register a new user (buyer or designer)
 // @route   POST /api/users/register
@@ -30,19 +39,18 @@ const registerUser = asyncHandler(async (req, res) => {
   const user = await User.create({
     name,
     email,
-    password: hashedPassword, // Store the hashed password
-    role: role || 'buyer', // Default to 'buyer' if role is not specified
-    // isApproved defaults to 'false' for designers, as per the model
+    password: hashedPassword,
+    role: role || 'buyer', 
   });
 
-  // 5. Send back a response
+  // 5. Send back a response with a token
   if (user) {
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      isApproved: user.isApproved,
+      token: generateToken(user._id), // Attach the token
     });
   } else {
     res.status(400);
@@ -51,10 +59,34 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 
-// We will add the login function here later...
+// @desc    Login a user
+// @route   POST /api/users/login
+// @access  Public
+const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  // 1. Find user by email
+  const user = await User.findOne({ email });
+
+  // 2. Check user and password (using bcrypt to compare the hash)
+  if (user && (await bcrypt.compare(password, user.password))) {
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isApproved: user.isApproved,
+      token: generateToken(user._id), // Send a new token on successful login
+    });
+  } else {
+    res.status(401); // 401: Unauthorized
+    throw new Error('Invalid credentials');
+  }
+});
 
 
-// Export the function so it can be used in the router
+// Export both functions
 module.exports = {
   registerUser,
+  loginUser, 
 };
