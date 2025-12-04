@@ -101,4 +101,7 @@ module.exports = {
   getDesignerDesigns,
   updateDesign,
   deleteDesign,
+  // NEW: Export the public functions
+  getAllApprovedDesigns, 
+  getDesignById,
 };

@@ -1,17 +1,25 @@
 const express = require('express');
 const router = express.Router();
-// Import the controller functions
 const { 
     createDesign, 
     getDesignerDesigns, 
     updateDesign, 
-    deleteDesign 
+    deleteDesign,
+    getAllApprovedDesigns, // NEW
+    getDesignById         // NEW
 } = require('../controllers/designController'); 
-// Import the protection middleware
 const { protect, authorizeRole } = require('../middleware/authMiddleware');
 
 // Base URL is /api/designs
 
+// --- Public Routes (Buyers / Everyone) ---
+// GET /api/designs - Get all approved designs
+router.get('/', getAllApprovedDesigns);
+// GET /api/designs/:id - Get single design details
+router.get('/:id', getDesignById);
+
+
+// --- Designer/Admin Routes (Protected) ---
 // POST /api/designs - Create a new design (Designer only)
 router.post(
   '/', 
