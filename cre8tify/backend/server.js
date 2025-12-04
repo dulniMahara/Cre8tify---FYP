@@ -1,19 +1,37 @@
 require('dotenv').config(); 
-// Import the connection function
+// Import the database connection function
 const connectDB = require('./config/db'); 
- 
+// Import the error handler middleware
+const { errorHandler } = require('./middleware/errorMiddleware');
+
 // Connect to the database
 connectDB(); 
 
 const express = require('express');
 const app = express();
-// Set the port number from the .env file, or use 3000 as a backup
 const port = process.env.PORT || 3000;
+
+// --- Middlewares to read request data ---
+// Allows the app to read JSON data from the request body (e.g., username/password)
+app.use(express.json()); 
+// Allows the app to read form data
+app.use(express.urlencoded({ extended: false }));
+
 
 // Define a basic route (the home page)
 app.get('/', (req, res) => {
     res.send('Welcome to Cre8tify Backend API!');
 });
+
+// --- Routes ---
+// Use the user routes for anything starting with /api/users
+app.use('/api/users', require('./routes/userRoutes'));
+
+
+// --- Error Handling Middleware ---
+// This must be placed after routes
+app.use(errorHandler);
+
 
 // Start the server and listen for connections
 app.listen(port, () => {
