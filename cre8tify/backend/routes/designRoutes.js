@@ -1,47 +1,33 @@
 const express = require('express');
 const router = express.Router();
+// Assuming you have protect and designer middleware imported
+const { protect, designer } = require('../middleware/authMiddleware'); 
 const { 
     createDesign, 
-    getDesignerDesigns, 
-    updateDesign, 
-    deleteDesign,
-    getAllApprovedDesigns, // NEW
-    getDesignById         // NEW
-} = require('../controllers/designController'); 
-const { protect, authorizeRole } = require('../middleware/authMiddleware');
+    getDesignerDesigns,
+    getAllApprovedDesigns, 
+    getDesignById,
+} = require('../controllers/designController');
 
-// Base URL is /api/designs
+// NEW: Import Multer upload middleware
+const upload = require('../middleware/uploadMiddleware'); 
 
-// --- Public Routes (Buyers / Everyone) ---
-// GET /api/designs - Get all approved designs
-router.get('/', getAllApprovedDesigns);
-// GET /api/designs/:id - Get single design details
-router.get('/:id', getDesignById);
+// Public Routes (Get Designs)
+router.route('/').get(getAllApprovedDesigns);
+router.route('/:id').get(getDesignById);
 
+// Private Designer Routes
+router.route('/mine')
+    .get(protect, designer, getDesignerDesigns); // Get all designs by designer
 
-// --- Designer/Admin Routes (Protected) ---
-// POST /api/designs - Create a new design (Designer only)
-router.post(
-  '/', 
-  protect, 
-  authorizeRole('designer'), 
-  createDesign
-);
+router.route('/') 
+    // ADDED: upload.single('image') handles file upload, 'image' is the field name from the frontend form
+    .post(protect, designer, upload.single('image'), createDesign); 
 
-// GET /api/designs/mine - Get all designs created by the logged-in designer (Designer only)
-router.get(
-  '/mine', 
-  protect, 
-  authorizeRole('designer'), 
-  getDesignerDesigns
-);
-
-// PUT and DELETE requests require the design ID in the URL
-router.route('/:id')
-  // PUT /api/designs/:id - Update a design (Designer only)
-  .put(protect, authorizeRole('designer'), updateDesign)
-  // DELETE /api/designs/:id - Delete a design (Designer only)
-  .delete(protect, authorizeRole('designer'), deleteDesign);
+// Private Designer CRUD Routes
+// router.route('/:id') 
+// .put(protect, designer, updateDesign) 
+// .delete(protect, designer, deleteDesign);
 
 
 module.exports = router;
