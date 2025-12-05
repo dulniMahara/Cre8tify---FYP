@@ -4,7 +4,10 @@ import Footer from './layout/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login'; 
 import Register from './pages/Register'; 
-import PrivateRoute from './components/PrivateRoute'; // NEW IMPORT
+import PrivateRoute from './components/PrivateRoute'; 
+
+// NEW IMPORT
+import DesignerDashboard from './pages/DesignerDashboard'; 
 
 function App() {
   return (
@@ -20,12 +23,16 @@ function App() {
 
           {/* ------------------------------------------------------------- */}
           {/* PRIVATE ROUTES WRAPPED BY THE GUARD COMPONENT */}
-          {/* The <Outlet /> in PrivateRoute renders the nested <Route> element */}
           {/* ------------------------------------------------------------- */}
           
           {/* 1. Designer Panel Route - Requires 'designer' role */}
           <Route element={<PrivateRoute requiredRole={['designer', 'admin']} />}>
-            <Route path='/designer/dashboard' element={<h1>[DESIGNER PANEL] - You are logged in as a Designer/Admin</h1>} />
+            {/* The main dashboard wrapper */}
+            <Route path='/designer/dashboard' element={<DesignerDashboard />}>
+              {/* Nested Routes within the dashboard component */}
+              <Route index element={<h1>[My Designs] - List of all your designs</h1>} />
+              <Route path='new' element={<h1>[New Design Form] - Component to upload new design</h1>} />
+            </Route>
           </Route>
           
           {/* 2. Buyer Panel Route - Requires 'buyer' role */}
@@ -37,7 +44,6 @@ function App() {
           <Route element={<PrivateRoute requiredRole={['admin']} />}>
             <Route path='/admin/dashboard' element={<h1>[ADMIN PANEL] - You are logged in as an Admin</h1>} />
           </Route>
-
 
           {/* Fallback Route for 404 Not Found */}
           <Route path='*' element={<h1>404 Not Found</h1>} />
