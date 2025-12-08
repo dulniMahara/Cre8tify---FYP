@@ -3,6 +3,7 @@ require('dotenv').config();
 const connectDB = require('./config/db'); 
 // Import the error handler middleware
 const { errorHandler } = require('./middleware/errorMiddleware');
+const path = require('path');
 
 // Connect to the database
 connectDB(); 
@@ -16,7 +17,8 @@ const port = process.env.PORT || 3000;
 app.use(express.json()); 
 // Allows the app to read form data
 app.use(express.urlencoded({ extended: false }));
-
+// This serves the files inside the /uploads folder at the /uploads URL path
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Define a basic route (the home page)
 app.get('/', (req, res) => {

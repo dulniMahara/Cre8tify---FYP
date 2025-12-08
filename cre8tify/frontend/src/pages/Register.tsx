@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+// CRITICAL FIX: ADD THIS LINE BACK! This brings in useSelector, useDispatch.
+import { useSelector, useDispatch } from 'react-redux'; 
+
 import authService from '../features/auth/authService';
 import { loginSuccess } from '../features/auth/authSlice';
+import { AuthState } from '../features/auth/authSlice';
+
+// CRITICAL FIX: ADD THIS LINE BACK! This brings in RootState and AppDispatch.
 import { AppDispatch, RootState } from '../app/store';
+
 
 // Simple loading component for illustration (reused from Login.tsx)
 const Spinner = () => (

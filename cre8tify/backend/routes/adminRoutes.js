@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, authorizeRole } = require('../middleware/authMiddleware');
+const { protect, admin, authorizeRole } = require('../middleware/authMiddleware');
 const {
   getSubmittedDesigns,
   updateDesignStatus,
@@ -8,7 +8,6 @@ const {
   updateUserRole,
   approveDesigner
 } = require('../controllers/adminController');
-
 
 // All routes below are protected and restricted to the 'admin' role
 router.use(protect, authorizeRole('admin')); 

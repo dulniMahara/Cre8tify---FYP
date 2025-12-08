@@ -1,13 +1,16 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './layout/Header';
 import Footer from './layout/Footer';
+
+// Page Components
 import Home from './pages/Home';
 import Login from './pages/Login'; 
 import Register from './pages/Register'; 
-import PrivateRoute from './components/PrivateRoute'; 
-
-// NEW IMPORT
 import DesignerDashboard from './pages/DesignerDashboard'; 
+
+// Components
+import PrivateRoute from './components/PrivateRoute'; 
+import NewDesignForm from './components/designer/NewDesignForm'; // Single, correct import
 
 function App() {
   return (
@@ -27,11 +30,15 @@ function App() {
           
           {/* 1. Designer Panel Route - Requires 'designer' role */}
           <Route element={<PrivateRoute requiredRole={['designer', 'admin']} />}>
-            {/* The main dashboard wrapper */}
+            {/* The main dashboard wrapper uses Outlet to render its children */}
             <Route path='/designer/dashboard' element={<DesignerDashboard />}>
               {/* Nested Routes within the dashboard component */}
+              
+              {/* This is the default path: /designer/dashboard */}
               <Route index element={<h1>[My Designs] - List of all your designs</h1>} />
-              <Route path='new' element={<h1>[New Design Form] - Component to upload new design</h1>} />
+              
+              {/* THIS IS THE CRITICAL FIX: Render the actual component */}
+              <Route path='new' element={<NewDesignForm />} /> 
             </Route>
           </Route>
           
