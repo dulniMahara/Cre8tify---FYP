@@ -1,122 +1,121 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import authService from '../features/auth/authService';
-import { loginSuccess, logout } from '../features/auth/authSlice';
-import { AppDispatch, RootState } from '../app/store';
-
-// Simple loading component for illustration
-const Spinner = () => <div style={{ border: '4px solid #f3f3f3', borderTop: '4px solid #3498db', borderRadius: '50%', width: '20px', height: '20px', animation: 'spin 2s linear infinite' }}></div>;
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
+    const location = useLocation();
+    
+    const userRole = location.state?.role || 'designer'; 
 
-  const { email, password } = formData;
-  const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
-  // Get user state from Redux
-  const { user } = useSelector((state: RootState) => state.auth);
+    // RESET FORM ON PAGE LOAD
+    useEffect(() => {
+        setEmail('');
+        setPassword('');
+    }, []);
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      // Redirect to home page
-      navigate('/'); 
-    }
-  }, [user, navigate]);
-
-
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
-  const onSubmit = async (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !password) {
-      setError('Please fill in all fields.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
     try {
-      const userData = { email, password };
-      const userPayload = await authService.login(userData);
+        const response = await fetch('http://localhost:5000/api/users/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }), 
+        });
 
-      // Dispatch success action to update Redux store
-      dispatch(loginSuccess(userPayload)); 
-      navigate('/'); // Navigate to home on success
+        const data = await response.json();
 
-    } catch (err: any) {
-      // Display error message from the backend (if available)
-      const message = 
-        (err.response && err.response.data && err.response.data.message) ||
-        err.message ||
-        'Login failed. Check your email and password.';
+        if (response.ok) {
+            // logic tosave the user info and Token in the browser
+            localStorage.setItem('userInfo', JSON.stringify(data));
 
-      setError(message);
-      dispatch(logout()); // Clear any previous failed state
-    } finally {
-      setIsLoading(false);
-    }
+            // Go to correct dashboard based on the role from the Database
+            if (data.role === 'designer') {
+                navigate('/designer-dashboard');
+            } else {
+                navigate('/buyer-dashboard');
+            }
+        } else {
+            alert(data.message || "Invalid Email or Password");
+        }
+    } catch (error) {
+        console.error("Login error:", error);
+        alert("Server error. Is your backend running?");
+      }
   };
 
-  return (
-    <div style={{ padding: '20px', maxWidth: '400px', margin: '50px auto', border: '1px solid #ddd', borderRadius: '8px' }}>
-      <h2>Login to Cre8tify</h2>
-      <p>Access your Buyer, Designer, or Admin account.</p>
+    return (
+        <div style={{ height: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            
+            <div style={{ background: 'white', padding: '60px 80px', borderRadius: '30px', boxShadow: '0 30px 60px rgba(0,0,0,0.08)', width: '600px' }}>
+                
+                <div style={{ textAlign: 'center', marginBottom: '50px' }}>
+                    <h2 style={{ fontFamily: '"Instrument Serif", serif', fontSize: '64px', color: '#0d375b', margin: '0 0 15px 0', fontStyle: 'italic' }}>
+                        {userRole === 'buyer' ? 'Customer Login' : 'Designer Login'}
+                    </h2>
+                    <p style={{ color: '#64748b', fontSize: '18px', margin: 0 }}>
+                        Please enter your details to login.
+                    </p>
+                </div>
 
-      {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
+                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '25px' }} autoComplete="off">
+                    
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '10px', fontWeight: '700', color: '#1e293b', fontSize: '16px' }}>
+                            Email Address
+                        </label>
+                        <input 
+                            type="email" 
+                            placeholder="Enter your email" 
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            autoComplete="off"
+                            style={{ width: '100%', padding: '18px', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', outline: 'none', fontSize: '16px', color: '#0f172a' }}
+                        />
+                    </div>
 
-      <form onSubmit={onSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Email</label>
-          <input
-            type='email'
-            name='email'
-            value={email}
-            onChange={onChange}
-            placeholder='Enter your email'
-            style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
-            required
-          />
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '10px', fontWeight: '700', color: '#1e293b', fontSize: '16px' }}>
+                            Password
+                        </label>
+                        <input 
+                            type="password" 
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter your password" 
+                            required
+                            autoComplete="new-password"
+                            style={{ width: '100%', padding: '18px', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', outline: 'none', fontSize: '16px', color: '#0f172a' }}
+                        />
+                    </div>
+                    
+                    <button 
+                        type="submit" 
+                        style={{ marginTop: '20px', padding: '20px', borderRadius: '15px', background: '#0d375b', color: 'white', border: 'none', fontSize: '18px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 10px 20px rgba(13, 55, 91, 0.2)' }}
+                    >
+                        Login
+                    </button>
+                </form>
+
+                <div style={{ marginTop: '40px', textAlign: 'center', fontSize: '16px' }}>
+                    <span style={{ color: '#94a3b8' }}>Don't have an account? </span>
+                    <span 
+                        style={{ color: '#0d375b', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }} 
+                        onClick={() => navigate(userRole === 'buyer' ? '/buyer-signup' : '/designer-signup')}
+                    >
+                        Sign Up as {userRole === 'buyer' ? 'Customer' : 'Designer'}
+                    </span>
+                </div>
+
+            </div>
         </div>
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Password</label>
-          <input
-            type='password'
-            name='password'
-            value={password}
-            onChange={onChange}
-            placeholder='Enter password'
-            style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
-            required
-          />
-        </div>
-        <button 
-          type='submit' 
-          disabled={isLoading}
-          style={{ width: '100%', padding: '10px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-        >
-          {isLoading ? <Spinner /> : 'Log In'}
-        </button>
-      </form>
-      <p style={{ textAlign: 'center', marginTop: '15px' }}>
-        Don't have an account? <a href='/register' style={{ color: '#007bff' }}>Register Here</a>
-      </p>
-    </div>
-  );
+    );
 };
 
 export default Login;
