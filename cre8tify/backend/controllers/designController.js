@@ -12,31 +12,30 @@ const fs = require('fs');
 // @route   POST /api/designs
 // @access  Private/Designer
 const createDesign = asyncHandler(async (req, res) => {
-  // Multer attaches the file info to req.file, and form fields to req.body
-  const { title, description, price } = req.body;
-  
-  // The image path is created by Multer and stored in req.file.path
-  const imageUrl = req.file ? req.file.path : null; 
+  const { title, description, price } = req.body;
+ 
+  // The image path is created by Multer and stored in req.file.path
+  const imageUrl = req.file ? req.file.path : null; 
 
-  // 1. Validation for form fields AND the file upload
-  if (!title || !description || !price || !imageUrl) {
-    
-    // If validation fails but a file was uploaded, clean up the file
-    if (imageUrl) {
-      try {
+ // 1. Validation for form fields AND the file upload
+ if (!title || !description || !price || !imageUrl) {
+
+     // If validation fails but a file was uploaded, clean up the file
+      if (imageUrl) {
+        try {
             // FIX: Use synchronous unlink to simplify and ensure immediate cleanup
-            fs.unlinkSync(imageUrl); 
-      } catch (error) {
-          console.error(`Failed to delete failed upload file: ${imageUrl}`, error);
-      }
-    }
+          fs.unlinkSync(imageUrl); 
+          } catch (error) {
+          console.error(`Failed to delete failed upload file: ${imageUrl}`, error);
+       }
+      }
 
-    res.status(400);
-    throw new Error('Please include title, description, price, and upload a design image.');
-  }
-  
-  // We need to convert the price to a number for Mongoose validation/schema
-  const numericPrice = parseFloat(price);
+    res.status(400);
+    throw new Error('Please include title, description, price, and upload a design image.');
+ }
+ 
+ // We need to convert the price to a number for Mongoose validation/schema
+ const numericPrice = parseFloat(price);
 
   // 2. Create the design
   const design = await Design.create({

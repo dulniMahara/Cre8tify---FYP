@@ -1,0 +1,27 @@
+/* 🟢 src/index.css */
+
+/* 1. Force the browser window to allow scrolling */
+html {
+    height: auto !important;
+    overflow-y: scroll !important; /* Forces the scrollbar to appear */
+}
+
+/* 2. Make the body grow with your content */
+body {
+    min-height: 100vh;
+    height: auto !important;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto !important; /* Allows scrolling */
+    overflow-x: hidden; /* Prevents side scrolling */
+    font-family: 'Poppins', sans-serif;
+}
+
+/* 3. Unlock React's root container (The hidden culprit!) */
+#root {
+    min-height: 100vh;
+    height: auto !important;
+    display: flex;
+    flex-direction: column;
+    overflow: visible !important; /* Let content overflow naturally */
+}

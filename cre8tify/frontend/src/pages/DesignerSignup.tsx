@@ -55,15 +55,19 @@ export default function DesignerSignup() {
       const data = await response.json();
 
       if (response.ok) {
-        sessionStorage.setItem('isNewUser', 'true');
-        alert("✅ Registration Successful! Please login.");
-        navigate('/login', { state: { role: 'designer' } }); 
+        // 🟢 THE CHANGE: Save the user data immediately (Auto-Login)
+        localStorage.setItem('userInfo', JSON.stringify(data));
+        
+        alert("✅ Registration Successful! Welcome to Cre8tify!");
+        
+        // 🟢 Redirect straight to the Designer Dashboard
+        navigate('/designer-dashboard'); 
       } else {
         alert(data.message || "Signup failed");
       }
     } catch (error) {
       console.error("Signup error:", error);
-      alert("Server is not responding. Please ensure your backend is running.");
+      alert("Server is not responding.");
     }
   };
 

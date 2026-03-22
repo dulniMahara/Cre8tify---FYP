@@ -1,63 +1,81 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './layout/Header';
-import Footer from './layout/Footer';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-// Page Components
-import Home from './pages/Home';
-import Login from './pages/Login'; 
-import Register from './pages/Register'; 
-import DesignerDashboard from './pages/DesignerDashboard'; 
-
-// Components
-import PrivateRoute from './components/PrivateRoute'; 
-import NewDesignForm from './components/designer/NewDesignForm'; // Single, correct import
+// Import Pages
+import Home from "./pages/Home"; // 🟢 This is your restored Landing Page
+import Login from "./pages/Login"; // 🟢 The Login page we made
+import DesignerSignup from "./pages/DesignerSignup"; 
+import CustomerSignup from "./pages/CustomerSignup"; 
+import DesignerDashboard from "./pages/DesignerDashboard";
+import Profile from './pages/Profile';
+import DesignTool from "./pages/DesignTool";
+import ProductSubmission from './pages/ProductSubmission';
+import ProductMockupViewer from "./components/ProductMockupViewer";
+import MyShop from './pages/MyShop';
+import MyDesigns from './pages/MyDesigns';
+import MySales from './pages/MySales';
+import Requests from './pages/Requests';
+import BuyerDashboard from "./pages/CustomerDashboard";
+import WomenCollection from "./pages/WomenCollection";
+import MenCollection from "./pages/MenCollection";
+import KidsCollection from './pages/KidsCollection';
+import ProductDetail from './pages/ProductDetail';
+import LivePreview from './pages/LivePreview';
+import DummyModel from './pages/DummyModel';
+import AdminDashboard from './pages/AdminDashboard';
+import RequestEdit from './pages/RequestEdit';
+import Cart from './pages/Cart';
+import OrderConfirmation from './pages/OrderConfirmation';
+import OrderSuccess from './pages/OrderSuccess';
+import TrackOrder from './pages/TrackOrder';
+import AccountLayout from './pages/Account/AccountLayout';
+import CustomerProfile from './pages/CustomerProfile';
 
 function App() {
   return (
-    <Router> 
-      <div className="App" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <Header />
-        
-        {/* Main Content Area: Routes */}
-        <Routes>
-          <Route path='/' element={<Home />} />
-          <Route path='/login' element={<Login />} />
-          <Route path='/register' element={<Register />} />
+    <Router>
+      <Routes>
+        {/* 🟢 PUBLIC ROUTES (Linked from Landing Page) */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/designer-signup" element={<DesignerSignup />} />
+        <Route path="/customer-signup" element={<CustomerSignup />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/account" element={<AccountLayout />} />
 
-          {/* ------------------------------------------------------------- */}
-          {/* PRIVATE ROUTES WRAPPED BY THE GUARD COMPONENT */}
-          {/* ------------------------------------------------------------- */}
-          
-          {/* 1. Designer Panel Route - Requires 'designer' role */}
-          <Route element={<PrivateRoute requiredRole={['designer', 'admin']} />}>
-            {/* The main dashboard wrapper uses Outlet to render its children */}
-            <Route path='/designer/dashboard' element={<DesignerDashboard />}>
-              {/* Nested Routes within the dashboard component */}
-              
-              {/* This is the default path: /designer/dashboard */}
-              <Route index element={<h1>[My Designs] - List of all your designs</h1>} />
-              
-              {/* THIS IS THE CRITICAL FIX: Render the actual component */}
-              <Route path='new' element={<NewDesignForm />} /> 
-            </Route>
-          </Route>
-          
-          {/* 2. Buyer Panel Route - Requires 'buyer' role */}
-          <Route element={<PrivateRoute requiredRole={['buyer', 'admin']} />}>
-            <Route path='/buyer/dashboard' element={<h1>[BUYER PANEL] - You are logged in as a Buyer/Admin</h1>} />
-          </Route>
+        {/* 🟢 DESIGNER DASHBOARD ROUTES */}
+        <Route path="/designer-dashboard" element={<DesignerDashboard />} />
+        <Route path="/design-tool" element={<DesignTool />} />
+        <Route path="/mockup-test" element={<ProductMockupViewer />} />
+        <Route path="/submit-product" element={<ProductSubmission />} />
+        <Route path="/my-shop" element={<MyShop />} />
+        <Route path="/my-designs" element={<MyDesigns />} />
+        <Route path="/my-sales" element={<MySales />} />
+        <Route path="/requests" element={<Requests />} />
 
-          {/* 3. Admin Panel Route - Requires 'admin' role */}
-          <Route element={<PrivateRoute requiredRole={['admin']} />}>
-            <Route path='/admin/dashboard' element={<h1>[ADMIN PANEL] - You are logged in as an Admin</h1>} />
-          </Route>
+        {/*CUSTOMER DASHBOARD ROUTES */}
+        <Route path="/buyer-dashboard" element={<BuyerDashboard />} />
+        <Route path="/women-collection" element={<WomenCollection />} />
+        <Route path="/men-collection" element={<MenCollection />}/>
+        <Route path="/kids-collection" element={<KidsCollection />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/live-preview" element={<LivePreview />} />
+        <Route path="/dummy-model" element={<DummyModel />} />
+        <Route path="/request-edit/:id" element={<RequestEdit />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<OrderConfirmation />} />
+        <Route path="/order-success" element={<OrderSuccess />} />
+        <Route path="/track-order" element={<TrackOrder />} />
+        <Route path="/customer-profile" element={<CustomerProfile />} />
 
-          {/* Fallback Route for 404 Not Found */}
-          <Route path='*' element={<h1>404 Not Found</h1>} />
-        </Routes>
+        {/* 🟢 ADMIN DASHBOARD ROUTES (Only accessible to admins) */}
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
 
-        <Footer />
-      </div>
+
+        app.use('/api/auth', require('./routes/authRoutes'));
+        app.use('/api/users', require('./routes/userRoutes'));
+        app.use('/api/designs', require('./routes/designRoutes'));
+      </Routes>
     </Router>
   );
 }

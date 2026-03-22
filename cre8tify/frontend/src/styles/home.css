@@ -1,0 +1,658 @@
+/* GLOBAL RESET */
+* {
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+/*SCROLLING ENABLED */
+.home-container {
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden; /* Prevents scrollbars */
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- HERO MAIN LAYOUT --- */
+.hero-section {
+    display: flex;
+    justify-content: space-between;
+    align-items:stretch;
+    padding: 0 ;
+    gap: 40px;
+    width: 100%;
+    height: 100vh;
+    min-height: 800px;
+    background-color: #0d375b;
+    position: relative;
+}
+
+/* --- LEFT SIDE (BLUE) --- */
+.hero-left {
+    background-color: #0d375b;
+    color: white;
+    width: 38%; 
+    height: 100%;
+    
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+
+    padding-top: 10px; 
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+}
+
+/* WRAPPER: Holds text centered */
+.left-content-wrapper {
+    width: 80%; 
+    margin: 0 auto; 
+    text-align: center;
+    z-index: 10;
+}
+
+/* LOGO */
+.logo-section img {
+    width: 190px; 
+    margin-bottom: 10px;
+    /* CHANGE 4: Removed 'margin-top: -50px' so it sits naturally */
+    margin-top: 20px; 
+}
+
+/* HEADLINE */
+.hero-headline {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 26px; /* Larger Text */
+    line-height: 1.4;
+    margin-bottom: 30px;
+}
+.highlight-text {
+    font-weight: bold;
+}
+
+/* DARK BLUE TEXT BOX */
+.hero-text-box {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 50px 30px;
+    border-radius: 8px;
+    font-size: 23px;
+    line-height: 1.4;
+    color: #e0e0e0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.last-p {
+    display: block;
+    margin-top: 15px;
+    font-weight: 600;
+    font-style: italic;
+    color: white;
+}
+
+/* WHITE BANNER - THE KEY FIX */
+.cta-banner {
+    position: absolute;
+    /* Lifts the banner up, creating the "blue border" underneath */
+    bottom: 120px; 
+    left: 0;
+    width: 109%; 
+    background: #f9f8fa;
+    color: #0d375b;
+    font-weight: 800;
+    font-style: italic;
+    text-align: center;
+    padding: 20px 0;
+    font-size: 25px;
+    cursor: pointer;
+    z-index: 15;
+}
+
+/* JUICE MODEL - Standing on the Banner */
+.juice-model {
+    position: absolute;
+    /* Pushes him to the right so he overlaps the white section */
+    right: -224px; 
+    bottom: 185px;
+    width: 430px; /* Large size */
+    z-index: 20; /* Stands on top of banner */
+    pointer-events: none; /* Allows clicks to pass through */
+    animation: slideInFromLeft 1.2s ease-out forwards; /*1.2 seconds long, smooth ease-out*/
+}
+
+/* --- RIGHT SIDE (WHITE) --- */
+.hero-right {
+    background: white;
+    width: 62%;
+    height: 95%;
+    align-self: flex-start;
+
+    position: relative;
+    display: flex;
+    align-items: center; 
+    justify-content: center;
+    border-radius: 0 0 0 30px;
+}
+
+/* LOGIN FORM WRAPPER */
+.login-wrapper {
+    width: 100%;
+    max-width: 600px; /* Wider form */
+    padding: 40px;
+    z-index: 10;
+    /* Push form left so it doesn't hit the Juice Guy */
+    margin-right: 80px; 
+}
+
+.hero-right h2 {
+    font-size: 60px;
+    margin-bottom: 15px;
+    align-items: center;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-align: center;
+    font-weight: 700;
+}
+.slogan {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 50px;
+    font-size: 25px;
+    line-height: 1.5;
+    text-align: center;
+    display: block;
+}
+
+/* INPUTS */
+.hero-right label {
+    display: block;
+    margin-top: 25px;
+    font-size: 25px;
+    color: #333;
+    font-weight: 600;
+}
+.input {
+    width: 100%;
+    padding: 20px;
+    margin-top: 10px;
+    background: #e6f0ff;
+    border: none;
+    border-radius: 8px;
+    font-size: 25px;
+}
+.login-options {
+    display: flex;
+    justify-content: space-between;
+    font-size: 17px;
+    margin-top: 20px;
+    color: #0d375b;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-primary {
+    width: 100%;
+    padding: 20px;
+    background: #0d375b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    margin-top: 40px;
+    font-size: 21px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: #0b2e4a;
+}
+
+.sign-up-link {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 16px;
+}
+.sign-up-link span {
+    color: #0d375b;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 17px;
+}
+
+/* RUNNING GIRL MODEL */
+.running-girl-model {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 560px;
+    z-index: 5;
+    animation: slideInFromRight 1.2s ease-out forwards; /*1.2 seconds long, smooth ease-out*/
+
+}
+
+/* =========================================
+   UPDATED: ABOUT US (Glass Effect)
+   ========================================= */
+.about-section {
+    padding: 80px 0 0;
+    text-align: center;
+    background: #fff;
+}
+
+.about-title {
+    font-size: 50px;
+    color: #000;
+    margin-bottom: 5px;
+    position: relative;
+    display: inline-block;
+}
+.about-title::after {
+    content: '';
+    display: block;
+    width: 60%;
+    height: 2px;
+    background: #000;
+    margin: 5px auto 0;
+}
+
+.about-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    color: #555;
+    font-size: 25px;
+    margin-bottom: 40px;
+}
+
+/* Container for Image + Glass Overlay */
+.about-banner-container {
+    position: relative;
+    width: 100%;
+    /* This height crops the image like a banner */
+    height: 400px; 
+    overflow: hidden;
+}
+
+.about-bg-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.9); 
+}
+
+ 
+
+    /* The glass box */
+    .glass-overlay {
+    position: absolute;
+    /* FIX: Fits along with the bg picture (same width n height) */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    /*GLASS EFFECT*/
+    background: rgba(255, 255, 255, 0.15); /* Semi-transparent white */
+    backdrop-filter: blur(8px); /* The Blur */
+    -webkit-backdrop-filter: blur(8px); /* Safari support */
+   
+    /* Centering the text inside */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.glass-overlay p {
+    max-width: 70%; /*900px*/
+    color: #f7f4f4; /* Dark text */
+    font-size: 25px; /* Increased font size */
+    line-height: 1.8;
+    font-weight: 500;
+    text-align: center;
+    padding: 20px;
+} 
+
+/* =========================================
+   UPDATED: FOR BUYERS (Image Backgrounds)
+   ========================================= */
+.customers-section {
+    /* Set the texture background image here */
+    background-image: url('/public/img/landingbg.png'); /* Ensure path is correct */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 100px 5%;
+    gap: 40px;
+    margin-top: 150px;
+}
+
+/* Hanging Shirt Image Container */
+.customer-img-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding-right: 20px;
+}
+.customer-img {
+    width: 100%;
+    max-width: 450px;
+    /* Drop shadow to make it look like it's hanging in front */
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+}
+
+.customer-content {
+    flex: 1.2;
+    text-align: left;
+}
+
+.customer-header {
+    font-size: 50px;
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid #aaa;
+    padding-bottom: 10px;
+    display: inline-block;
+}
+.star-icon {
+    color: #d4af37;
+    font-size: 50px;
+}
+.customer-content p {
+    font-size: 25px; /* Bigger intro text */
+    margin-bottom: 20px;
+    font-weight: 550;
+}
+.customer-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 30px;
+}
+
+.customer-list li {
+    margin-bottom: 15px;
+    padding-left: 25px;
+    position: relative;
+    font-size: 23px;
+    color: #222;
+    font-weight: 550;
+    line-height: 1.5;
+}
+.customer-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #000;
+    font-weight: bold;
+    font-size: 25px;
+}
+
+.btn-customer {
+    background: #b0a08f;
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    font-size: 25px;
+    margin-top: 40px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transition: 0.3s;
+}
+.btn-customer:hover {
+    background: #968676;
+    transform: translateY(-2px);
+}
+
+.customer-note {
+    margin-top: 60px;
+    font-size: 20px;
+    color: #666;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+/* =========================================
+   NEW: FOR DESIGNERS SECTION (Zig-Zag Layout)
+   ========================================= */
+
+.designer-section {
+    /* Set the texture background image here */
+    background-image: url('/public/img/landingbg.png'); /* Ensure path is correct */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 100px 5%;
+    gap: 40px;
+    margin-top: 150px;
+}
+
+/* Hanging Shirt Image Container */
+.designer-img-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding-right: 20px;
+}
+.designer-img {
+    width: 100%;
+    max-width: 450px;
+    /* Drop shadow to make it look like it's hanging in front */
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+}
+
+.designer-content {
+    flex: 1.2;
+    text-align: left;
+}
+
+.designer-header {
+    font-size: 50px;
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+    margin-bottom: 55px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid #aaa;
+    padding-bottom: 10px;
+    display: inline-block;
+}
+.star-icon {
+    color: #d4af37;
+    font-size: 50px;
+}
+
+.designer-subtitle{
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 35px;
+}
+.designer-content p {
+    font-size: 25px; /* Bigger intro text */
+    margin-bottom: 20px;
+    font-weight: 550;
+}
+.designer-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 30px;
+}
+
+.designer-list li {
+    margin-bottom: 15px;
+    padding-left: 25px;
+    position: relative;
+    font-size: 23px;
+    color: #222;
+    font-weight: 550;
+    line-height: 1.5;
+}
+.designer-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #000;
+    font-weight: bold;
+    font-size: 25px;
+}
+
+.btn-designer {
+    background: #b0a08f;
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    font-size: 25px;
+    margin-top: 40px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transition: 0.3s;
+}
+.btn-designer:hover {
+    background: #968676;
+    transform: translateY(-2px);
+}
+
+.designer-note {
+    margin-top: 60px;
+    font-size: 20px;
+    color: #666;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+/* =========================================
+   NEW: PURPOSE & DIFFERENCE SECTION
+   ========================================= */
+.purpose-section {
+    background-color: white;
+    padding: 100px 5% 100px 10%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Aligns columns to top */
+    gap: 0; /* Gap handled by the divider logic */
+}
+
+/* Common Column Style */
+.purpose-col {
+    flex: 1;
+    padding: 0 40px;
+    color: #000;
+}
+.purpose-col:last-child {
+    padding-left: 130px; /* Increase this value to move it further right */
+}
+/* The Header with Star */
+.purpose-header {
+    font-size: 50px;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.purpose-header .star {
+    color: #ffcc00; /* Bright Yellow/Gold star */
+    font-size: 50px;
+    /* Optional text shadow to make it pop */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+}
+
+/* Introduction Text */
+.purpose-intro {
+    font-size: 25px;
+    margin-bottom: 40px;
+    margin-top: 50px;
+    font-weight: 600;
+}
+
+/* Bullet Lists */
+.purpose-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 40px;
+}
+.purpose-list li {
+    font-size: 25px;
+    margin-bottom: 12px;
+    position: relative;
+    padding-left: 25px;
+    line-height: 1.6;
+    color: #222;
+}
+.purpose-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    font-size: 25px;
+    color: #000;
+    font-weight: bold;
+}
+
+/* Final Summary Paragraph */
+.purpose-summary {
+    font-size: 25px;
+    line-height: 1.6;
+    font-style: italic;
+    color: #333;
+    max-width: 90%;
+}
+
+/* VERTICAL DIVIDER LINE */
+.vertical-divider {
+    width: 2px;
+    background-color: #d4af37; /* Gold/Brown color like reference */
+    /* Adjust height to control line length */
+    height: 550px; 
+    margin-top: 50px; /* Push it down slightly to align with text */
+    opacity: 0.8;
+}
+
+/* --- ANIMATIONS --- */
+
+/* Slide in from the Left (for Juice Model) */
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateX(-100px); /* Starts 100px to the left */
+        opacity: 0; /* Invisible start */
+    }
+    100% {
+        transform: translateX(0); /* Ends at original position */
+        opacity: 1; /* Fully visible */
+    }
+}
+
+/* Slide in from the Right (for Running Girl) */
+@keyframes slideInFromRight {
+    0% {
+        transform: translateX(100px); /* Starts 100px to the right */
+        opacity: 0; 
+    }
+    100% {
+        transform: translateX(0); 
+        opacity: 1; 
+    }
+}
