@@ -7,10 +7,10 @@ import "../styles/signup.css";
 const initialFormState = {
   name: '',
   email: '',
-  phone: '',
+  contact: '',
+  address: '',
   password: '',
   confirmPassword: '',
-  address: '',
   gender: '',
   interest: [] as string[], 
   role: 'buyer'
@@ -70,7 +70,11 @@ export default function CustomerSignup() {
       });
 
       const data = await response.json();
+      
       if (response.ok) {
+        // 🟢 THIS IS THE CHANGE: Save the real data for the Profile Page
+        localStorage.setItem('userInfo', JSON.stringify(formData)); 
+        
         localStorage.setItem('isNewUser', 'true');
         alert("Customer Registration Successful!");
         navigate('/login');
@@ -81,10 +85,10 @@ export default function CustomerSignup() {
       console.error("Signup error:", error);
       alert("Server error. Check your backend!");
     }
-  };
+};
 
   // Styles
-  const inputStyle: React.CSSProperties = { 
+   const inputStyle: React.CSSProperties = { 
     width: '100%', 
     padding: '22px', 
     paddingRight: '60px', 
@@ -155,33 +159,37 @@ export default function CustomerSignup() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginBottom: '30px' }}>
                     <div className="form-group">
                         <label style={labelStyle}>Full Name</label>
-                        <input type="text" name="name" value={formData.name} style={inputStyle} required onChange={handleChange} autoComplete="off" />
+                        <input type="text" name="name" value={formData.name} style={inputStyle} required onChange={handleChange} autoComplete="name" />
                     </div>
-                    <div className="form-group">
-                        <label style={labelStyle}>Email Address</label>
-                        <input type="email" name="email" value={formData.email} style={inputStyle} required onChange={handleChange} autoComplete="new-password" />
+                     <div className="form-group">
+                        <label style={labelStyle}>Contact Number</label>
+                        <input type="tel" name="contact" value={formData.contact} style={inputStyle}  onChange={handleChange} autoComplete="tel" />
                     </div>
+                   
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginBottom: '30px' }}>
-                    <div className="form-group">
-                        <label style={labelStyle}>Contact Number</label>
-                        <input type="text" name="phone" value={formData.phone} style={inputStyle} onChange={handleChange} autoComplete="off" />
-                    </div>
+                    
                     <div className="form-group">
                         <label style={labelStyle}>Delivery Address</label>
-                        <input type="text" name="address" value={formData.address} style={inputStyle} onChange={handleChange} autoComplete="off" />
+                        <input type="text" name="address" id="signup-address" value={formData.address} style={inputStyle} onChange={handleChange} autoComplete="street-address" />
+                    </div>
+                     <div className="form-group">
+                        <label style={labelStyle}>Email</label>
+                        <input type="email" name="email" id="signup-email" value={formData.email} style={inputStyle} required onChange={handleChange} autoComplete="username" />
                     </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginBottom: '45px' }}>
                     <div className="form-group">
+                        <input type="text" title="hidden" style={{ display: 'none' }} tabIndex={-1} />
                         <label style={labelStyle}>Password</label>
                         <div style={{ position: 'relative' }}>
                             <input 
                                 type={showPassword ? "text" : "password"} 
                                 name="password" 
                                 value={formData.password}
+                                id="signup-password"
                                 style={inputStyle} 
                                 required 
                                 onChange={handleChange}
