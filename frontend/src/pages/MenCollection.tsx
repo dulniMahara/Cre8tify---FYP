@@ -2,12 +2,79 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
-import Header from '../components/Header'; // 🟢 1. Import the Smart Header
+import Header from '../components/Header'; 
 import CollectionHero from '../components/CollectionHero';
+import { useCart } from '../context/CartContext';
 import '../styles/dashboard.css';
+
+// 🟢 DATA
+export const originalProducts = [
+        { id: 101, title: 'Classic Urban Fit', price: 1350, likes: 42, sales: 10, img: '/img/men1.png', scale: 1.3, fit: 'Regular Fit' },
+        { id: 102, title: 'Cyberpunk Shadow', price: 1550, likes: 65, sales: 15, img: '/img/men2.png', scale: 1.2, fit: 'Oversized Fit' },
+        { id: 103, title: 'Minimalist Core', price: 1200, likes: 29, sales: 8, img: '/img/men3.png', scale: 1.3, fit: 'Boxy Fit' },
+        { id: 104, title: 'Vintage Band Tee', price: 1400, likes: 88, sales: 30, img: '/img/men4.png', scale: 1.3, fit: 'Regular Fit' },
+        { id: 105, title: 'Futuristic Kanji', price: 1650, likes: 110, sales: 22, img: '/img/men5.png', scale: 1.2, fit: 'Oversized Fit' },
+        { id: 106, title: 'Desert Storm Tee', price: 1300, likes: 37, sales: 12, img: '/img/men6.png', scale: 1.3, fit: 'Regular Fit' },
+        { id: 107, title: 'Graphite Oversized', price: 1700, likes: 210, sales: 45, img: '/img/men7.png', scale: 1.2, fit: 'Oversized Fit' },
+        { id: 108, title: 'Electric Signal', price: 1450, likes: 54, sales: 19, img: '/img/men8.png', scale: 2.5, fit: 'Boxy Fit' },
+        { id: 109, title: 'Midnight Stealth', price: 1800, likes: 12, sales: 4, img: '/img/men1.png', scale: 1.3, fit: 'Regular Fit' },
+        { id: 110, title: 'Astral Heavy', price: 1100, likes: 98, sales: 30, img: '/img/men2.png', scale: 1.2, fit: 'Boxy Fit' },
+        { id: 111, title: 'Vapor Wave', price: 1400, likes: 55, sales: 18, img: '/img/men3.png', scale: 1.3, fit: 'Oversized Fit' },
+        { id: 112, title: 'Concrete Jungle', price: 1650, likes: 33, sales: 7, img: '/img/men4.png', scale: 1.3, fit: 'Boxy Fit' },
+        { id: 113, title: 'Titanium Tee', price: 1200, likes: 77, sales: 22, img: '/img/men5.png', scale: 1.2, fit: 'Regular Fit' },
+        { id: 114, title: 'Iron Sight', price: 1950, likes: 150, sales: 60, img: '/img/men6.png', scale: 1.3, fit: 'Boxy Fit' },
+        { id: 115, title: 'Carbon Fiber', price: 1350, likes: 41, sales: 10, img: '/img/men7.png', scale: 1.2, fit: 'Oversized Fit' },
+        { id: 116, title: 'Sunset Silhouette', price: 1500, likes: 88, sales: 25, img: '/img/men8.png', scale: 2.5, fit: 'Regular Fit' },
+        { id: 117, title: 'Glitch Mode', price: 1700, likes: 20, sales: 3, img: '/img/men1.png', scale: 1.3, fit: 'Oversized Fit' },
+        { id: 118, title: 'Static Noise', price: 1250, likes: 66, sales: 14, img: '/img/men2.png', scale: 1.2, fit: 'Boxy Fit' },
+        { id: 119, title: 'Obsidian Oversized', price: 1450, likes: 92, sales: 33, img: '/img/men3.png', scale: 1.3, fit: 'Regular Fit' },
+        { id: 120, title: 'Digital Nomad', price: 1100, likes: 110, sales: 45, img: '/img/men4.png', scale: 1.3, fit: 'Regular Fit' },
+        { id: 121, title: 'Phantom Print', price: 1850, likes: 45, sales: 9, img: '/img/men5.png', scale: 1.2, fit: 'Oversized Fit' },
+        { id: 122, title: 'Velocity Tee', price: 1300, likes: 38, sales: 11, img: '/img/men6.png', scale: 1.3, fit: 'Boxy Fit' },
+        { id: 123, title: 'Abyss Depth', price: 1400, likes: 200, sales: 80, img: '/img/men7.png', scale: 1.2, fit: 'Regular Fit' },
+        { id: 124, title: 'Summit Reach', price: 1550, likes: 50, sales: 12, img: '/img/men8.png', scale: 2.5, fit: 'Regular Fit' }
+];
+
 
 const MenCollection = () => {
     const navigate = useNavigate();
+    
+    // 🛡️ 1. Grab the context (Ensure this is inside the component!)
+    const cartContext = useCart();
+    const addToCart = cartContext ? cartContext.addToCart : null;
+
+    const handleAddToCart = (item: any) => {
+        console.log("1. Click detected for:", item?.title);
+        
+        if (!item) {
+            console.error("Error: No item data passed to function");
+            return;
+        }
+
+        if (!addToCart) {
+            console.error("Error: addToCart function not found in Context. Check App.tsx!");
+            alert("Cart system error. Please refresh.");
+            return;
+        }
+
+        const productWithDefaults = {
+            id: item.id || Math.random(), 
+            title: item.title || "T-Shirt",
+            price: item.price || 0,
+            // 🖼️ Fix image path
+            image: item.img ? (item.img.startsWith('/img/') ? item.img : `/img/${item.img}`) : (item.image || "/img/placeholder.png"),
+            size: 'Choose Size', 
+            color: 'Choose Color',
+            quantity: 1, 
+            selected: true,
+            type: 'physical'
+        };
+
+        console.log("2. Sending to Context:", productWithDefaults);
+        addToCart(productWithDefaults);
+        
+        alert(`${item.title} added! 🛒`);
+    };
 
     // 🟢 2. HERO SLIDER STATE (Profile logic removed here)
     const [heroImageIndex, setHeroImageIndex] = useState(0);
@@ -41,34 +108,7 @@ const MenCollection = () => {
         );
     };
 
-    // 🟢 DATA
-    const originalProducts = [
-        { id: 101, title: 'Classic Urban Fit', price: 1350, likes: 42, sales: 10, img: '/img/men1.png', scale: 1.3, fit: 'Regular Fit' },
-        { id: 102, title: 'Cyberpunk Shadow', price: 1550, likes: 65, sales: 15, img: '/img/men2.png', scale: 1.2, fit: 'Oversized Fit' },
-        { id: 103, title: 'Minimalist Core', price: 1200, likes: 29, sales: 8, img: '/img/men3.png', scale: 1.3, fit: 'Boxy Fit' },
-        { id: 104, title: 'Vintage Band Tee', price: 1400, likes: 88, sales: 30, img: '/img/men4.png', scale: 1.3, fit: 'Regular Fit' },
-        { id: 105, title: 'Futuristic Kanji', price: 1650, likes: 110, sales: 22, img: '/img/men5.png', scale: 1.2, fit: 'Oversized Fit' },
-        { id: 106, title: 'Desert Storm Tee', price: 1300, likes: 37, sales: 12, img: '/img/men6.png', scale: 1.3, fit: 'Regular Fit' },
-        { id: 107, title: 'Graphite Oversized', price: 1700, likes: 210, sales: 45, img: '/img/men7.png', scale: 1.2, fit: 'Oversized Fit' },
-        { id: 108, title: 'Electric Signal', price: 1450, likes: 54, sales: 19, img: '/img/men8.png', scale: 2.5, fit: 'Boxy Fit' },
-        { id: 109, title: 'Midnight Stealth', price: 1800, likes: 12, sales: 4, img: '/img/men1.png', scale: 1.3, fit: 'Regular Fit' },
-        { id: 110, title: 'Astral Heavy', price: 1100, likes: 98, sales: 30, img: '/img/men2.png', scale: 1.2, fit: 'Boxy Fit' },
-        { id: 111, title: 'Vapor Wave', price: 1400, likes: 55, sales: 18, img: '/img/men3.png', scale: 1.3, fit: 'Oversized Fit' },
-        { id: 112, title: 'Concrete Jungle', price: 1650, likes: 33, sales: 7, img: '/img/men4.png', scale: 1.3, fit: 'Boxy Fit' },
-        { id: 113, title: 'Titanium Tee', price: 1200, likes: 77, sales: 22, img: '/img/men5.png', scale: 1.2, fit: 'Regular Fit' },
-        { id: 114, title: 'Iron Sight', price: 1950, likes: 150, sales: 60, img: '/img/men6.png', scale: 1.3, fit: 'Boxy Fit' },
-        { id: 115, title: 'Carbon Fiber', price: 1350, likes: 41, sales: 10, img: '/img/men7.png', scale: 1.2, fit: 'Oversized Fit' },
-        { id: 116, title: 'Sunset Silhouette', price: 1500, likes: 88, sales: 25, img: '/img/men8.png', scale: 2.5, fit: 'Regular Fit' },
-        { id: 117, title: 'Glitch Mode', price: 1700, likes: 20, sales: 3, img: '/img/men1.png', scale: 1.3, fit: 'Oversized Fit' },
-        { id: 118, title: 'Static Noise', price: 1250, likes: 66, sales: 14, img: '/img/men2.png', scale: 1.2, fit: 'Boxy Fit' },
-        { id: 119, title: 'Obsidian Oversized', price: 1450, likes: 92, sales: 33, img: '/img/men3.png', scale: 1.3, fit: 'Regular Fit' },
-        { id: 120, title: 'Digital Nomad', price: 1100, likes: 110, sales: 45, img: '/img/men4.png', scale: 1.3, fit: 'Regular Fit' },
-        { id: 121, title: 'Phantom Print', price: 1850, likes: 45, sales: 9, img: '/img/men5.png', scale: 1.2, fit: 'Oversized Fit' },
-        { id: 122, title: 'Velocity Tee', price: 1300, likes: 38, sales: 11, img: '/img/men6.png', scale: 1.3, fit: 'Boxy Fit' },
-        { id: 123, title: 'Abyss Depth', price: 1400, likes: 200, sales: 80, img: '/img/men7.png', scale: 1.2, fit: 'Regular Fit' },
-        { id: 124, title: 'Summit Reach', price: 1550, likes: 50, sales: 12, img: '/img/men8.png', scale: 2.5, fit: 'Regular Fit' }
-    ];
-
+    
     // 🟢 PAGINATION & FILTER LOGIC
     const getProcessedProducts = () => {
         let products = [...originalProducts];
@@ -194,13 +234,37 @@ const MenCollection = () => {
                                                 LKR {item.price.toLocaleString()}.00
                                             </div>
 
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '12px', gap: '15px' }}>
+                                           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '12px', gap: '15px' }}>
+                                                {/* --- LIKE SECTION --- */}
                                                 <div onClick={(e) => { e.stopPropagation(); toggleLike(item.id); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
                                                     <img src="/img/heart.png" alt="" style={{ width: '18px', filter: likedProducts.includes(item.id) ? 'invert(15%) sepia(95%) saturate(6932%) hue-rotate(358deg) brightness(95%) contrast(112%)' : 'none', opacity: likedProducts.includes(item.id) ? 1 : 0.7, transition: 'all 0.3s ease' }} />
                                                     <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>{likedProducts.includes(item.id) ? item.likes + 1 : item.likes}</span>
                                                 </div>
-                                                <img src="/img/cart.png" alt="" style={{ width: '18px', opacity: 0.7 }} />
-                                                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>{item.sales}</span>
+
+                                                {/* --- 🛒 CART SECTION --- */}
+                                                <div 
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        console.log("Cart Icon Clicked for ID:", item.id); // 🔍 Check F12 Console for this!
+                                                        handleAddToCart(item); 
+                                                    }} 
+                                                    style={{ 
+                                                        cursor: 'pointer', 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        gap: '5px', 
+                                                        padding: '5px', 
+                                                        borderRadius: '8px', 
+                                                        transition: 'background 0.2s' 
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                                >
+                                                    <img src="/img/cart.png" alt="Add to Cart" style={{ width: '18px', opacity: 0.7 }} />
+                                                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>
+                                                        {item.sales}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
