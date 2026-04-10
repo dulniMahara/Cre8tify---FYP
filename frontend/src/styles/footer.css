@@ -1,0 +1,45 @@
+/* --- GLOBAL FOOTER STYLES --- */
+.site-footer {
+    background-color: #0d375b; /* Dark Blue */
+    color: white;
+    padding: 60px 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 25px; /* Use the size you confirmed */
+    border-top: 1px solid rgba(255,255,255,0.1);
+    width: 100%;
+    position: relative; /* Ensures it sits naturally */
+    z-index: 100;
+}
+
+.footer-left {
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.footer-center {
+    display: flex;
+    gap: 20px;
+}
+.footer-center span {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.footer-center span:hover {
+    color: #aaa;
+}
+
+.footer-right {
+    opacity: 1;
+}
+
+/* MOBILE RESPONSIVE TWEAK (Optional) */
+@media (max-width: 768px) {
+    .site-footer {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+        font-size: 16px;
+    }
+}

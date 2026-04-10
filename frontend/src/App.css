@@ -1,0 +1,19 @@
+/* Global page styling */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #f7f7f7;
+}
+
+/* Utility container */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: auto;
+}
+
