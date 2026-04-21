@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;600;800&display=swap');
+
 /* GLOBAL RESET */
 * {
     box-sizing: border-box;
@@ -8,7 +10,8 @@
 .home-container {
     width: 100%;
     min-height: 100vh;
-    overflow-x: hidden; /* Prevents scrollbars */
+    overflow-x: hidden;
+    /* Prevents scrollbars */
     display: flex;
     flex-direction: column;
 }
@@ -17,12 +20,12 @@
 .hero-section {
     display: flex;
     justify-content: space-between;
-    align-items:stretch;
-    padding: 0 ;
-    gap: 40px;
+    align-items: stretch;
+    padding: 0;
+    gap: 20px;
     width: 100%;
     height: 100vh;
-    min-height: 800px;
+    min-height: 400px;
     background-color: #0d375b;
     position: relative;
 }
@@ -31,15 +34,15 @@
 .hero-left {
     background-color: #0d375b;
     color: white;
-    width: 38%; 
+    width: 38%;
     height: 100%;
-    
+
     position: relative;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
 
-    padding-top: 10px; 
+    padding-top: 5px;
     padding-left: 0;
     padding-right: 0;
     padding-bottom: 0;
@@ -47,67 +50,96 @@
 
 /* WRAPPER: Holds text centered */
 .left-content-wrapper {
-    width: 80%; 
-    margin: 0 auto; 
+    width: 80%;
+    margin: 0 auto;
     text-align: center;
     z-index: 10;
 }
 
 /* LOGO */
 .logo-section img {
-    width: 190px; 
-    margin-bottom: 10px;
-    /* CHANGE 4: Removed 'margin-top: -50px' so it sits naturally */
-    margin-top: 20px; 
+    width: 95px;
+    margin-bottom: 5px;
+    /* CHANGE 4: Removed 'margin-top: -25px' so it sits naturally */
+    margin-top: 10px;
 }
 
 /* HEADLINE */
 .hero-headline {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Instrument Serif', serif;
     font-style: italic;
-    font-size: 26px; /* Larger Text */
-    line-height: 1.4;
-    margin-bottom: 30px;
-}
-.highlight-text {
-    font-weight: bold;
+    font-size: 24px;
+    line-height: 1.1;
+    margin-bottom: 13px;
+    color: #ffffff;
+    font-weight: 400;
 }
 
-/* DARK BLUE TEXT BOX */
+.highlight-text {
+    font-family: 'Inter', sans-serif;
+    font-style: normal;
+    font-weight: 800;
+    color: #38bdf8;
+    /* Vibrant Sky Blue */
+}
+
+/* NO BACKGROUND - SLEEK TEXT VIBE */
 .hero-text-box {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 50px 30px;
-    border-radius: 8px;
-    font-size: 23px;
-    line-height: 1.4;
-    color: #e0e0e0;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    max-width: 500px;
+    background: transparent;
+    padding: 5px 20px;
+    border-left: 2px solid #38bdf8;
+    /* Vibrant Sky Blue */
+    max-width: 290px;
     margin: 0 auto;
+    text-align: left;
+}
+
+.hero-text-box p {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    line-height: 1.7;
+    color: #cbd5e1;
+    margin-bottom: 10px;
+    font-weight: 300;
 }
 
 .last-p {
-    display: block;
-    margin-top: 15px;
-    font-weight: 600;
-    font-style: italic;
-    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+    font-family: 'Inter', sans-serif;
+    font-size: 7px;
+    font-weight: 700;
+    color: #38bdf8;
+    /* Vibrant Sky Blue */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.last-p::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 1px;
+    background: #38bdf8;
+    /* Vibrant Sky Blue */
 }
 
 /* WHITE BANNER - THE KEY FIX */
 .cta-banner {
     position: absolute;
     /* Lifts the banner up, creating the "blue border" underneath */
-    bottom: 120px; 
+    bottom: 60px;
     left: 0;
-    width: 109%; 
+    width: 109%;
     background: #f9f8fa;
     color: #0d375b;
     font-weight: 800;
     font-style: italic;
     text-align: center;
-    padding: 20px 0;
-    font-size: 25px;
+    padding: 10px 0;
+    font-size: 13px;
     cursor: pointer;
     z-index: 15;
 }
@@ -116,12 +148,16 @@
 .juice-model {
     position: absolute;
     /* Pushes him to the right so he overlaps the white section */
-    right: -224px; 
-    bottom: 185px;
-    width: 430px; /* Large size */
-    z-index: 20; /* Stands on top of banner */
-    pointer-events: none; /* Allows clicks to pass through */
-    animation: slideInFromLeft 1.2s ease-out forwards; /*1.2 seconds long, smooth ease-out*/
+    right: -112px;
+    bottom: 93px;
+    width: 215px;
+    /* Large size */
+    z-index: 20;
+    /* Stands on top of banner */
+    pointer-events: none;
+    /* Allows clicks to pass through */
+    animation: slideInFromLeft 1.2s ease-out forwards;
+    /*1.2 seconds long, smooth ease-out*/
 }
 
 /* --- RIGHT SIDE (WHITE) --- */
@@ -133,36 +169,38 @@
 
     position: relative;
     display: flex;
-    align-items: center; 
+    align-items: center;
     justify-content: center;
-    border-radius: 0 0 0 30px;
+    border-radius: 0 0 0 15px;
 }
 
 /* LOGIN FORM WRAPPER */
 .login-wrapper {
     width: 100%;
-    max-width: 600px; /* Wider form */
-    padding: 40px;
+    max-width: 300px;
+    /* Wider form */
+    padding: 20px;
     z-index: 10;
     /* Push form left so it doesn't hit the Juice Guy */
-    margin-right: 80px; 
+    margin-right: 40px;
 }
 
 .hero-right h2 {
-    font-size: 60px;
-    margin-bottom: 15px;
+    font-size: 30px;
+    margin-bottom: 8px;
     align-items: center;
     color: #000;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 1.3px;
     text-align: center;
     font-weight: 700;
 }
+
 .slogan {
     font-style: italic;
     color: #666;
-    margin-bottom: 50px;
-    font-size: 25px;
+    margin-bottom: 25px;
+    font-size: 13px;
     line-height: 1.5;
     text-align: center;
     display: block;
@@ -171,38 +209,41 @@
 /* INPUTS */
 .hero-right label {
     display: block;
-    margin-top: 25px;
-    font-size: 25px;
+    margin-top: 13px;
+    font-size: 13px;
     color: #333;
     font-weight: 600;
 }
+
 .input {
     width: 100%;
-    padding: 20px;
-    margin-top: 10px;
+    padding: 10px;
+    margin-top: 5px;
     background: #e6f0ff;
     border: none;
-    border-radius: 8px;
-    font-size: 25px;
+    border-radius: 4px;
+    font-size: 13px;
 }
+
 .login-options {
     display: flex;
     justify-content: space-between;
-    font-size: 17px;
-    margin-top: 20px;
+    font-size: 9px;
+    margin-top: 10px;
     color: #0d375b;
     font-weight: 700;
     cursor: pointer;
 }
+
 .btn-primary {
     width: 100%;
-    padding: 20px;
+    padding: 10px;
     background: #0d375b;
     color: white;
     border: none;
-    border-radius: 8px;
-    margin-top: 40px;
-    font-size: 21px;
+    border-radius: 4px;
+    margin-top: 20px;
+    font-size: 11px;
     font-weight: bold;
     cursor: pointer;
     text-transform: uppercase;
@@ -216,14 +257,15 @@
 
 .sign-up-link {
     text-align: center;
-    margin-top: 30px;
-    font-size: 16px;
+    margin-top: 15px;
+    font-size: 8px;
 }
+
 .sign-up-link span {
     color: #0d375b;
     font-weight: bold;
     cursor: pointer;
-    font-size: 17px;
+    font-size: 9px;
 }
 
 /* RUNNING GIRL MODEL */
@@ -231,9 +273,10 @@
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 560px;
+    width: 280px;
     z-index: 5;
-    animation: slideInFromRight 1.2s ease-out forwards; /*1.2 seconds long, smooth ease-out*/
+    animation: slideInFromRight 1.2s ease-out forwards;
+    /*1.2 seconds long, smooth ease-out*/
 
 }
 
@@ -241,33 +284,34 @@
    UPDATED: ABOUT US (Glass Effect)
    ========================================= */
 .about-section {
-    padding: 80px 0 0;
+    padding: 40px 0 0;
     text-align: center;
     background: #fff;
 }
 
 .about-title {
-    font-size: 50px;
+    font-size: 25px;
     color: #000;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
     position: relative;
     display: inline-block;
 }
+
 .about-title::after {
     content: '';
     display: block;
     width: 60%;
-    height: 2px;
+    height: 1px;
     background: #000;
-    margin: 5px auto 0;
+    margin: 3px auto 0;
 }
 
 .about-subtitle {
     font-family: 'Playfair Display', serif;
     font-style: italic;
     color: #555;
-    font-size: 25px;
-    margin-bottom: 40px;
+    font-size: 13px;
+    margin-bottom: 20px;
 }
 
 /* Container for Image + Glass Overlay */
@@ -275,7 +319,7 @@
     position: relative;
     width: 100%;
     /* This height crops the image like a banner */
-    height: 400px; 
+    height: 200px;
     overflow: hidden;
 }
 
@@ -283,13 +327,13 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: brightness(0.9); 
+    filter: brightness(0.9);
 }
 
- 
 
-    /* The glass box */
-    .glass-overlay {
+
+/* The glass box */
+.glass-overlay {
     position: absolute;
     /* FIX: Fits along with the bg picture (same width n height) */
     top: 0;
@@ -298,130 +342,172 @@
     height: 100%;
 
     /*GLASS EFFECT*/
-    background: rgba(255, 255, 255, 0.15); /* Semi-transparent white */
-    backdrop-filter: blur(8px); /* The Blur */
-    -webkit-backdrop-filter: blur(8px); /* Safari support */
-   
+    background: rgba(0, 0, 0, 0.65);
+    /* Elegant Dark Overlay for Contrast */
+    backdrop-filter: blur(6px);
+    /* High Blur */
+    -webkit-backdrop-filter: blur(6px);
+    /* Safari support */
+
     /* Centering the text inside */
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 10px;
 }
 
 .glass-overlay p {
-    max-width: 70%; /*900px*/
-    color: #f7f4f4; /* Dark text */
-    font-size: 25px; /* Increased font size */
+    max-width: 70%;
+    /*450px*/
+    color: #ffffff;
+    /* pure white text */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    /* subtle shadow for extra crispness */
+    font-size: 13px;
+    /* Increased font size */
     line-height: 1.8;
     font-weight: 500;
     text-align: center;
-    padding: 20px;
-} 
+    padding: 10px;
+}
 
 /* =========================================
    UPDATED: FOR BUYERS (Image Backgrounds)
    ========================================= */
 .customers-section {
     /* Set the texture background image here */
-    background-image: url('/public/img/landingbg.png'); /* Ensure path is correct */
+    background-image: url('/public/img/landingbg.png');
+    /* Ensure path is correct */
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    
+
+    position: relative;
+    /* REQUIRED FOR ABSOLUTE BLEED IMAGES */
+    overflow: hidden;
+
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
+    /* Push content to right for customers section */
     align-items: center;
-    padding: 100px 5%;
-    gap: 40px;
-    margin-top: 150px;
+    padding: 50px 5%;
+    margin-top: 75px;
 }
 
-/* Hanging Shirt Image Container */
+/* Hanging Shirt Image Container - NOW ABSOLUTE TO BLEED EDGES */
 .customer-img-container {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    padding-right: 20px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 48%;
+    /* Adjust width of the bleed */
+    height: 100%;
+    z-index: 1;
 }
-.customer-img {
+
+.buyer-img {
     width: 100%;
-    max-width: 450px;
-    /* Drop shadow to make it look like it's hanging in front */
-    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+    height: 100%;
+    object-fit: cover;
+    /* Softly blends the right edge into the background */
+    -webkit-mask-image: linear-gradient(to right, black 50%, transparent 100%);
+    mask-image: linear-gradient(to right, black 50%, transparent 100%);
+    transition: transform 0.4s ease;
+}
+
+.buyer-img:hover {
+    transform: scale(1.02);
 }
 
 .customer-content {
-    flex: 1.2;
+    flex: 0 0 55%;
+    /* Take up exact remaining width rigidly */
+    position: relative;
+    z-index: 2;
     text-align: left;
+
+    /* NEW: Glassmorphism Card for Text Legibility */
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 20px 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .customer-header {
-    font-size: 50px;
+    font-size: 25px;
     font-style: italic;
     font-family: 'Playfair Display', serif;
-    margin-bottom: 25px;
+    margin-bottom: 13px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    border-bottom: 2px solid #aaa;
-    padding-bottom: 10px;
+    gap: 5px;
+    border-bottom: 1px solid #aaa;
+    padding-bottom: 5px;
     display: inline-block;
 }
+
 .star-icon {
     color: #d4af37;
-    font-size: 50px;
+    font-size: 25px;
 }
+
 .customer-content p {
-    font-size: 25px; /* Bigger intro text */
-    margin-bottom: 20px;
+    font-size: 13px;
+    /* Bigger intro text */
+    margin-bottom: 10px;
     font-weight: 550;
 }
+
 .customer-list {
     list-style: none;
     padding: 0;
-    margin-bottom: 30px;
+    margin-bottom: 15px;
 }
 
 .customer-list li {
-    margin-bottom: 15px;
-    padding-left: 25px;
+    margin-bottom: 8px;
+    padding-left: 13px;
     position: relative;
-    font-size: 23px;
+    font-size: 12px;
     color: #222;
     font-weight: 550;
     line-height: 1.5;
 }
+
 .customer-list li::before {
     content: '•';
     position: absolute;
     left: 0;
     color: #000;
     font-weight: bold;
-    font-size: 25px;
+    font-size: 13px;
 }
 
 .btn-customer {
     background: #b0a08f;
     color: white;
     border: none;
-    padding: 15px 40px;
-    font-size: 25px;
-    margin-top: 40px;
-    border-radius: 30px;
+    padding: 8px 20px;
+    font-size: 13px;
+    margin-top: 20px;
+    border-radius: 15px;
     cursor: pointer;
     font-weight: 600;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
     transition: 0.3s;
 }
+
 .btn-customer:hover {
     background: #968676;
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .customer-note {
-    margin-top: 60px;
-    font-size: 20px;
+    margin-top: 30px;
+    font-size: 10px;
     color: #666;
     font-style: italic;
     line-height: 1.4;
@@ -433,111 +519,144 @@
 
 .designer-section {
     /* Set the texture background image here */
-    background-image: url('/public/img/landingbg.png'); /* Ensure path is correct */
+    background-image: url('/public/img/landingbg.png');
+    /* Ensure path is correct */
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    
+
+    position: relative;
+    overflow: hidden;
+
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
+    /* Push content to left for designer section */
     align-items: center;
-    padding: 100px 5%;
-    gap: 40px;
-    margin-top: 150px;
+    padding: 50px 5%;
+    margin-top: 75px;
 }
 
-/* Hanging Shirt Image Container */
+/* Hanging Shirt Image Container - ABSOLUTE RIGHT SIDE */
 .designer-img-container {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    padding-right: 20px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 48%;
+    /* Adjust bleed width */
+    height: 100%;
+    z-index: 1;
 }
+
 .designer-img {
     width: 100%;
-    max-width: 450px;
-    /* Drop shadow to make it look like it's hanging in front */
-    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+    height: 100%;
+    object-fit: cover;
+    /* Softly blends the left edge into the background */
+    -webkit-mask-image: linear-gradient(to left, black 50%, transparent 100%);
+    mask-image: linear-gradient(to left, black 50%, transparent 100%);
+    transition: transform 0.4s ease;
+}
+
+.designer-img:hover {
+    transform: scale(1.02);
 }
 
 .designer-content {
-    flex: 1.2;
+    flex: 0 0 55%;
+    /* Keep text rigid on left */
+    position: relative;
+    z-index: 2;
     text-align: left;
+
+    /* NEW: Glassmorphism Card for Text Legibility */
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 20px 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .designer-header {
-    font-size: 50px;
+    font-size: 25px;
     font-style: italic;
     font-family: 'Playfair Display', serif;
-    margin-bottom: 55px;
-    margin-top: 10px;
+    margin-bottom: 28px;
+    margin-top: 5px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    border-bottom: 2px solid #aaa;
-    padding-bottom: 10px;
+    gap: 5px;
+    border-bottom: 1px solid #aaa;
+    padding-bottom: 5px;
     display: inline-block;
 }
+
 .star-icon {
     color: #d4af37;
-    font-size: 50px;
+    font-size: 25px;
 }
 
-.designer-subtitle{
-    font-size: 28px;
+.designer-subtitle {
+    font-size: 14px;
     font-weight: 600;
-    margin-bottom: 35px;
+    margin-bottom: 18px;
 }
+
 .designer-content p {
-    font-size: 25px; /* Bigger intro text */
-    margin-bottom: 20px;
+    font-size: 13px;
+    /* Bigger intro text */
+    margin-bottom: 10px;
     font-weight: 550;
 }
+
 .designer-list {
     list-style: none;
     padding: 0;
-    margin-bottom: 30px;
+    margin-bottom: 15px;
 }
 
 .designer-list li {
-    margin-bottom: 15px;
-    padding-left: 25px;
+    margin-bottom: 8px;
+    padding-left: 13px;
     position: relative;
-    font-size: 23px;
+    font-size: 12px;
     color: #222;
     font-weight: 550;
     line-height: 1.5;
 }
+
 .designer-list li::before {
     content: '•';
     position: absolute;
     left: 0;
     color: #000;
     font-weight: bold;
-    font-size: 25px;
+    font-size: 13px;
 }
 
 .btn-designer {
     background: #b0a08f;
     color: white;
     border: none;
-    padding: 15px 40px;
-    font-size: 25px;
-    margin-top: 40px;
-    border-radius: 30px;
+    padding: 8px 20px;
+    font-size: 13px;
+    margin-top: 20px;
+    border-radius: 15px;
     cursor: pointer;
     font-weight: 600;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
     transition: 0.3s;
 }
+
 .btn-designer:hover {
     background: #968676;
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .designer-note {
-    margin-top: 60px;
-    font-size: 20px;
+    margin-top: 30px;
+    font-size: 10px;
     color: #666;
     font-style: italic;
     line-height: 1.4;
@@ -548,44 +667,51 @@
    ========================================= */
 .purpose-section {
     background-color: white;
-    padding: 100px 5% 100px 10%;
+    padding: 50px 5% 50px 10%;
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Aligns columns to top */
-    gap: 0; /* Gap handled by the divider logic */
+    align-items: flex-start;
+    /* Aligns columns to top */
+    gap: 0;
+    /* Gap handled by the divider logic */
 }
 
 /* Common Column Style */
 .purpose-col {
     flex: 1;
-    padding: 0 40px;
+    padding: 0 20px;
     color: #000;
 }
+
 .purpose-col:last-child {
-    padding-left: 130px; /* Increase this value to move it further right */
+    padding-left: 65px;
+    /* Increase this value to move it further right */
 }
+
 /* The Header with Star */
 .purpose-header {
-    font-size: 50px;
+    font-size: 25px;
     font-family: 'Playfair Display', serif;
     font-style: italic;
-    margin-bottom: 30px;
+    margin-bottom: 15px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
 }
+
 .purpose-header .star {
-    color: #ffcc00; /* Bright Yellow/Gold star */
-    font-size: 50px;
+    color: #ffcc00;
+    /* Bright Yellow/Gold star */
+    font-size: 25px;
     /* Optional text shadow to make it pop */
-    text-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Introduction Text */
 .purpose-intro {
-    font-size: 25px;
-    margin-bottom: 40px;
-    margin-top: 50px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    margin-top: 25px;
     font-weight: 600;
 }
 
@@ -593,28 +719,30 @@
 .purpose-list {
     list-style: none;
     padding: 0;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
 }
+
 .purpose-list li {
-    font-size: 25px;
-    margin-bottom: 12px;
+    font-size: 13px;
+    margin-bottom: 6px;
     position: relative;
-    padding-left: 25px;
+    padding-left: 13px;
     line-height: 1.6;
     color: #222;
 }
+
 .purpose-list li::before {
     content: '•';
     position: absolute;
     left: 0;
-    font-size: 25px;
+    font-size: 13px;
     color: #000;
     font-weight: bold;
 }
 
 /* Final Summary Paragraph */
 .purpose-summary {
-    font-size: 25px;
+    font-size: 13px;
     line-height: 1.6;
     font-style: italic;
     color: #333;
@@ -623,11 +751,13 @@
 
 /* VERTICAL DIVIDER LINE */
 .vertical-divider {
-    width: 2px;
-    background-color: #d4af37; /* Gold/Brown color like reference */
+    width: 1px;
+    background-color: #d4af37;
+    /* Gold/Brown color like reference */
     /* Adjust height to control line length */
-    height: 550px; 
-    margin-top: 50px; /* Push it down slightly to align with text */
+    height: 275px;
+    margin-top: 25px;
+    /* Push it down slightly to align with text */
     opacity: 0.8;
 }
 
@@ -636,23 +766,30 @@
 /* Slide in from the Left (for Juice Model) */
 @keyframes slideInFromLeft {
     0% {
-        transform: translateX(-100px); /* Starts 100px to the left */
-        opacity: 0; /* Invisible start */
+        transform: translateX(-50px);
+        /* Starts 50px to the left */
+        opacity: 0;
+        /* Invisible start */
     }
+
     100% {
-        transform: translateX(0); /* Ends at original position */
-        opacity: 1; /* Fully visible */
+        transform: translateX(0);
+        /* Ends at original position */
+        opacity: 1;
+        /* Fully visible */
     }
 }
 
 /* Slide in from the Right (for Running Girl) */
 @keyframes slideInFromRight {
     0% {
-        transform: translateX(100px); /* Starts 100px to the right */
-        opacity: 0; 
+        transform: translateX(50px);
+        /* Starts 50px to the right */
+        opacity: 0;
     }
+
     100% {
-        transform: translateX(0); 
-        opacity: 1; 
+        transform: translateX(0);
+        opacity: 1;
     }
 }

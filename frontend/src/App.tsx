@@ -5,8 +5,8 @@ import { CartProvider } from './context/CartContext';
 // Import Pages
 import Home from "./pages/Home"; // 🟢 This is your restored Landing Page
 import Login from "./pages/Login"; // 🟢 The Login page we made
-import DesignerSignup from "./pages/DesignerSignup"; 
-import CustomerSignup from "./pages/CustomerSignup"; 
+import DesignerSignup from "./pages/DesignerSignup";
+import CustomerSignup from "./pages/CustomerSignup";
 import DesignerDashboard from "./pages/DesignerDashboard";
 import Profile from './pages/Profile';
 import DesignTool from "./pages/DesignTool";
@@ -32,6 +32,7 @@ import TrackOrder from './pages/TrackOrder';
 import AccountLayout from './pages/Account/AccountLayout';
 import CustomerProfile from './pages/CustomerProfile';
 import MyOrders from './pages/MyOrders';
+import Favorites from './pages/Favorites';
 
 function App() {
   return (
@@ -59,7 +60,7 @@ function App() {
           {/*CUSTOMER DASHBOARD ROUTES */}
           <Route path="/customer-dashboard" element={<CustomerDashboard />} />
           <Route path="/women-collection" element={<WomenCollection />} />
-          <Route path="/men-collection" element={<MenCollection />}/>
+          <Route path="/men-collection" element={<MenCollection />} />
           <Route path="/kids-collection" element={<KidsCollection />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/live-preview" element={<LivePreview />} />
@@ -71,9 +72,10 @@ function App() {
           <Route path="/order-success" element={<OrderSuccess />} />
           <Route path="/track-order" element={<TrackOrder />} />
           <Route path="/customer-profile" element={<CustomerProfile />} />
+          <Route path="/favorites" element={<Favorites />} />
 
           {/* 🟢 ADMIN DASHBOARD ROUTES (Only accessible to admins) */}
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-dashboard/*" element={<AdminDashboard />} />
         </Routes>
       </Router>
     </CartProvider>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
-import Header from '../components/Header'; // 🟢 The Smart Header handles the sync
+import Header from '../components/Header'; 
 import CollectionHero from '../components/CollectionHero';
 import '../styles/dashboard.css';
 
@@ -38,15 +38,12 @@ export const originalProducts = [
 const KidsCollection = () => {
     const navigate = useNavigate();
     
-
-    // 🛡️ 1. Grab the Context (Add this now!)
+    // 🛡️ 1. Grab the Context (Including cartItems for live sync)
     const cartContext = useCart();
     const addToCart = cartContext ? cartContext.addToCart : null;
+    const cartItems = cartContext ? cartContext.cartItems : [];
 
-    // 🖼️ 2. Add the Profile State (To prevent that other error we saw in Women's)
-    const [navProfileImg, setNavProfileImg] = useState<string>('/img/profile.png');
-
-    // 🚀 3. Paste the Master handleAddToCart Function
+    // 🚀 2. handleAddToCart with alert
     const handleAddToCart = (item: any) => {
         if (!item || !addToCart) {
             console.error("Cart system error");
@@ -57,8 +54,7 @@ const KidsCollection = () => {
             id: item.id, 
             title: item.title,
             price: item.price,
-            // 🖼️ Ensure image path is clean
-            image: item.img ? (item.img.startsWith('/img/') ? item.img : `/img/${item.img}`) : (item.image || "/img/placeholder.png"),
+            image: item.img ? (item.img.startsWith('/img/') ? item.img : `/img/${item.img}`) : "/img/placeholder.png",
             size: 'Choose Size', 
             color: 'Choose Color',
             quantity: 1, 
@@ -70,7 +66,6 @@ const KidsCollection = () => {
         alert(`${item.title} added to kids' cart! 🛒`);
     };
 
-    // 🟢 HERO SLIDER LOGIC
     const [heroImageIndex, setHeroImageIndex] = useState(0);
     const heroImages = ['/img/kidscollect1.png', '/img/kidscollect2.png', '/img/kidscollect3.png'];
     
@@ -81,17 +76,23 @@ const KidsCollection = () => {
         return () => clearInterval(interval);
     }, [heroImages.length]);
 
-    // 🟢 UI & FILTER STATES
     const [likedProducts, setLikedProducts] = useState<any[]>([]);
     const [filterBy, setFilterBy] = useState('All Ages'); 
     const [filterOpen, setFilterOpen] = useState(false);
     const [visibleGirls, setVisibleGirls] = useState(8);
     const [visibleBoys, setVisibleBoys] = useState(8);
 
-    const toggleLike = (id: any) => {
-        setLikedProducts(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    const toggleLike = (id: any) => { 
+        setLikedProducts((prev: any) => {
+            const updated = prev.includes(id) 
+                ? prev.filter((item: any) => item !== id) 
+                : [...prev, id];
+            
+            // SAVE TO LOCAL STORAGE
+            localStorage.setItem('wishlist', JSON.stringify(updated));
+            return updated;
+        });
     };
-
 
     const getFiltered = (gender: string) => {
         let items = originalProducts.filter(p => p.gender === gender);
@@ -105,24 +106,18 @@ const KidsCollection = () => {
     return (
         <div className="dashboard-container">
             <Sidebar variant="customer" />
-            
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
-                
-                {/* 🔵 THE SMART HEADER 
-                   By using this, we don't need any local profile state in this file. 
-                   It will automatically sync with the image you upload in CustomerProfile. */}
                 <Header mode="search" />
 
-                <div className="content-wrapper" style={{ padding: '0', background: '#f8fafc', marginTop: '140px' }}>
+                <div className="content-wrapper collection-content" style={{ padding: '0', background: '#f8fafc', marginTop: '0px' }}>
                     <CollectionHero 
                         title="KIDS COLLECTION" 
                         subtitle="Soft cotton for girls & Active play for boys" 
                         image={heroImages[heroImageIndex]} 
                     />
 
-                    <div style={{ padding: '0 60px 80px 60px' }}>
-                        {/* FILTER SECTION */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '40px', marginTop: '20px' }}>
+                    <div style={{ padding: '0 30px 40px 30px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px', marginTop: '10px' }}>
                             <div style={{ position: 'relative' }}>
                                 <FilterButton 
                                     text={filterBy} 
@@ -141,10 +136,10 @@ const KidsCollection = () => {
                         </div>
 
                         {/* GIRLS SECTION */}
-                        <div style={{ marginBottom: '80px' }}>
+                        <div style={{ marginBottom: '40px' }}>
                             <div style={sectionHeaderStyle('#db2777')}>
-                                <h2 style={{ fontSize: '32px', fontWeight: '800', color: '#db2777', margin: 0 }}>GIRLS: Soft Cotton</h2>
-                                <div style={{ height: '2px', flex: 1, background: 'linear-gradient(to right, #db2777, transparent)' }}></div>
+                                <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#db2777', margin: 0 }}>GIRLS: Soft Cotton</h2>
+                                <div style={{ height: '1px', flex: 1, background: 'linear-gradient(to right, #db2777, transparent)' }}></div>
                             </div>
                             <div style={productGridStyle}>
                                 {girlsList.slice(0, visibleGirls).map((item: any) => (
@@ -155,6 +150,7 @@ const KidsCollection = () => {
                                         toggleLike={toggleLike} 
                                         color="#db2777" 
                                         onAddToCart={handleAddToCart} 
+                                        cartItems={cartItems} // 👈 Pass cartItems for sync
                                     />
                                 ))}
                             </div>
@@ -164,10 +160,10 @@ const KidsCollection = () => {
                         </div>
 
                         {/* BOYS SECTION */}
-                        <div style={{ marginBottom: '80px' }}>
+                        <div style={{ marginBottom: '40px' }}>
                             <div style={sectionHeaderStyle('#0284c7')}>
-                                <h2 style={{ fontSize: '32px', fontWeight: '800', color: '#0284c7', margin: 0 }}>BOYS: Active Play</h2>
-                                <div style={{ height: '2px', flex: 1, background: 'linear-gradient(to right, #0284c7, transparent)' }}></div>
+                                <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#0284c7', margin: 0 }}>BOYS: Active Play</h2>
+                                <div style={{ height: '1px', flex: 1, background: 'linear-gradient(to right, #0284c7, transparent)' }}></div>
                             </div>
                             <div style={productGridStyle}>
                                 {boysList.slice(0, visibleBoys).map((item: any) => (
@@ -178,6 +174,7 @@ const KidsCollection = () => {
                                         toggleLike={toggleLike} 
                                         color="#0284c7" 
                                         onAddToCart={handleAddToCart}
+                                        cartItems={cartItems} // 👈 Pass cartItems for sync
                                     />
                                 ))}
                             </div>
@@ -193,66 +190,50 @@ const KidsCollection = () => {
     );
 };
 
-// --- SUB-COMPONENTS & STYLES ---
+// --- SUB-COMPONENTS ---
 
-const ProductCard = ({ item, likedProducts, toggleLike, color, onAddToCart }: any) => {
-const navigate = useNavigate(); // 🚀 Hook for navigation
+const ProductCard = ({ item, likedProducts, toggleLike, color, onAddToCart, cartItems }: any) => {
+    const navigate = useNavigate();
+
+    // 🚀 LIVE SYNC LOGIC: Find quantity in the context
+    const quantityInCart = cartItems?.find((c: any) => c.id === item.id)?.quantity || 0;
 
     const handleProductClick = () => {
-    navigate(`/product/${item.id}`, { 
-        state: { 
-            product: {
-                ...item,
-                isKids: true,
-                sizes: item.age.includes('5-10y') 
-                    ? ['5-6y', '7-8y', '9-10y'] 
-                    : ['11-12y', '13-14y', '15y+'],
-                basePrice: 500, 
-                designerCharge: 250, 
-                serviceCharge: 150
-            },
-            // ✅ This is now correctly inside the state object
-            selectedColor: '#FFFFFF' 
-        } 
-    });
-};
+        navigate(`/product/${item.id}`, { 
+            state: { 
+                product: {
+                    ...item,
+                    isKids: true,
+                    sizes: item.age.includes('5-10y') ? ['5-6y', '7-8y', '9-10y'] : ['11-12y', '13-14y', '15y+'],
+                    basePrice: 500, designerCharge: 250, serviceCharge: 150
+                },
+                selectedColor: '#FFFFFF' 
+            } 
+        });
+    };
 
     return (
-        <div 
-            className="product-card" 
-            style={{ ...productCardMain, cursor: 'pointer' }} 
-            onClick={handleProductClick}
-        >
+        <div className="product-card" style={{ ...productCardMain, cursor: 'pointer' }} onClick={handleProductClick}>
             <div style={productImgBox}>
-                <img src={item.img} alt="" style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain', transform: `scale(${item.scale || 1})`, filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.05))' }} />
+                <img src={item.img} alt="" style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain', transform: `scale(${item.scale || 1})`, filter: 'drop-shadow(0 5px 8px rgba(0,0,0,0.05))' }} />
             </div>
-            <div style={{ display: 'inline-block', padding: '4px 12px', borderRadius: '10px', background: `${color}15`, color: color, fontSize: '11px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>{item.material}</div>
-            <h3 style={{ fontSize: '24px', fontWeight: '800', margin: '0 0 5px 0', color: '#1e293b' }}>{item.title}</h3>
-            <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }}>{item.age}</div>
+            <div style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '5px', background: `${color}15`, color: color, fontSize: '6px', fontWeight: '800', marginBottom: '5px', textTransform: 'uppercase' }}>{item.material}</div>
+            <h3 style={{ fontSize: '12px', fontWeight: '800', margin: '0 0 3px 0', color: '#1e293b' }}>{item.title}</h3>
+            <div style={{ fontSize: '6px', color: '#94a3b8', marginBottom: '6px' }}>{item.age}</div>
             
-            {/* Prevent like button from triggering navigation */}
             <div style={cardFooterStyle} onClick={(e) => e.stopPropagation()}>
-                <div style={{ fontSize: '18px', fontWeight: '900', color: '#ef4444' }}>LKR {item.price.toLocaleString()}.00</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div onClick={() => toggleLike(item.id)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <img src="/img/heart.png" alt="" style={{ width: '18px', filter: likedProducts.includes(item.id) ? 'invert(15%) sepia(95%) saturate(6932%) hue-rotate(358deg)' : 'none', opacity: likedProducts.includes(item.id) ? 1 : 0.6 }} />
-                        <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>{likedProducts.includes(item.id) ? item.likes + 1 : item.likes}</span>
+                <div style={{ fontSize: '9px', fontWeight: '900', color: '#ef4444' }}>LKR {item.price.toLocaleString()}.00</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div onClick={() => toggleLike(item.id)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <img src="/img/heart.png" alt="" style={{ width: '9px', filter: likedProducts.includes(item.id) ? 'invert(15%) sepia(95%) saturate(6932%) hue-rotate(358deg)' : 'none', opacity: likedProducts.includes(item.id) ? 1 : 0.6 }} />
+                        <span style={{ fontSize: '6px', color: '#64748b', fontWeight: '700' }}>{likedProducts.includes(item.id) ? item.likes + 1 : item.likes}</span>
                     </div>
-                    {/* 🛒 CART SECTION */}
-                    <div 
-                        onClick={(e) => { 
-                            e.stopPropagation(); 
-                            onAddToCart(item);
-                        }} 
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                    >
-                        <img 
-                            src="/img/cart.png" // 👈 Add the leading slash!
-                            alt="Add to Cart" 
-                            style={{ width: '18px', opacity: 0.7 }} 
-                        />
-                        <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>
-                            {item.sales}
+
+                    {/* 🟢 DYNAMIC CART SECTION */}
+                    <div onClick={() => onAddToCart(item)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <img src="/img/cart.png" alt="Add to Cart" style={{ width: '9px', opacity: 0.7 }} />
+                        <span style={{ fontSize: '6px', color: '#64748b', fontWeight: '600' }}>
+                            {quantityInCart}
                         </span>
                     </div>
                 </div>
@@ -261,14 +242,10 @@ const navigate = useNavigate(); // 🚀 Hook for navigation
     );
 };
 
+// ... Styles remain the same ...
 const FilterButton = ({ icon, text, onClick, active }: any) => (
-    <button onClick={onClick} style={{ 
-        padding: '16px 32px', background: active ? '#0d375b' : 'white', color: active ? 'white' : '#1e293b', 
-        border: '2px solid #e2e8f0', borderRadius: '35px', cursor: 'pointer', display: 'flex', alignItems: 'center', 
-        gap: '12px', fontWeight: '800', fontSize: '16px', transition: 'all 0.3s'
-    }}>
-        <img src={icon} alt="" style={{ width: '20px', filter: active ? 'invert(1)' : 'none' }} /> 
-        {text}
+    <button onClick={onClick} style={{ padding: '8px 16px', background: active ? '#0d375b' : 'white', color: active ? 'white' : '#1e293b', border: '1px solid #e2e8f0', borderRadius: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800', fontSize: '8px', transition: 'all 0.3s' }}>
+        <img src={icon} alt="" style={{ width: '10px', filter: active ? 'invert(1)' : 'none' }} /> {text}
     </button>
 );
 
@@ -276,14 +253,13 @@ const DropdownItem = ({ text, onClick }: any) => (
     <div onClick={onClick} style={dropdownItemStyle} onMouseOver={(e) => (e.currentTarget.style.background = '#f1f5f9')} onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}>{text}</div>
 );
 
-// --- REUSABLE STYLE CONSTANTS ---
-const dropdownStyle: React.CSSProperties = { position: 'absolute', top: '70px', right: 0, width: '240px', background: 'white', borderRadius: '20px', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', padding: '10px', zIndex: 100, border: '1px solid #e2e8f0' };
-const dropdownItemStyle: React.CSSProperties = { padding: '14px 20px', cursor: 'pointer', fontSize: '15px', color: '#334155', borderRadius: '12px', fontWeight: '600' };
-const productGridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '30px' };
-const sectionHeaderStyle = (color: string): React.CSSProperties => ({ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '30px' });
-const loadMoreBtn = (color: string): React.CSSProperties => ({ marginTop: '50px', padding: '18px 45px', borderRadius: '40px', border: `3px solid ${color}`, color: color, background: 'transparent', fontSize: '18px', fontWeight: '900', cursor: 'pointer', display: 'block', margin: '50px auto 0', transition: '0.3s' });
-const productCardMain: React.CSSProperties = { background: 'white', padding: '15px', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' };
-const productImgBox: React.CSSProperties = { background: '#f8fafc', borderRadius: '18px', height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '15px', overflow: 'hidden' };
-const cardFooterStyle: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '15px' };
+const dropdownStyle: React.CSSProperties = { position: 'absolute', top: '35px', right: 0, width: '120px', background: 'white', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', padding: '5px', zIndex: 100, border: '1px solid #e2e8f0' };
+const dropdownItemStyle: React.CSSProperties = { padding: '7px 10px', cursor: 'pointer', fontSize: '8px', color: '#334155', borderRadius: '6px', fontWeight: '600' };
+const productGridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' };
+const sectionHeaderStyle = (color: string): React.CSSProperties => ({ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' });
+const loadMoreBtn = (color: string): React.CSSProperties => ({ marginTop: '25px', padding: '9px 23px', borderRadius: '20px', border: `2px solid ${color}`, color: color, background: 'transparent', fontSize: '9px', fontWeight: '900', cursor: 'pointer', display: 'block', margin: '25px auto 0', transition: '0.3s' });
+const productCardMain: React.CSSProperties = { background: 'white', padding: '8px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' };
+const productImgBox: React.CSSProperties = { background: '#f8fafc', borderRadius: '9px', height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px', overflow: 'hidden' };
+const cardFooterStyle: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '8px' };
 
 export default KidsCollection;

@@ -4,7 +4,7 @@ import '../styles/dashboard.css';
 
 // 🟢 Define Prop Type
 interface SidebarProps {
-  variant?: 'designer' | 'customer';
+  variant?: 'designer' | 'customer' | 'admin';
 }
 
 export default function Sidebar({ variant = 'designer' }: SidebarProps) {
@@ -16,7 +16,7 @@ export default function Sidebar({ variant = 'designer' }: SidebarProps) {
   };
 
   return (
-    <div className="sidebar">
+    <div className={`sidebar ${variant}-sidebar`}>
       {/* LOGO */}
       <div className="sidebar-logo">
         Cre8tify
@@ -37,11 +37,6 @@ export default function Sidebar({ variant = 'designer' }: SidebarProps) {
               My Designs
             </Link>
 
-            <Link to="/create" className={getActiveClass('/create')}>
-              <img src="/img/create.png" alt="" className="sidebar-icon" />
-              Create
-            </Link>
-
             <Link to="/requests" className={getActiveClass('/requests')}>
               <img src="/img/request.png" alt="" className="sidebar-icon" />
               Requests
@@ -57,7 +52,7 @@ export default function Sidebar({ variant = 'designer' }: SidebarProps) {
               My Shop
             </Link>
           </>
-        ) : (
+        ) : variant === 'customer' ? (
           // ================== CUSTOMER MENU ==================
           <>
             <Link to="/customer-dashboard" className={getActiveClass('/customer-dashboard')}>
@@ -90,7 +85,24 @@ export default function Sidebar({ variant = 'designer' }: SidebarProps) {
               Settings
             </Link>
           </>
-        )}
+        ) : variant === 'admin' ? (
+          <>
+            <Link to="/admin-dashboard/modules" className={getActiveClass('/admin-dashboard/modules') || getActiveClass('/admin-dashboard/')}>
+              <img src="/img/dashboard.png" alt="" className="sidebar-icon" />
+              Manage Modules
+            </Link>
+            
+            <Link to="/admin-dashboard/users" className={getActiveClass('/admin-dashboard/users')}>
+              <img src="/img/setting.png" alt="" className="sidebar-icon" />
+              User & Security Control
+            </Link>
+
+            <Link to="/admin-dashboard/analytics" className={getActiveClass('/admin-dashboard/analytics')}>
+              <img src="/img/earnings.png" alt="" className="sidebar-icon" />
+              Analytics & Insights
+            </Link>
+          </>
+        ) : null}
 
       </nav>
     </div>

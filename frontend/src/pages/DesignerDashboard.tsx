@@ -67,8 +67,8 @@ export default function DesignerDashboard() {
 
   // Helper to render a specific category grid
   const renderProductSection = (title: string, categoryItems: any[]) => (
-    <div style={{ marginBottom: '50px' }}>
-        <h3 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '20px', color: '#0d375b', borderLeft: '5px solid #0d375b', paddingLeft: '15px' }}>{title}</h3>
+    <div style={{ marginBottom: '25px' }}>
+        <h3 style={{ fontSize: '11px', fontWeight: '700', marginBottom: '10px', color: '#0d375b', borderLeft: '3px solid #0d375b', paddingLeft: '8px' }}>{title}</h3>
         <div className="products-grid">
             {categoryItems.map((product) => (
                 <div 
@@ -119,8 +119,8 @@ export default function DesignerDashboard() {
                     className="nav-icon" 
                     style={{ 
                         cursor: 'pointer',
-                        width: '40px',
-                        height: '40px',
+                        width: '20px',
+                        height: '20px',
                         borderRadius: '50%',
                         objectFit: 'cover'
                     }} 

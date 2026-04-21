@@ -57,21 +57,21 @@ const Login = () => {
     return (
         <div style={{ height: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             
-            <div style={{ background: 'white', padding: '60px 80px', borderRadius: '30px', boxShadow: '0 30px 60px rgba(0,0,0,0.08)', width: '600px' }}>
+            <div style={{ background: 'white', padding: '30px 40px', borderRadius: '15px', boxShadow: '0 15px 30px rgba(0,0,0,0.08)', width: '300px' }}>
                 
-                <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-                    <h2 style={{ fontFamily: '"Instrument Serif", serif', fontSize: '64px', color: '#0d375b', margin: '0 0 15px 0', fontStyle: 'italic' }}>
+                <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                    <h2 style={{ fontFamily: '"Instrument Serif", serif', fontSize: '32px', color: '#0d375b', margin: '0 0 8px 0', fontStyle: 'italic' }}>
                         {userRole === 'buyer' ? 'Customer Login' : 'Designer Login'}
                     </h2>
-                    <p style={{ color: '#64748b', fontSize: '18px', margin: 0 }}>
+                    <p style={{ color: '#64748b', fontSize: '9px', margin: 0 }}>
                         Please enter your details to login.
                     </p>
                 </div>
 
-                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '25px' }} autoComplete="off">
+                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '13px' }} autoComplete="off">
                     
                     <div>
-                        <label style={{ display: 'block', marginBottom: '10px', fontWeight: '700', color: '#1e293b', fontSize: '16px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: '700', color: '#1e293b', fontSize: '8px' }}>
                             Email Address
                         </label>
                         <input 
@@ -81,12 +81,12 @@ const Login = () => {
                             onChange={(e) => setEmail(e.target.value)}
                             required
                             autoComplete="off"
-                            style={{ width: '100%', padding: '18px', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', outline: 'none', fontSize: '16px', color: '#0f172a' }}
+                            style={{ width: '100%', padding: '9px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'white', outline: 'none', fontSize: '8px', color: '#0f172a' }}
                         />
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '10px', fontWeight: '700', color: '#1e293b', fontSize: '16px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: '700', color: '#1e293b', fontSize: '8px' }}>
                             Password
                         </label>
                         <input 
@@ -96,19 +96,19 @@ const Login = () => {
                             placeholder="Enter your password" 
                             required
                             autoComplete="new-password"
-                            style={{ width: '100%', padding: '18px', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', outline: 'none', fontSize: '16px', color: '#0f172a' }}
+                            style={{ width: '100%', padding: '9px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'white', outline: 'none', fontSize: '8px', color: '#0f172a' }}
                         />
                     </div>
                     
                     <button 
                         type="submit" 
-                        style={{ marginTop: '20px', padding: '20px', borderRadius: '15px', background: '#0d375b', color: 'white', border: 'none', fontSize: '18px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 10px 20px rgba(13, 55, 91, 0.2)' }}
+                        style={{ marginTop: '10px', padding: '10px', borderRadius: '8px', background: '#0d375b', color: 'white', border: 'none', fontSize: '9px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 5px 10px rgba(13, 55, 91, 0.2)' }}
                     >
                         Login
                     </button>
                 </form>
 
-                <div style={{ marginTop: '40px', textAlign: 'center', fontSize: '16px' }}>
+                <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '8px' }}>
                     <span style={{ color: '#94a3b8' }}>Don't have an account? </span>
                     <span 
                         style={{ color: '#0d375b', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }} 

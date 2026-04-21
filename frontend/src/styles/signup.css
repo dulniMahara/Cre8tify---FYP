@@ -11,7 +11,7 @@
 /* --- LEFT SIDE (INFO) --- */
 .signup-left {
     flex: 0.9; 
-    padding: 100px 80px 0 80px;
+    padding: 50px 40px 0 40px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -21,16 +21,16 @@
 }
 
 .signup-logo {
-    width: 190px; /* Bigger Logo */
-    margin-bottom: 100px;
+    width: 95px; /* Bigger Logo */
+    margin-bottom: 50px;
 }
 
 .signup-headline {
-    font-size: 50px;
+    font-size: 25px;
     font-weight: 800;
     line-height: 1.2;
     color: #f7f4f4;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
 }
 
 .benefit-list {
@@ -39,11 +39,11 @@
     margin-bottom: 0;
 }
 .benefit-list li {
-    font-size: 28px;
-    margin-bottom: 25px;
+    font-size: 14px;
+    margin-bottom: 13px;
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 8px;
     color: #eee;
     font-weight: 500;
 }
@@ -62,7 +62,7 @@
     content: '✔';
     font-weight: 900;
     color: #ffd700;
-    font-size: 30px;
+    font-size: 15px;
 }
 
 .work-section-title, .work-images {
@@ -75,7 +75,7 @@
     display: flex;
     justify-content: center; /* Aligns form closer to the left side */
     align-items: center;
-    padding: 40px; 
+    padding: 20px; 
     background-color: #f4f6f9 ;
 }
 
@@ -83,7 +83,7 @@
 .blue-card-container {
     background-color: transparent;
     width: 100%;
-    max-width: 700px; 
+    max-width: 350px; 
     padding: 0;
     box-shadow: none;
 }
@@ -91,29 +91,29 @@
 /* THE WHITE FORM INSIDE */
 .white-form-card {
     background: white;
-    border-radius: 20px;
-    padding: 20px 50px;
+    border-radius: 10px;
+    padding: 10px 25px;
     text-align: center;
     width: 110%;
 
     /* Modern "Float" Shadow */
-    box-shadow: 0 20px 60px rgba(0,0,0,0.08); 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
     border: 1px solid rgba(0,0,0,0.02);
 }
 
 .form-title {
-    font-size: 28px; /* Bigger form header */
+    font-size: 14px; /* Bigger form header */
     font-weight: 800;
-    letter-spacing: 2px;
-    margin-bottom: 10px;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
     color: #0d375b; /* Blue header */
     text-transform: uppercase;
 }
 .profile-icon-container {
     position: relative;
-    width: 90px;
-    height: 90px;
-    margin: 0 auto 30px;
+    width: 45px;
+    height: 45px;
+    margin: 0 auto 15px;
 }
 .profile-icon-placeholder {
     width: 100%; 
@@ -123,28 +123,28 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 40px;
+    font-size: 20px;
     color: #0d375b;
-    border: 3px solid white; /* Adds a clean white border */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border: 2px solid white; /* Adds a clean white border */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 .camera-icon-btn {
     position: absolute;
     bottom: 0;
-    right: -5px; /* Slightly hanging off the edge */
+    right: -2px; /* Slightly hanging off the edge */
     background-color: #f6f7f8; /* Dark blue contrast */
     color: white;
-    width: 32px;
-    height: 32px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    border: 2px solid white; /* White border to separate it */
+    font-size: 8px;
+    border: 1px solid white; /* White border to separate it */
     cursor: pointer;
     transition: 0.2s;
-    padding-bottom: 10px;
+    padding-bottom: 5px;
 }
 .camera-icon-btn:hover {
     background-color: #f7f8f9;
@@ -154,29 +154,29 @@
 .form-grid-2-col {
     display: grid;
     grid-template-columns: 1fr 1fr; /* Two equal columns */
-    column-gap: 25px; /* Space between the columns */
+    column-gap: 13px; /* Space between the columns */
     /* Row gap is handled by the margin-bottom of form-group */
 }
 
 /* FORM INPUTS */
 .form-group {
     text-align: left;
-    margin-bottom: 20px; 
+    margin-bottom: 10px; 
 }
 .form-group label {
     display: block;
-    font-size: 23px; 
+    font-size: 12px; 
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     color: #444;
 }
 .form-input {
     width: 100%;
     background: #eef6fc; 
-    border: 2px solid #dcebf7;
-    padding: 16px; 
-    border-radius: 10px;
-    font-size: 23px; 
+    border: 1px solid #dcebf7;
+    padding: 8px; 
+    border-radius: 5px;
+    font-size: 12px; 
     color: #333;
     transition: 0.3s;
 }
@@ -187,22 +187,22 @@
 }
 .form-textarea {
     resize: none;
-    height: 100px;
+    height: 50px;
 }
 
 /* CHECKBOX AREA */
 .checkbox-group {
     display: flex;
     align-items: center;
-    gap: 15px;
-    font-size: 16px; /* Bigger checkbox text */
-    margin: 30px 0;
+    gap: 8px;
+    font-size: 8px; /* Bigger checkbox text */
+    margin: 15px 0;
     justify-content: center;
     color: #555;
 }
 .checkbox-group input {
-    width: 20px;
-    height: 20px;
+    width: 10px;
+    height: 10px;
     cursor: pointer;
 }
 
@@ -211,26 +211,26 @@
     width: 30%;
     background: #0d375b;
     color: white;
-    padding: 18px; /* Taller button */
+    padding: 9px; /* Taller button */
     border: none;
-    border-radius: 50px;
+    border-radius: 25px;
     font-weight: 700;
-    font-size: 20px; /* Bigger button text */
+    font-size: 10px; /* Bigger button text */
     cursor: pointer;
     text-transform: uppercase;
-    box-shadow: 0 10px 20px rgba(13, 55, 91, 0.2);
+    box-shadow: 0 5px 10px rgba(13, 55, 91, 0.2);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 .btn-signup:hover {
     background: #09253d;
-    transform: translateY(-2px);
-    box-shadow: 0 15px 30px rgba(13, 55, 91, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 15px rgba(13, 55, 91, 0.3);
 }
 
 /* LOGIN LINK */
 .login-redirect {
-    margin-top: 30px;
-    font-size: 16px; /* Bigger link text */
+    margin-top: 15px;
+    font-size: 8px; /* Bigger link text */
     color: #666; 
     text-align: center;
 }

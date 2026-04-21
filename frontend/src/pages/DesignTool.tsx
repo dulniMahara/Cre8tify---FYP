@@ -3,10 +3,9 @@ import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
-import CurvedText from '../components/CurvedText'; 
-import { useLibrary } from '../hooks/useLibrary'; 
-import '../styles/dashboard.css'; 
-import '../styles/designTool.css'; 
+import { useLibrary } from '../hooks/useLibrary';
+import '../styles/dashboard.css';
+import '../styles/designTool.css';
 import html2canvas from 'html2canvas';
 
 const API_URL = "http://localhost:5000";
@@ -24,8 +23,17 @@ interface TextConfig {
     y: number;
     scale: number;
     rotation: number;
+    letterSpacing?: number;
+    curve?: number;
 }
-
+interface CurvedTextProps {
+    text: string;
+    fontFamily: string;
+    color: string;
+    curve: number;
+    letterSpacing: number;
+    styleId?: string;
+}
 interface ImageLayer {
     id: number;
     src: string;
@@ -47,16 +55,19 @@ interface HistoryState {
 
 // --- MOCK DATA ---
 const VARIANT_COLORS = [
-    { name: "White", hex: "#ffffff", isAvailable: true },
-    { name: "Black", hex: "#000000", isAvailable: false},
-    { name: "Athletic Heather", hex: "#cfcfcf", isAvailable: true }, 
-    { name: "Dark Grey", hex: "#555555", isAvailable: true },
-    { name: "Navy", hex: "#000080", isAvailable: true },
-    { name: "Red", hex: "#d32f2f", isAvailable: true },
-    { name: "Royal Blue", hex: "#1565c0", isAvailable: true },
-    { name: "Maroon", hex: "#800000", isAvailable: true },
-    { name: "Forest Green", hex: "#228b22", isAvailable: true},
-    { name: "Gold", hex: "#ffd700", isAvailable: true },
+    { name: 'White', hex: '#FFFFFF', gradient: 'linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%)', isAvailable: true },
+    { name: 'Black', hex: '#000000', gradient: 'linear-gradient(135deg, #1a1a1b 0%, #000000 100%)', isAvailable: true },
+    { name: 'Dark Heather', hex: '#454545', gradient: 'radial-gradient(circle at 30% 30%, #5a5a5a 0%, #454545 100%)', isAvailable: true },
+    { name: 'Antique Cherry', hex: '#a82235', gradient: 'linear-gradient(135deg, #c02d41 0%, #a82235 100%)', isAvailable: true },
+    { name: 'Maroon', hex: '#642838', gradient: 'linear-gradient(135deg, #7a3245 0%, #642838 100%)', isAvailable: true },
+    { name: 'Midnight Blue', hex: '#0f262b', gradient: 'linear-gradient(135deg, #1a3a41 0%, #0f262b 100%)', isAvailable: true },
+    { name: 'Sapphire', hex: '#0080b5', gradient: 'linear-gradient(135deg, #0099d6 0%, #0080b5 100%)', isAvailable: true },
+    { name: 'Turf Green', hex: '#297937', gradient: 'linear-gradient(135deg, #359846 0%, #297937 100%)', isAvailable: true },
+    { name: 'Kiwi', hex: '#8fa749', gradient: 'linear-gradient(135deg, #a4be54 0%, #8fa749 100%)', isAvailable: true },
+    { name: 'Yellow Haze', hex: '#fadfa6', gradient: 'linear-gradient(135deg, #fff2cc 0%, #fadfa6 100%)', isAvailable: true },
+    { name: 'Cornsilk', hex: '#f7ef8f', gradient: 'linear-gradient(135deg, #fffbc7 0%, #f7ef8f 100%)', isAvailable: true },
+    { name: 'Light Blue', hex: '#d6e6f7', gradient: 'linear-gradient(135deg, #ebf4ff 0%, #d6e6f7 100%)', isAvailable: true },
+    { name: 'Light Pink', hex: '#fee0eb', gradient: 'linear-gradient(135deg, #fff0f6 0%, #fee0eb 100%)', isAvailable: true },
 ];
 
 const VARIANT_SIZES = [
@@ -69,27 +80,66 @@ const VARIANT_SIZES = [
 ];
 
 const TEXT_STYLES_CONFIG = [
-    { id: 'default',        img: "",              label: "Blank Text" },
-    { id: 'style-wave',     img: "/img/Text1.png",  label: "Blue Wave" },
-    { id: 'style-stack',    img: "/img/Text2.png",  label: "Dreamer Stack" }, 
-    { id: 'style-fish',     img: "/img/Text5.png",  label: "Nevermind" },    
-    { id: 'style-circle',   img: "/img/Text4.png",  label: "Full Circle" },    
-    { id: 'style-diamond',  img: "/img/Text3.png",  label: "Diamond Box" },
-    { id: 'style-glitch',   img: "/img/Text6.png",  label: "Anxiety" },        
+    { id: 'default', img: "", label: "Blank Text" },
+    { id: 'style-wave', img: "/img/Text1.png", label: "Blue Wave" },
+    { id: 'style-stack', img: "/img/Text2.png", label: "Dreamer Stack" },
+    { id: 'style-fish', img: "/img/Text5.png", label: "Nevermind" },
+    { id: 'style-circle', img: "/img/Text4.png", label: "Full Circle" },
+    { id: 'style-diamond', img: "/img/Text3.png", label: "Diamond Box" },
+    { id: 'style-glitch', img: "/img/Text6.png", label: "Anxiety" },
 ];
 
 const FONT_LIST = ["Abril Fatface", "Chewy", "Shrikhand", "Lobster", "Oswald", "Anton", "Roboto", "Inter"];
 const TEXT_COLORS = [
-    "#000000", "#ffffff", "#333333", "#808080", 
-    "#ff0000", "#00ff00", "#0000ff", "#ffff00", 
-    "#ffa500", "#800080", "#ffc0cb", "#008080", 
-    "#8B4513", "#FFD700", "#C0C0C0"               
+    "#000000", "#ffffff", "#333333", "#808080",
+    "#ff0000", "#00ff00", "#0000ff", "#ffff00",
+    "#ffa500", "#800080", "#ffc0cb", "#008080",
+    "#8B4513", "#FFD700", "#C0C0C0"
 ];
+
+// 🟢 CURVED TEXT COMPONENT (Paste this outside the main DesignTool function)
+const CurvedText = ({ text, fontFamily, color, curve, letterSpacing, id }: { 
+    text: string, 
+    fontFamily: string, 
+    color: string, 
+    curve: number, 
+    letterSpacing: number,
+    id: number ,
+    styleId?: string
+}) => {
+    const curveIntensity = curve * 1.5; 
+    const pathId = `path-${id}`; // 🚀 Unique ID so layers don't interfere
+    
+    // M = Start, Q = Control Point (The bend), T = End
+    const pathData = `M 50,100 Q 250,${100 - curveIntensity} 450,100`;
+
+    return (
+        <svg viewBox="0 0 500 200" width="200" height="100" style={{ overflow: 'visible', display: 'block' }}>
+            <defs>
+                <path id={pathId} d={pathData} />
+            </defs>
+            <text 
+                fill={color} 
+                style={{ 
+                    fontFamily: fontFamily, 
+                    fontSize: '42px', 
+                    fontWeight: 'bold',
+                    letterSpacing: `${letterSpacing}px` 
+                }}
+            >
+                <textPath xlinkHref={`#${pathId}`} startOffset="50%" textAnchor="middle">
+                    {text}
+                </textPath>
+            </text>
+        </svg>
+    );
+};
+
 const ICON_SIZE = 18;
 
 export default function DesignTool() {
-    const navigate = useNavigate(); 
-    
+    const navigate = useNavigate();
+
     // --- 1. HOOKS ---
     const { libraryItems, addToLibrary } = useLibrary();
 
@@ -97,20 +147,20 @@ export default function DesignTool() {
     const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
     const [imageLayers, setImageLayers] = useState<ImageLayer[]>([]);
     const [textLayers, setTextLayers] = useState<TextConfig[]>([]);
+    const imgRef = useRef<HTMLImageElement | null>(null);
 
-    // 🟢 UPDATE STATE: Added all 7 mockup views
-    const [currentSide, setCurrentSide] = useState<'front' | 'back' | 'neck' | 'folded'|'model_front' | 'model_back' | 'hanging'>('front');
-    
+    const [currentSide, setCurrentSide] = useState<'front' | 'back' | 'neck' | 'folded'>('front');
+
     const [showInfoPopup, setShowInfoPopup] = useState(false);
-    
+
     // VARIANT & COLOR STATE
     const [showVariantPopup, setShowVariantPopup] = useState(false);
     const [activeVariantTab, setActiveVariantTab] = useState<'color' | 'size'>('color');
     const [selectedTshirtColor, setSelectedTshirtColor] = useState<string>('#ffffff');
-    
+
     // UI Panels
     const [activePanel, setActivePanel] = useState<'none' | 'text' | 'colors' | 'layers' | 'size' | 'library'>('none');
-    
+
     // Selection & Editing
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -135,44 +185,45 @@ export default function DesignTool() {
     const [cropAspect, setCropAspect] = useState<number | undefined>(undefined);
     const cropImageRef = useRef<HTMLImageElement | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [mockupScale, setMockupScale] = useState(1);
 
     const location = useLocation();
-    const productData = location.state?.selectedProduct; 
-    const designTitle = productData ? productData.name : "Untitled Design";
-    const designPrice = productData ? productData.price : "LKR 1200.00";
+    const productData = location.state?.selectedProduct;
     
-    // Default Images
-    const designImage = productData ? productData.img : "/img/dashwoman1.png";
+    // 🚀 Dynamic MAPPING: No hardcoded fallbacks to specific shirts
+    const designTitle = productData?.name || "Loading Product..."; 
+    const designPrice = productData?.price || "LKR 0.00";
+    const designImage = productData?.img || "";
 
     const activeTextConfig = textLayers.find(t => t.id === selectedId) || null;
     const isImageSelected = imageLayers.some(i => i.id === selectedId);
     const isSomethingSelected = selectedId !== null;
 
-    const REALISTIC_PREVIEW_SIDES = new Set(['front', 'back', 'model_front', 'model_back']);
-    
+    const REALISTIC_PREVIEW_SIDES = new Set(['front', 'back']);
+
     // 🟢 MOCKUP CONFIGURATION
     const MOCKUP_CONFIG = {
-        front: { 
-            img: productData?.mockup ? productData.mockup : "/img/womenfront-mockup.png", 
+        front: {
+            img: productData?.mockup ? productData.mockup : "/img/womenfront-mockup.png",
             label: 'Front',
             showDesign: true,
             // Standard Front View
             printArea: { top: '50%', left: '50%', width: '25%', height: '40%', rotation: 0 }
         },
-        back: { 
-            img: "/img/womenback-mockup.png", 
+        back: {
+            img: "/img/womenback-mockup.png",
             label: 'Back',
             showDesign: false,
             printArea: { top: '50%', left: '50%', width: '25%', height: '40%', rotation: 0 }
         },
-        neck: { 
-            img: "/img/mockups/collar.png", 
+        neck: {
+            img: "/img/mockups/collar.png",
             label: 'Neck',
-            showDesign: false, // Hides design
-            printArea: { top: '50%', left: '50%', width: '0%', height: '0%', rotation: 0 }
+            showDesign: true, // Shows chopped design for neck
+            printArea: { top: '70%', left: '60%', width: '35%', height: '25%', rotation: 0 }
         },
-        folded: { 
-            img: "/img/mockups/folded.png", 
+        folded: {
+            img: "/img/mockups/folded.png",
             label: 'Folded',
             mask: "/img/mockups/foldedmask.png",
             maskSize: 'contain',
@@ -180,48 +231,16 @@ export default function DesignTool() {
             showDesign: true,
             // Folded view settings
             printArea: { top: '56%', left: '46%', width: '30%', height: '42%', rotation: 5 }
-        },
-        model_front: { 
-            img: "/img/mockups/girl_front.png",
-            label: 'Model Front',
-            mask: "/img/mockups/girl_frontmask.png",
-            maskSize: '90% auto', 
-            maskPosition: '50% 85%',
-            showDesign: true,
-            // 🟢 UPDATED: Width is now 20%
-            printArea: { top: '57%', left: '40%', width: '42%', height: '40%', rotation: 3 }
-        },
-        model_back: { 
-            img: "/img/mockups/girl_back.png",
-            label: 'Model Back',
-            mask: "/img/mockups/girl_backmask.png",
-            maskSize: '92% auto', 
-            maskPosition: '40% 90%',
-            showDesign: false,
-            // 🟢 UPDATED: Width is now 20%
-            printArea: { top: '42%', left: '50%', width: '20%', height: '30%', rotation: 0 }
-        },
-        hanging: { 
-            img: "/img/mockups/hanging.png", 
-            label: 'Hanging',
-            mask: "/img/mockups/hanging_mask.png",
-            maskSize: 'contain',
-            maskPosition: 'center',
-            showDesign: true,
-            printArea: { top: '53%', left: '49%', width: '38%', height: '35%', rotation: 0 }, // 🟢 Added comma here!
-            thumbnailMaskScale: '45%',
-            thumbnailMaskTop: '32%',
-            thumbnailMaskBottom: '52%',
         }
     };
 
-   useEffect(() => {
+    useEffect(() => {
         // 1. PRIORITY: Check if we are coming from the "Edit" or "Fix Design" button in the shop
         if (location.state?.isEdit && location.state?.savedLayers) {
             const { imageLayers, textLayers } = location.state.savedLayers;
             if (imageLayers) setImageLayers(imageLayers);
             if (textLayers) setTextLayers(textLayers);
-            
+
             // Clear the navigation state so a refresh doesn't keep forcing old data
             window.history.replaceState({}, document.title);
             return; // Stop here if we loaded from the database
@@ -232,7 +251,7 @@ export default function DesignTool() {
         if (savedDesign) {
             try {
                 const parsed = JSON.parse(savedDesign);
-                
+
                 if (parsed.imageLayers) {
                     // Your existing normalization logic for local images
                     const normalized = (parsed.imageLayers as ImageLayer[]).map((layer) => {
@@ -254,12 +273,35 @@ export default function DesignTool() {
         }
     }, [location.state]); // 🟢 Add location.state here so it triggers on navigation
 
+    // 🟢 DYNAMIC SCALING LOGIC TO FIT 100% ZOOM
+    useEffect(() => {
+        const calculateScale = () => {
+            // Top Header: 70px, Canvas Header: 45px.
+            const availableHeight = window.innerHeight - 200; 
+
+            const scaleRequiredHeight = availableHeight / 850;
+            // In Preview mode, there is no 200px sidebar, so maxAllowedWidth is larger
+            const sidebarWidth = viewMode === 'edit' ? 300 : 0;
+            const maxAllowedWidth = window.innerWidth - sidebarWidth - 100; 
+            const scaleRequiredWidth = maxAllowedWidth / 550; 
+
+            // Bias towards slightly larger to increase T-shirt size
+            const effectiveScale = Math.min(scaleRequiredHeight, scaleRequiredWidth, 1.0);
+            
+            setMockupScale(Math.max(effectiveScale, 0.4));
+        };
+
+        calculateScale();
+        window.addEventListener('resize', calculateScale);
+        return () => window.removeEventListener('resize', calculateScale);
+    }, [viewMode, currentSide]);
+
     // --- HISTORY HELPER FUNCTION ---
     const addToHistory = (newImages: ImageLayer[], newTexts: TextConfig[]) => {
         const newEntry = { imageLayers: newImages, textLayers: newTexts };
         const historyCopy = history.slice(0, historyIndex + 1);
         setHistory([...historyCopy, newEntry]);
-        setHistoryIndex(historyCopy.length); 
+        setHistoryIndex(historyCopy.length);
     };
 
     const handleUndo = () => {
@@ -281,76 +323,74 @@ export default function DesignTool() {
     };
 
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-        try {
-            // 1. Convert file to URL (Existing logic)
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const url = e.target?.result as string;
+        const file = event.target.files?.[0];
+        if (file) {
+            try {
+                // 1. Convert file to URL (Existing logic)
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const url = e.target?.result as string;
 
-                // 2. Calculate Z-index (The fix for overlapping)
-                const maxZ = Math.max(0, ...imageLayers.map(l => l.zIndex || 0), ...textLayers.map(t => t.zIndex || 0));
+                    // 2. Calculate Z-index (The fix for overlapping)
+                    const maxZ = Math.max(0, ...imageLayers.map(l => l.zIndex || 0), ...textLayers.map(t => t.zIndex || 0));
 
-                // 3. Create the new layer
-                const newImage: ImageLayer = {
-                    id: Date.now(),
-                    src: url,
-                    x: 150, // Default center-ish
-                    y: 150,
-                    scale: 0.5,
-                    rotation: 0,
-                    flipX: false,
-                    flipY: false,
-                    zIndex: maxZ + 1, // 🟢 Starts on top
+                    // 3. Create the new layer
+                    const newImage: ImageLayer = {
+                        id: Date.now(),
+                        src: url,
+                        x: 150, // Default center-ish
+                        y: 150,
+                        scale: 0.5,
+                        rotation: 0,
+                        flipX: false,
+                        flipY: false,
+                        zIndex: maxZ + 1, // 🟢 Starts on top
+                    };
+
+                    const updatedImages = [...imageLayers, newImage];
+                    setImageLayers(updatedImages);
+                    setSelectedId(newImage.id);
+                    addToHistory(updatedImages, textLayers);
                 };
-
-                const updatedImages = [...imageLayers, newImage];
-                setImageLayers(updatedImages);
-                setSelectedId(newImage.id);
-                addToHistory(updatedImages, textLayers);
-            };
-            reader.readAsDataURL(file);
-        } catch (error) {
-            console.error("Error uploading image:", error);
+                reader.readAsDataURL(file);
+            } catch (error) {
+                console.error("Error uploading image:", error);
+            }
         }
-    }
-};
-
-
+    };
 
     const handleAddFromLibrary = (imgSrc: string) => {
         const maxZ = Math.max(0, ...imageLayers.map(l => l.zIndex), ...textLayers.map(t => t.zIndex));
         const newLayer: ImageLayer = { id: Date.now(), src: imgSrc, zIndex: maxZ + 1, x: 0, y: 0, scale: 1, rotation: 0, flipX: false, flipY: false };
         setImageLayers([...imageLayers, newLayer]);
         setSelectedId(newLayer.id);
-        addToHistory([...imageLayers, newLayer], textLayers); 
+        addToHistory([...imageLayers, newLayer], textLayers);
     };
 
 
-   const handleTextSelection = (style: any) => {
-    const maxZ = Math.max(0, ...imageLayers.map(l => l.zIndex || 0), ...textLayers.map(t => t.zIndex || 0));
-    const styleId = typeof style === 'string' ? style : style.id;
-    
-    const newText: TextConfig = {
-        id: Date.now(),
-        text: styleId === 'default' ? "Plain Text" : "New Style",
-        font: 'Anton',
-        styleId: styleId,
-        color: "#000000",
-        zIndex: maxZ + 1, // 🟢 Starts on top
-        x: 100, 
-        y: 100, 
-        scale: 1, 
-        rotation: 0
+    const handleTextSelection = (style: any) => {
+        const maxZ = Math.max(0, ...imageLayers.map(l => l.zIndex || 0), ...textLayers.map(t => t.zIndex || 0));
+        const styleId = typeof style === 'string' ? style : style.id;
+
+        const newText: TextConfig = {
+            id: Date.now(),
+            text: styleId === 'default' ? "Plain Text" : "New Style",
+            font: 'Anton',
+            styleId: styleId,
+            color: "#000000",
+            zIndex: maxZ + 1, // 🟢 Starts on top
+            x: 100,
+            y: 100,
+            scale: 1,
+            rotation: 0
+        };
+
+        const updated = [...textLayers, newText];
+        setTextLayers(updated);
+        setSelectedId(newText.id);
+        setIsEditing(true);
+        addToHistory(imageLayers, updated);
     };
-    
-    const updated = [...textLayers, newText];
-    setTextLayers(updated);
-    setSelectedId(newText.id);
-    setIsEditing(true);
-    addToHistory(imageLayers, updated);
-};
 
     const handleDragStart = (e: React.MouseEvent, id: number, type: 'text' | 'image', initialX: number, initialY: number) => {
         if (viewMode === 'preview') return;
@@ -376,7 +416,7 @@ export default function DesignTool() {
         document.addEventListener('mouseup', handleMouseUp);
     };
 
-  const deleteLibraryImage = async (imageId: string) => {
+    const deleteLibraryImage = async (imageId: string) => {
         if (!window.confirm("Are you sure you want to delete this image?")) return;
 
         try {
@@ -388,7 +428,7 @@ export default function DesignTool() {
                 // Since libraryItems comes from useLibrary(), 
                 // you might need a 'refreshLibrary' function from that hook,
                 // or simply reload the page for now to see changes:
-                window.location.reload(); 
+                window.location.reload();
             } else {
                 alert("Failed to delete image from server.");
             }
@@ -398,41 +438,57 @@ export default function DesignTool() {
     };
 
 
-    const getCurrentValue = (prop: 'scale' | 'x' | 'y' | 'rotation') => {
+   const getCurrentValue = (prop: 'scale' | 'x' | 'y' | 'rotation' | 'letterSpacing' | 'curve') => {
         const txt = textLayers.find(t => t.id === selectedId);
         if (txt) return (txt as any)[prop];
+
         const img = imageLayers.find(i => i.id === selectedId);
         if (img) return (img as any)[prop];
-        return prop === 'scale' ? 1 : 0;
+
+        // Fallback values for when nothing is selected or property is missing
+        if (prop === 'scale') return 1;
+        return 0;
     };
 
    const updateActiveLayer = (prop: string, value: any, isFinal: boolean = false) => {
-    if (!selectedId) return;
-    
-    // Check if we are editing a text layer
-    const isText = textLayers.some(t => t.id === selectedId);
-    
-    if (isText) {
-        setTextLayers(prev => prev.map(t => 
-            t.id === selectedId ? { ...t, [prop]: value } : t
-        ));
-        
-        // Save to history only when user stops typing or clicks away
-        if (isFinal) {
-            const updatedTexts = textLayers.map(t => t.id === selectedId ? { ...t, [prop]: value } : t);
-            addToHistory(imageLayers, updatedTexts);
+        if (!selectedId) return;
+
+        // Check if the selected item is a text layer
+        const isText = textLayers.some(t => t.id === selectedId);
+
+        if (isText) {
+            // 1. Calculate the new state first
+            const nextTexts = textLayers.map(t =>
+                t.id === selectedId ? { ...t, [prop]: value } : t
+            );
+            
+            // 2. Update the UI
+            setTextLayers(nextTexts);
+
+            // 3. Save to history using the fresh 'nextTexts' array
+            if (isFinal) {
+                addToHistory(imageLayers, nextTexts);
+            }
+        } else {
+            // Do the same for images to avoid stale state issues
+            const nextImages = imageLayers.map(img =>
+                img.id === selectedId ? { ...img, [prop]: value } : img
+            );
+            
+            setImageLayers(nextImages);
+
+            if (isFinal) {
+                addToHistory(nextImages, textLayers);
+            }
         }
-    } else {
-        // Image logic stays the same
-        const updated = imageLayers.map(img => img.id === selectedId ? { ...img, [prop]: value } : img);
-        setImageLayers(updated);
-        if (isFinal) addToHistory(updated, textLayers);
-    }
-};
+    };
     const getPrintAreaSize = () => {
         if (!printAreaRef.current) return { width: 1, height: 1 };
-        const rect = printAreaRef.current.getBoundingClientRect();
-        return { width: rect.width || 1, height: rect.height || 1 };
+        // Use intrinsic logical layout dimension, untainted by CSS transform `scale`
+        return { 
+            width: printAreaRef.current.offsetWidth || 1, 
+            height: printAreaRef.current.offsetHeight || 1 
+        };
     };
 
     const getImageDimensions = (src: string) =>
@@ -501,7 +557,7 @@ export default function DesignTool() {
 
     const handleImageTool = async (action: string) => {
         if (!selectedId) return;
-        let nImgs = [...imageLayers]; 
+        let nImgs = [...imageLayers];
         let nTxts = [...textLayers];
         const img = nImgs.find(i => i.id === selectedId);
 
@@ -540,10 +596,10 @@ export default function DesignTool() {
             }
         } else if (action === 'crop') {
             if (!img) return;
-            setCropTargetId(img.id);
+            // 🚀 Ensure we use selectedId consistently
             setCropImageSrc(img.src);
             setCrop({ unit: '%', x: 10, y: 10, width: 80, height: 80 });
-            setCompletedCrop(null);
+            setCompletedCrop(null); // Reset previous crop coordinates
             setShowCropModal(true);
             return;
         }
@@ -573,17 +629,49 @@ export default function DesignTool() {
         setActiveTextConfig({ ...activeTextConfig, font }, true);
     };
 
-    const toolBtnStyle = (enabled: boolean) => ({
+    const toolBtnStyle = (enabled: boolean, isDelete: boolean = false): React.CSSProperties => ({
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
         border: 'none',
         background: 'none',
         cursor: enabled ? 'pointer' : 'default',
-        color: enabled ? '#333' : '#aaa',
-        opacity: enabled ? 1 : 0.5
+        // Delete is always red, others are dark gray or light gray based on 'enabled'
+        color: isDelete ? '#ef4444' : (enabled ? '#475569' : '#cbd5e1'),
+        opacity: enabled ? 1 : 0.5,
+        padding: '4px 8px',
+        pointerEvents: 'auto', // 🚀 Forces clickability
+        zIndex: 10
     });
 
+    const toolLabelStyle: React.CSSProperties = {
+        fontSize: '9px',
+        fontWeight: '700',
+        color: 'inherit', // Inherits color from the button (red for delete)
+        letterSpacing: '0.3px',
+        textTransform: 'uppercase'
+    };
+    const activeToggleStyle: React.CSSProperties = {
+        padding: '4px 16px',
+        borderRadius: '15px',
+        border: 'none',
+        backgroundColor: '#0d375b',
+        color: 'white',
+        fontSize: '11px',
+        fontWeight: '700',
+        cursor: 'pointer'
+    };
+
+    const inactiveToggleStyle: React.CSSProperties = {
+        padding: '4px 16px',
+        borderRadius: '15px',
+        border: 'none',
+        backgroundColor: 'transparent',
+        color: '#64748b',
+        fontSize: '11px',
+        fontWeight: '600',
+        cursor: 'pointer'
+    };
     const applyCropPreset = (aspect?: number) => {
         setCropAspect(aspect);
         if (!aspect) {
@@ -598,18 +686,40 @@ export default function DesignTool() {
         setCrop({ unit: '%', x, y, width, height });
     };
 
-    const handleApplyCrop = async () => {
-        if (!cropImageSrc || !completedCrop || !cropTargetId || !cropImageRef.current) {
-            setShowCropModal(false);
-            return;
-        }
-        const croppedSrc = await getCroppedImg(cropImageRef.current, completedCrop);
-        const updatedImages = imageLayers.map(i => i.id === cropTargetId ? { ...i, src: croppedSrc } : i);
-        setImageLayers(updatedImages);
-        addToHistory(updatedImages, textLayers);
-        setShowCropModal(false);
-    };
+   const handleApplyCrop = async () => {
+        // 🚀 We check for cropImageRef.current (from your modal) and selectedId
+        if (completedCrop && cropImageRef.current && selectedId) {
+            const image = cropImageRef.current;
+            const canvas = document.createElement('canvas');
+            
+            const scaleX = image.naturalWidth / image.width;
+            const scaleY = image.naturalHeight / image.height;
+            
+            canvas.width = completedCrop.width;
+            canvas.height = completedCrop.height;
+            const ctx = canvas.getContext('2d');
 
+            if (ctx) {
+                ctx.drawImage(
+                    image,
+                    completedCrop.x * scaleX,
+                    completedCrop.y * scaleY,
+                    completedCrop.width * scaleX,
+                    completedCrop.height * scaleY,
+                    0, 0, completedCrop.width, completedCrop.height
+                );
+            }
+
+            const croppedBase64 = canvas.toDataURL('image/png');
+
+            // 🚀 CRITICAL: Update imageLayers state
+            setImageLayers((prev) => prev.map((img) =>
+                img.id === selectedId ? { ...img, src: croppedBase64 } : img
+            ));
+
+            setShowCropModal(false);
+        }
+    };
     const handleSaveProduct = async () => {
         setIsSaving(true);
         const prevSide = currentSide;
@@ -677,17 +787,18 @@ export default function DesignTool() {
         const printAreaPxMap: Record<string, { width: number; height: number } | null> = {
             front: null,
             folded: null,
-            hanging: null
+            neck: null,
+            back: null
         };
 
-        const captureDesignOnly = async (side: 'front' | 'folded' | 'hanging') => {
+        const captureDesignOnly = async (side: 'front' | 'folded' | 'neck' | 'back') => {
             setCurrentSide(side);
-            await new Promise(resolve => setTimeout(resolve, 400)); 
+            await new Promise(resolve => setTimeout(resolve, 400));
             await waitForPaint();
 
             const workspaceElement = document.getElementById('tshirt-capture-area');
             const printArea = workspaceElement?.querySelector('.print-area') as HTMLElement | null;
-            
+
             if (!printArea) return null;
 
             // 🟢 THE FIX: Temporarily disable cropping for the capture
@@ -701,7 +812,7 @@ export default function DesignTool() {
                     backgroundColor: null,
                     scale: 2,
                     logging: true,
-                    
+
                 });
 
                 // Restore original style
@@ -715,7 +826,18 @@ export default function DesignTool() {
             }
         };
 
-    const captureMockup = async (side: 'front' | 'folded') => {
+        const handleOpenCrop = (imageLayer: ImageLayer) => {
+            // 1. Set the source of the image to show in the crop modal
+            setCropImageSrc(imageLayer.src);
+                    
+            // 2. IMPORTANT: Set the ID so the "Apply" button knows which layer to update
+            setSelectedId(imageLayer.id); 
+            
+            // 3. Open the modal
+            setShowCropModal(true);
+        };
+
+        const captureMockup = async (side: 'front' | 'folded' | 'neck' | 'back') => {
             setCurrentSide(side);
             await new Promise(resolve => setTimeout(resolve, 1000));
             await waitForPaint();
@@ -740,9 +862,12 @@ export default function DesignTool() {
         // 🟢 CRITICAL: Sequential capturing
         const frontDesign = await captureDesignOnly('front');
         const foldedDesign = await captureDesignOnly('folded');
-        const hangingDesign = await captureDesignOnly('hanging');
+        const neckDesign = await captureDesignOnly('neck');
+        
         const frontSnapshot = await captureMockup('front');
         const foldedSnapshot = await captureMockup('folded');
+        const neckSnapshot = await captureMockup('neck');
+        const backSnapshot = await captureMockup('back');
 
         // Restore UI state
         setCurrentSide(prevSide);
@@ -750,21 +875,20 @@ export default function DesignTool() {
 
         const normalizedImageLayers = await normalizeImageLayers(imageLayers);
 
-       const submissionData = { 
+        const submissionData = {
             productImages: [
                 // 🟢 THE FIX: Use frontSnapshot (the photo with your design)
                 // instead of MOCKUP_CONFIG.front.img (the blank shirt)
-                frontSnapshot,      // This is what will show in "My Shop"
-                foldedSnapshot,     // This is the second view
-                MOCKUP_CONFIG.back.img,
-                MOCKUP_CONFIG.neck.img,
-                MOCKUP_CONFIG.hanging.img
-            ], 
+                frontSnapshot,      
+                backSnapshot,
+                neckSnapshot,
+                foldedSnapshot
+            ],
             productType: productData?.name || 'Women Fit Boxy T-shirt',
             // 🟢 CRITICAL: Send normalizedImageLayers (Base64) so it saves permanently
             canvasState: { imageLayers: normalizedImageLayers, textLayers },
             tshirtColor: selectedTshirtColor || "#ffffff",
-            
+
             // Link the snapshots to the specific mockup fields
             frontMockup: frontSnapshot,
             frontPrintArea: MOCKUP_CONFIG.front.printArea,
@@ -773,27 +897,27 @@ export default function DesignTool() {
             foldedPrintArea: MOCKUP_CONFIG.folded.printArea,
             foldedMaskSize: (MOCKUP_CONFIG.folded as any).maskSize,
             foldedMaskPosition: (MOCKUP_CONFIG.folded as any).maskPosition,
+
+            neckMockup: neckSnapshot,
+            neckPrintAreaPx: printAreaPxMap.neck,
             
-            hangingMockup: MOCKUP_CONFIG.hanging.img,
-            hangingMask: (MOCKUP_CONFIG.hanging as any).mask,
-            hangingPrintAreaPx: printAreaPxMap.hanging,
-            hangingMaskSize: (MOCKUP_CONFIG.hanging as any).maskSize,
-            hangingMaskPosition: (MOCKUP_CONFIG.hanging as any).maskPosition,
-            
+            backMockup: backSnapshot,
+
             // Design-only captures (the "PNG" versions)
             frontDesign,
             foldedDesign,
-            hangingDesign,
-            
+            neckDesign,
+
             frontPrintAreaPx: printAreaPxMap.front,
             foldedPrintAreaPx: printAreaPxMap.folded,
         };
 
-        // Save local backup
-        localStorage.setItem('temp_design_state', JSON.stringify({ 
-            imageLayers, 
-            textLayers, 
-            selectedTshirtColor 
+        // Save local backup without full Base64 image payload to respect quota limits
+        const textOnlyImages = imageLayers.map(img => ({ ...img, src: '' }));
+        localStorage.setItem('temp_design_state', JSON.stringify({
+            imageLayers: textOnlyImages,
+            textLayers,
+            selectedTshirtColor
         }));
 
         console.log("Snapshot Preview:", frontSnapshot);
@@ -828,7 +952,7 @@ export default function DesignTool() {
         const newImages = allLayers
             .filter(l => l.layerType === 'image')
             .map(({ layerType, ...rest }) => rest as ImageLayer);
-            
+
         const newTexts = allLayers
             .filter(l => l.layerType === 'text')
             .map(({ layerType, ...rest }) => rest as TextConfig);
@@ -840,24 +964,29 @@ export default function DesignTool() {
     };
 
     const handleSaveCrop = async () => {
-        // 1. Safety check: ensure we have a crop area, a target image, and the image source
-        if (!completedCrop || !cropTargetId || !cropImageSrc) return;
+        // 1. Safety check
+        if (!completedCrop || !cropTargetId || !cropImageSrc || !cropImageRef.current) return;
 
         const image = new Image();
-        image.crossOrigin = "anonymous"; // tells browser to request CORS permission
-        image.src = cropImageSrc + (cropImageSrc.includes('?') ? '&' : '?') + 't=' + Date.now();
-        
+        image.crossOrigin = "anonymous";
+        // Fetch original untouched src
+        image.src = cropImageSrc; 
+
         image.onload = () => {
-            // 2. Create a canvas to draw the cropped section
             const canvas = document.createElement('canvas');
-            const scaleX = image.naturalWidth / image.width;
-            const scaleY = image.naturalHeight / image.height;
-            
-            canvas.width = completedCrop.width;
-            canvas.height = completedCrop.height;
+            // Use rendered dimensions from cropImageRef instead of unloaded Image scale
+            const scaleX = image.naturalWidth / cropImageRef.current!.width;
+            const scaleY = image.naturalHeight / cropImageRef.current!.height;
+
+            const pixelRatio = window.devicePixelRatio || 1;
+            canvas.width = completedCrop.width * scaleX * pixelRatio;
+            canvas.height = completedCrop.height * scaleY * pixelRatio;
             const ctx = canvas.getContext('2d');
 
             if (ctx) {
+                ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                ctx.imageSmoothingQuality = 'high';
+                
                 // 3. Draw only the selected portion of the image onto the canvas
                 ctx.drawImage(
                     image,
@@ -865,150 +994,168 @@ export default function DesignTool() {
                     completedCrop.y * scaleY,
                     completedCrop.width * scaleX,
                     completedCrop.height * scaleY,
-                    0, 0, completedCrop.width, completedCrop.height
+                    0, 0, completedCrop.width * scaleX, completedCrop.height * scaleY
                 );
-                
+
                 // 4. Convert the canvas back into a usable image URL
                 const croppedUrl = canvas.toDataURL('image/png');
-                
+
                 // 5. Update the specific image on the T-shirt
-                const updatedImages = imageLayers.map(img => 
+                const updatedImages = imageLayers.map(img =>
                     img.id === cropTargetId ? { ...img, src: croppedUrl } : img
                 );
-                
+
                 setImageLayers(updatedImages);
                 addToHistory(updatedImages, textLayers);
-                
+
                 // 6. Close the modal and reset crop states
                 setShowCropModal(false);
                 setCropImageSrc(null);
                 setCropTargetId(null);
             }
         };
+        image.onerror = () => {
+             alert('Failed to load image for cropping, please check CORS or retry');
+        };
     };
 
-    
+
     const renderTShirtWorkspace = () => {
-        const config = viewMode === 'edit' 
-        ? MOCKUP_CONFIG.front 
+    const config = viewMode === 'edit'
+        ? MOCKUP_CONFIG.front
         : (MOCKUP_CONFIG[currentSide as keyof typeof MOCKUP_CONFIG] || MOCKUP_CONFIG.front);
-            
-        // Safety checks for mask properties
-        const maskSrc = (config as any).mask || config.img;
-        const mSize = (config as any).maskSize || 'contain';
-        const mPos = (config as any).maskPosition || 'center';
-        
-        const isPreview = viewMode === 'preview';
-        const useRealisticPreview = isPreview && REALISTIC_PREVIEW_SIDES.has(currentSide);
-        const shouldShowDesign = viewMode === 'edit' ? true : config.showDesign;
 
-        return (
-            <div id="tshirt-capture-area" style={{ 
-                position: 'relative', 
-                width: 'fit-content', 
-                backgroundColor: '#f5f5f5', // Uniform Ash Background
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                
-                // @ts-ignore
-                isolation: 'isolate',
-                /* 🟢 TARGETED SIZE INCREASE */
-                /* If currentSide is 'hanging', we scale it up. Otherwise, stay at 1. */
-                transform: currentSide === 'hanging' ? 'scale(1.25)' : 'scale(1)',
-                
-                /* Optional: If the hanging one needs more vertical room to not look cramped */
-                height: currentSide === 'hanging' ? '850px' : '800px',
-                
-                transition: 'transform 0.3s ease, height 0.3s ease', 
-                margin: '0 auto'
-            }}>
-                
-                {/* 1. Base Mockup Image */}
-                <img 
-                    src={config.img} 
-                    alt="Mockup" 
-                    crossOrigin="anonymous" 
-                    style={{ display: 'block', height: '100%', position: 'relative', zIndex: 1 }} 
-                />
+    const isPreview = viewMode === 'preview';
+    const shouldShowDesign = viewMode === 'edit' ? true : config.showDesign;
+    const useRealisticPreview = isPreview && REALISTIC_PREVIEW_SIDES.has(currentSide);
+    
+    const isWideView = currentSide === 'folded' || currentSide === 'neck';
+    const maskSrc = (config as any).mask || config.img;
 
-                {/* 2. Color Overlay Layer */}
-                <div style={{ 
-                    position: 'absolute', inset: 0, 
-                    backgroundColor: selectedTshirtColor, 
-                    mixBlendMode: 'multiply',
-                    WebkitMaskImage: `url(${maskSrc})`, maskImage: `url(${maskSrc})`, 
-                    WebkitMaskSize: mSize, maskSize: mSize, 
-                    WebkitMaskPosition: (config as any).thumbnailMaskTop ? `center ${(config as any).thumbnailMaskTop}` : 'center', 
-                    maskPosition: (config as any).thumbnailMaskTop ? `center ${(config as any).thumbnailMaskTop}` : 'center',
-                        WebkitMaskRepeat: 'no-repeat', 
-                        maskRepeat: 'no-repeat', 
-                        zIndex: 2, 
-                        pointerEvents: 'none',
-                }}></div>
+    return (
+        <div id="tshirt-capture-area" style={{
+            position: 'relative',
+            width: isWideView ? '850px' : '550px', 
+            height: '800px',
+            backgroundColor: '#f5f5f5', 
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            isolation: 'isolate',
+            transform: `scale(${mockupScale})`,
+            transformOrigin: 'center center',
+            flexShrink: 0,
+            transition: 'transform 0.3s ease, width 0.3s ease',
+            margin: '0 auto'
+        }}>
+            {/* 1. Base Mockup Image */}
+            <img
+                src={config.img}
+                alt="Mockup"
+                crossOrigin="anonymous"
+                style={{ 
+                    display: 'block', 
+                    height: '100%', 
+                    width: '100%',     /* 🟢 Ensure image fills the designated width */
+                    objectFit: 'contain', /* 🟢 Keep aspect ratio safe */
+                    position: 'relative', 
+                    zIndex: 1 
+                }}
+            />
+
+            {/* 2. Color Overlay Layer */}
+            <div style={{
+                position: 'absolute', 
+                /* 🟢 CRITICAL: Instead of 'inset: 0', we match the image boundaries */
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: selectedTshirtColor,
+                mixBlendMode: 'multiply',
+                /* 🟢 MASK MUST MATCH OBJECT-FIT OF IMAGE */
+                WebkitMaskImage: `url(${maskSrc})`, 
+                maskImage: `url(${maskSrc})`,
+                WebkitMaskSize: 'contain', 
+                maskSize: 'contain',
+                WebkitMaskPosition: 'center', 
+                maskPosition: 'center',
+                WebkitMaskRepeat: 'no-repeat',
+                maskRepeat: 'no-repeat',
+                zIndex: 2,
+                pointerEvents: 'none',
+            }}></div>
 
                 {/* 3. Design Print Area (The Dashed Box / Clipping Window) */}
-                <div 
-                    ref={printAreaRef} 
-                    className={`print-area ${currentSide === 'back' ? 'back-view' : ''}`} 
-                    style={{ 
-                        position: 'absolute', 
-                        zIndex: 20, 
-                        top: config.printArea.top, 
-                        left: config.printArea.left, 
-                        width: config.printArea.width, 
-                        height: config.printArea.height, 
-                        transform: `translate(-50%, -50%) rotate(${(config.printArea as any).rotation ?? 0}deg)`, 
+                <div
+                    ref={printAreaRef}
+                    className={`print-area ${currentSide === 'back' ? 'back-view' : ''}`}
+                    style={{
+                        position: 'absolute',
+                        zIndex: 20,
+                        top: config.printArea.top,
+                        left: config.printArea.left,
+                        width: config.printArea.width,
+                        height: config.printArea.height,
+                        transform: `translate(-50%, -50%) rotate(${(config.printArea as any).rotation ?? 0}deg)`,
                         // Dashed border logic
                         border: viewMode === 'edit' && !isSaving ? '2px dashed rgba(0,0,0,0.4)' : 'none',
                         overflow: 'hidden', // Clips gallery images to the t-shirt
                         boxSizing: 'border-box',
                         pointerEvents: isPreview ? 'none' : 'auto',
                         // @ts-ignore
-                        isolation: 'isolate' 
+                        isolation: 'isolate'
                     }}
                 >
                     {/* Gallery Images */}
                     {shouldShowDesign && imageLayers.map((layer) => (
-                        <img 
-                            key={layer.id} 
-                            src={layer.src} 
-                            style={{ 
-                                position: 'absolute', 
-                                zIndex: layer.zIndex, 
+                        <img
+                            key={layer.id}
+                            src={layer.src}
+                            style={{
+                                position: 'absolute',
+                                zIndex: layer.zIndex,
                                 transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
                                 mixBlendMode: (isPreview && selectedTshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
                                 opacity: isPreview ? 0.92 : 1,
                                 cursor: 'move',
-                                border: (selectedId === layer.id && viewMode === 'edit' && !isSaving) ? '1px dashed #0d375b' : 'none' 
-                            }} 
-                            onMouseDown={(e) => handleDragStart(e, layer.id, 'image', layer.x, layer.y)} 
+                                border: (selectedId === layer.id && viewMode === 'edit' && !isSaving) ? '1px dashed #0d375b' : 'none'
+                            }}
+                            onMouseDown={(e) => handleDragStart(e, layer.id, 'image', layer.x, layer.y)}
                         />
                     ))}
 
                     {/* Text Layers */}
                     {shouldShowDesign && textLayers.map((t) => (
-                        <div 
-                            key={t.id} 
-                            style={{ 
-                                position: 'absolute', 
+                        <div
+                            key={t.id}
+                            style={{
+                                position: 'absolute',
                                 zIndex: t.zIndex,
-                                transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale}) rotate(${t.rotation}deg)`, 
-                                cursor: 'move', 
-                                border: (selectedId === t.id && viewMode === 'edit' && !isSaving) ? '1px solid #0d375b' : 'none', 
+                                transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale}) rotate(${t.rotation}deg)`,
+                                cursor: 'move',
+                                border: (selectedId === t.id && viewMode === 'edit' && !isSaving) ? '1px solid #0d375b' : 'none',
                                 display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
-                            }} 
+                            }}
                             onMouseDown={(e) => handleDragStart(e, t.id, 'text', t.x, t.y)}
                         >
                             {t.styleId === 'default' ? (
-                                <div style={{ 
+                                <div style={{
                                     fontFamily: t.font, color: t.color, fontSize: '24px', fontWeight: 'bold', whiteSpace: 'nowrap',
                                     textShadow: isPreview ? '0px 1px 3px rgba(0,0,0,0.3)' : 'none'
                                 }}>
                                     {t.text}
                                 </div>
                             ) : (
-                                <CurvedText text={t.text} styleId={t.styleId} fontFamily={t.font} color={t.color} />
+                                <CurvedText 
+                                    id={t.id}
+                                    text={t.text} 
+                                    styleId={t.styleId} 
+                                    fontFamily={t.font} 
+                                    color={t.color} 
+                                    curve={t.curve || 0} 
+                                    letterSpacing={t.letterSpacing || 0} 
+                                />
                             )}
                         </div>
                     ))}
@@ -1016,109 +1163,281 @@ export default function DesignTool() {
 
                 {/* 4. Realistic Wrinkles/Shadows (Preview Only) */}
                 {shouldShowDesign && useRealisticPreview && (
-                    <div style={{ 
-                        position: 'absolute', inset: 0, 
-                        backgroundImage: `url(${config.img})`, 
-                        backgroundSize: 'cover', backgroundPosition: 'center', 
-                        mixBlendMode: 'multiply', opacity: 0.15, 
-                        pointerEvents: 'none', zIndex: 15 
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        backgroundImage: `url(${config.img})`,
+                        backgroundSize: 'cover', backgroundPosition: 'center',
+                        mixBlendMode: 'multiply', opacity: 0.15,
+                        pointerEvents: 'none', zIndex: 15
                     }} />
                 )}
             </div>
         );
     };
-    
-    const renderThumbnailDesign = (side: string) => {
-    const config = MOCKUP_CONFIG[side as keyof typeof MOCKUP_CONFIG];
-    const backViews = ['back', 'model_back']; 
-    if (!config || !config.printArea || backViews.includes(side)) return null;
 
-    // 🟢 THE KEY: This scale must match the ratio between your 
-    // sidebar card size and your main workspace size.
-    const finalThumbnailScale = 0.25; 
+    const renderPreviewWorkspace = (side: keyof typeof MOCKUP_CONFIG, showDesign: boolean) => {
+    const config = MOCKUP_CONFIG[side];
+    const maskSrc = (config as any).mask || config.img;
+
+    return (
+        <div style={{ position: 'relative', width: 'fit-content', height: '800px' }}>
+            {/* 1. Mockup */}
+            <img src={config.img} alt="Mockup" style={{ height: '100%', display: 'block' }} crossOrigin="anonymous" />
+
+            {/* 2. Accurate Color Multiply */}
+            <div style={{
+                position: 'absolute', inset: 0,
+                backgroundColor: selectedTshirtColor,
+                mixBlendMode: 'multiply',
+                WebkitMaskImage: `url(${maskSrc})`, maskImage: `url(${maskSrc})`,
+                WebkitMaskSize: (config as any).maskSize || 'contain', 
+                maskSize: (config as any).maskSize || 'contain',
+                WebkitMaskPosition: 'center', maskPosition: 'center',
+                WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
+                zIndex: 2,
+            }}></div>
+
+            {/* 3. Design Clipping */}
+            {showDesign && (
+                <div style={{
+                    position: 'absolute',
+                    top: config.printArea.top,
+                    left: config.printArea.left,
+                    width: config.printArea.width,
+                    height: config.printArea.height,
+                    transform: `translate(-50%, -50%) rotate(${(config.printArea as any).rotation ?? 0}deg)`,
+                    overflow: 'hidden', // 🚀 Essential for the cropped design look
+                    zIndex: 20
+                }}>
+                    {/* Render Image Layers */}
+                    {imageLayers.map((layer) => (
+                        <img key={layer.id} src={layer.src} style={{
+                            position: 'absolute',
+                            zIndex: layer.zIndex,
+                            transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
+                            mixBlendMode: selectedTshirtColor.toLowerCase() === '#ffffff' ? 'normal' : 'multiply',
+                            opacity: 0.95
+                        }} />
+                    ))}
+                    {/* Render Text Layers */}
+                    {textLayers.map((t) => (
+                        <div key={t.id} style={{
+                            position: 'absolute',
+                            zIndex: t.zIndex,
+                            transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale}) rotate(${t.rotation}deg)`,
+                        }}>
+                             {t.styleId === 'default' ? (
+                                <div style={{ fontFamily: t.font, color: t.color, fontSize: '24px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{t.text}</div>
+                            ) : (
+                                <CurvedText id={t.id} text={t.text} fontFamily={t.font} color={t.color} curve={t.curve || 0} letterSpacing={t.letterSpacing || 0} />
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+    const renderThumbnailDesign = (side: string) => {
+        const config = MOCKUP_CONFIG[side as keyof typeof MOCKUP_CONFIG];
+        const backViews = ['back', 'model_back'];
+        if (!config || !config.printArea || backViews.includes(side)) return null;
+
+        // 🟢 THE KEY: This scale must match the ratio between your 
+        // sidebar card size and your main workspace size.
+        const finalThumbnailScale = 0.25;
+
+        return (
+            <div style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+                overflow: 'hidden',
+            }}>
+                {/* This inner div acts as a 'Mirror' of the entire Print Area */}
+                <div style={{
+                    position: 'relative',
+                    // 🟢 We use the actual print area dimensions from your config
+                    width: config.printArea.width,
+                    height: config.printArea.height,
+                    transform: `scale(${finalThumbnailScale})`,
+                    transformOrigin: 'center center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                } as any}>
+
+                    {/* 1. Image Layers */}
+                    {imageLayers.map((layer) => (
+                        <img
+                            key={layer.id}
+                            src={layer.src}
+                            style={{
+                                position: 'absolute',
+                                zIndex: layer.zIndex,
+                                // 🟢 NO MATH HERE: Use exact same transform as DesignTool
+                                transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
+                                transformOrigin: 'center center',
+                                maxWidth: 'none',
+                                width: '100%',
+                                height: 'auto'
+                            }}
+                        />
+                    ))}
+
+                  {/* 2. Text Layers */}
+                    {textLayers.map((t) => (
+                        <div
+                            key={t.id}
+                            style={{
+                                position: 'absolute',
+                                zIndex: t.zIndex,
+                                transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale}) rotate(${t.rotation}deg)`,
+                                transformOrigin: 'center center',
+                                cursor: 'pointer',
+                                // Added padding to make it easier to click/select
+                                padding: '10px'
+                            }}
+                            onClick={() => setSelectedId(t.id)}
+                        >
+                            {/* 🚀 Using the component we just pasted above */}
+                            <CurvedText 
+                                id={t.id}
+                                text={t.text} 
+                                fontFamily={t.font} 
+                                color={t.color} 
+                                curve={t.curve || 0} 
+                                letterSpacing={t.letterSpacing || 0} 
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    const handleToggleView = (mode: 'edit' | 'preview') => {
+        setViewMode(mode);
+        if (mode === 'edit') {
+            setCurrentSide('front');
+        }
+    };
+
+    const renderPreviewMode = () => {
+    const previewSides = [
+        { id: 'front', label: 'Front View', showDesign: true },
+        { id: 'back', label: 'Back View', showDesign: false },
+        { id: 'neck', label: 'Neck Detail', showDesign: true, zoom: 0.8 },
+        { id: 'folded', label: 'Folded View', showDesign: true, zoom: 1.5 }
+    ];
 
     return (
         <div style={{ 
-            position: 'absolute', 
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pointerEvents: 'none',
-            overflow: 'hidden',
+            width: '100vw', 
+            height: '100vh', 
+            backgroundColor: '#ffffff', 
+            overflowY: 'auto', 
+            padding: '40px 20px',
+            boxSizing: 'border-box'
         }}>
-            {/* This inner div acts as a 'Mirror' of the entire Print Area */}
-            <div style={{
-                position: 'relative',
-                // 🟢 We use the actual print area dimensions from your config
-                width: config.printArea.width,
-                height: config.printArea.height,
-                transform: `scale(${finalThumbnailScale})`,
-                transformOrigin: 'center center',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            } as any}>
-                
-                {/* 1. Image Layers */}
-                {imageLayers.map((layer) => (   
-                    <img 
-                        key={layer.id} 
-                        src={layer.src} 
-                        style={{ 
-                            position: 'absolute', 
-                            zIndex: layer.zIndex, 
-                            // 🟢 NO MATH HERE: Use exact same transform as DesignTool
-                            transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
-                            transformOrigin: 'center center',
-                            maxWidth: 'none',
-                            width: '100%',
-                            height: 'auto'
-                        }} 
-                    />
-                ))}
+            <div style={{ 
+                textAlign: 'center', 
+                marginBottom: '40px' 
+            }}>
+                <h2 style={{ color: '#0d375b', fontSize: '28px', fontWeight: '800' }}>Design Preview</h2>
+                <p style={{ color: '#666' }}>Review your custom product from all angles</p>
+            </div>
 
-                {/* 2. Text Layers */}
-                {textLayers.map((t) => (
-                    <div 
-                        key={t.id} 
-                        style={{ 
-                            position: 'absolute', 
-                            zIndex: t.zIndex,
-                            // 🟢 NO MATH HERE: Use exact same transform as DesignTool
-                            transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale}) rotate(${t.rotation}deg)`,
-                            transformOrigin: 'center center'
-                        }}
-                    >
-                        {t.styleId === 'default' ? (
-                            <div style={{ fontFamily: t.font, color: t.color, fontSize: '24px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                                {t.text}
+            {/* Responsive Grid: 2x2 on Desktop, 1x1 on Mobile */}
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+                gap: '30px', 
+                maxWidth: '1400px', 
+                margin: '0 auto' 
+            }}>
+                {previewSides.map((side) => {
+                    const config = MOCKUP_CONFIG[side.id as keyof typeof MOCKUP_CONFIG];
+                    return (
+                        <div key={side.id} style={{ 
+                            backgroundColor: '#f9f9f9', 
+                            borderRadius: '20px', 
+                            padding: '20px', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center',
+                            boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+                            overflow: 'hidden'
+                        }}>
+                            <span style={{ 
+                                alignSelf: 'flex-start', 
+                                backgroundColor: '#0d375b', 
+                                color: 'white', 
+                                padding: '5px 15px', 
+                                borderRadius: '20px', 
+                                fontSize: '12px', 
+                                fontWeight: '700',
+                                marginBottom: '15px'
+                            }}>
+                                {side.label}
+                            </span>
+
+                            {/* Viewport for the Mockup */}
+                            <div style={{ 
+                                width: '100%', 
+                                height: '400px', 
+                                position: 'relative', 
+                                overflow: 'hidden', // 🚀 This handles the cropping for Neck/Folded
+                                borderRadius: '12px',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                            }}>
+                                <div style={{ 
+                                    transform: `scale(${side.zoom || 1})`, 
+                                    transition: 'transform 0.3s ease' ,
+                                    display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+                                }}>
+                                    {/* Reuse your existing logic but force the specific side */}
+                                    {renderPreviewWorkspace(side.id as any, side.showDesign)}
+                                </div>
                             </div>
-                        ) : (
-                            <CurvedText text={t.text} styleId={t.styleId} fontFamily={t.font} color={t.color} />
-                        )}
-                    </div>
-                ))}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Action Bar */}
+            <div style={{ textAlign: 'center', marginTop: '50px', paddingBottom: '50px' }}>
+                <button 
+                    onClick={() => setViewMode('edit')} 
+                    style={{ marginRight: '20px', padding: '12px 30px', borderRadius: '30px', border: '2px solid #0d375b', background: 'transparent', color: '#0d375b', fontWeight: '700', cursor: 'pointer' }}
+                >
+                    Back to Edit
+                </button>
+                <button 
+                    onClick={handleSaveProduct} 
+                    style={{ padding: '14px 50px', borderRadius: '30px', border: 'none', background: '#0d375b', color: 'white', fontWeight: '800', cursor: 'pointer', fontSize: '16px' }}
+                >
+                    Confirm & Submit
+                </button>
             </div>
         </div>
     );
 };
-   
-         const handleToggleView = (mode: 'edit' | 'preview') => {
-            setViewMode(mode);
-            if (mode === 'edit') {
-                // 🟢 This ensures that whenever you switch to Edit, 
-                // the workspace resets to the Front view.
-                setCurrentSide('front');
-            }
-        };        
 
-        return (
-        <div className="dashboard-container" style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: '#f5f5f5' }}>
-            
+    return (
+        <div className="design-dashboard-container" style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: '#f5f5f5', position: 'relative' }}>
+
             {/* 1. SIDEBAR (Restored original style and logo) */}
             {viewMode === 'edit' && (
-                <div className="sidebar" style={{ width: '260px', flexShrink: 0, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+                <div className="design-sidebar" style={{ width: '220px', flexShrink: 0 }}>
                     <div className="sidebar-logo">Cre8tify</div>
                     <div className="sidebar-menu">
                         <label className="sidebar-btn">
@@ -1152,7 +1471,7 @@ export default function DesignTool() {
 
             {/* 2. MAIN CONTENT */}
             <div
-                className="main-content"
+                className="design-main-content"
                 style={{
                     flex: 1,
                     height: '100vh',
@@ -1165,200 +1484,211 @@ export default function DesignTool() {
                     opacity: isSaving ? 0 : 1,
                     pointerEvents: isSaving ? 'none' : 'auto'
                 }}
-            >                
-                
+            >
+
                 {/* 🟢 TOP HEADER - Now always visible */}
-                <header className="top-header" style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    padding: '0 20px', 
-                    minHeight: '70px', 
+                <header className="design-top-header" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 20px',
+                    minHeight: '70px',
                     flexShrink: 0,
                     backgroundColor: '#0d375b', // Keeps your dark blue theme
-                    zIndex: 1000 
+                    zIndex: 1000
                 }}>
                     {/* Left Side: Back Button */}
-                    <div 
-                        style={{display:'flex', alignItems:'center', gap:'15px', cursor: 'pointer'}} 
+                    <div
+                        style={{ display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer' }}
                         onClick={() => navigate('/designer-dashboard')}
                     >
-                        <img src="/img/back.png" alt="Back" style={{width:'30px', height:'30px', filter:'invert(1)'}} /> 
-                        <span style={{color:'white', fontWeight:700, fontSize: '20px'}}>Back</span>
+                        <img src="/img/back.png" alt="Back" style={{ width: '15px', height: '15px', filter: 'invert(1)' }} />
+                        <span style={{ color: 'white', fontWeight: 700, fontSize: '13px' }}>Back</span>
                     </div>
 
                     {/* Right Side: Profile */}
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '20px', marginRight: '30px' }}>
                         {/* Profile Picture */}
-                        <img 
-                            src={navProfileImg} 
-                            alt="Profile" 
-                            style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)', cursor: 'pointer' }} 
+                        <img
+                            src={navProfileImg}
+                            alt="Profile"
+                            style={{ width: '25px', height: '25px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
                             onClick={() => navigate('/profile')}
                         />
                     </div>
-                    
                 </header>
-               {showVariantPopup && (
-                    <div className="modal-overlay" onClick={() => setShowVariantPopup(false)} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '170px' }}>
-                        <div className="variant-popup-card" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'white', width: '450px', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', marginTop: '80px' }}>
-                            <div style={{ display: 'flex', borderBottom: '1px solid #eee' }}>
-                                <button onClick={() => setActiveVariantTab('color')} style={{ flex: 1, padding: '20px', border: 'none', background: activeVariantTab === 'color' ? '#fff' : '#f5f5f5', fontWeight: activeVariantTab === 'color' ? 'bold' : 'normal', cursor: 'pointer' }}>Color</button>
-                                <button onClick={() => setActiveVariantTab('size')} style={{ flex: 1, padding: '20px', border: 'none', background: activeVariantTab === 'size' ? '#fff' : '#f5f5f5', fontWeight: activeVariantTab === 'size' ? 'bold' : 'normal', cursor: 'pointer' }}>Size</button>
+
+                {showVariantPopup && (
+                    /* 🚀 Changed to absolute and used top: 10px to match Info Card exactly */
+                    <div className="variant-sidebar-overlay" style={{ 
+                        position: 'absolute', 
+                        top: '80px', 
+                        right: '10px', 
+                        zIndex: 3000, 
+                        pointerEvents: 'auto' 
+                    }}>
+                        <div className="variant-popup-card" onClick={e => e.stopPropagation()} style={{ 
+                            backgroundColor: 'white', 
+                            width: '280px', 
+                            borderRadius: '12px', 
+                            overflow: 'hidden', 
+                            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                            border: '1px solid #e2e8f0',
+                            maxHeight: '320px', // 🚀 Exact match to Info Card
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}>
+                            {/* Tabs */}
+                            <div style={{ display: 'flex', background: '#f8fafc', borderBottom: '1px solid #eee' }}>
+                                <button onClick={() => setActiveVariantTab('color')} style={{ 
+                                    flex: 1, padding: '12px', border: 'none', 
+                                    background: activeVariantTab === 'color' ? '#fff' : 'transparent', 
+                                    fontWeight: '800', fontSize: '11px', cursor: 'pointer',
+                                    color: activeVariantTab === 'color' ? '#0d375b' : '#94a3b8',
+                                    textTransform: 'uppercase',
+                                    borderBottom: activeVariantTab === 'color' ? '2px solid #0d375b' : 'none'
+                                }}>Colors</button>
+                                <button onClick={() => setActiveVariantTab('size')} style={{ 
+                                    flex: 1, padding: '12px', border: 'none', 
+                                    background: activeVariantTab === 'size' ? '#fff' : 'transparent', 
+                                    fontWeight: '800', fontSize: '11px', cursor: 'pointer',
+                                    color: activeVariantTab === 'size' ? '#0d375b' : '#94a3b8',
+                                    textTransform: 'uppercase',
+                                    borderBottom: activeVariantTab === 'size' ? '2px solid #0d375b' : 'none'
+                                }}>Sizes</button>
                             </div>
-                            
-                            <div style={{ padding: '20px', maxHeight: '350px', overflowY: 'auto' }}>
+
+                        {/* Selection Area */}
+                            <div style={{ padding: '15px', overflowY: 'auto', flex: 1 }}>
                                 {activeVariantTab === 'color' ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                                         {VARIANT_COLORS.map(c => (
-                                            <div key={c.name} onClick={() => c.isAvailable && setSelectedTshirtColor(c.hex)} style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '12px', cursor: c.isAvailable ? 'pointer' : 'not-allowed', borderRadius: '8px', opacity: c.isAvailable ? 1 : 0.4, background: selectedTshirtColor === c.hex ? '#f0f7ff' : 'none' }}>
-                                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: c.hex, border: '1px solid #ddd' }} />
-                                                <span>{c.name} {!c.isAvailable && "(Unavailable)"}</span>
+                                            <div key={c.name} onClick={() => c.isAvailable && setSelectedTshirtColor(c.hex)} style={{ 
+                                                display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', 
+                                                cursor: c.isAvailable ? 'pointer' : 'not-allowed', borderRadius: '8px',
+                                                border: selectedTshirtColor === c.hex ? '1.5px solid #0d375b' : '1px solid #f1f5f9',
+                                                background: selectedTshirtColor === c.hex ? '#f0f7ff' : 'transparent',
+                                                opacity: c.isAvailable ? 1 : 0.4,
+                                                transition: 'all 0.2s ease' // 🚀 Smooth transition for selection
+                                            }}>
+                                                {/* 🚀 THE UPDATED FABRIC SWATCH CIRCLE */}
+                                                <div style={{ 
+                                                    width: '16px', // Slightly larger looks better for textures
+                                                    height: '16px', 
+                                                    borderRadius: '50%', 
+                                                    background: c.gradient, // Using the textured gradient here
+                                                    border: '1px solid rgba(0,0,0,0.1)',
+                                                    boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3), 0 1px 2px rgba(0,0,0,0.1)' // Mimics light hitting fabric
+                                                }} />
+                                                <span style={{ fontSize: '10px', fontWeight: '600', color: '#1e293b' }}>{c.name}</span>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                                         {VARIANT_SIZES.map(s => (
-                                            <div key={s.label} style={{ padding: '15px 10px', textAlign: 'center', borderRadius: '8px', border: '1px solid #ddd', fontWeight: '700', fontSize: '14px', backgroundColor: s.isAvailable ? '#fff' : '#f5f5f5', color: s.isAvailable ? '#0d375b' : '#aaa', opacity: s.isAvailable ? 1 : 0.6, position: 'relative' }}>
-                                                {s.label}
-                                                {!s.isAvailable && <div style={{ fontSize: '8px', color: '#d32f2f', marginTop: '4px' }}>OUT OF STOCK</div>}
-                                            </div>
+                                            <div key={s.label} style={{ 
+                                                padding: '12px 0', textAlign: 'center', borderRadius: '8px', 
+                                                border: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '800',
+                                                backgroundColor: s.isAvailable ? '#fff' : '#f8fafc',
+                                                color: s.isAvailable ? '#0f172a' : '#cbd5e1'
+                                            }}>{s.label}</div>
                                         ))}
                                     </div>
                                 )}
                             </div>
-                            <button onClick={() => setShowVariantPopup(false)} style={{ width: '100%', padding: '20px', border: 'none', backgroundColor: '#0d375b', color: 'white', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>Apply Variants</button>
-                        </div>
+
+                            <div style={{ padding: '10px 15px 15px', borderTop: '1px solid #f1f5f9' }}>
+                                <button onClick={() => setShowVariantPopup(false)} style={{ 
+                                    width: '100%', padding: '10px', border: 'none', 
+                                    backgroundColor: '#0d375b', color: 'white', 
+                                    borderRadius: '8px', fontSize: '12px', fontWeight: '800', cursor: 'pointer' 
+                                }}>Apply</button>
+                            </div>
+                    </div>
                     </div>
                 )}
 
-               {/* 🟢 CONDITIONAL RENDERING: EDIT vs PREVIEW */}
+                {/* 🟢 CONDITIONAL RENDERING: EDIT vs PREVIEW */}
                 {viewMode === 'edit' ? (
                     <div className="design-wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1, width: '100%', position: 'relative', overflow: 'hidden' }}>
-                        
-                       {/* 🟢 SIDE PANEL - Universal Features */}
-                        {activePanel !== 'none' && (
-                            <div className="side-panel-container" style={{ width: '320px', flexShrink: 0, backgroundColor: 'white', borderRight: '1px solid #ddd', display: 'flex', flexDirection: 'column', zIndex: 1200 }}>
-                                
-                                {/* UNIVERSAL PANEL HEADER */}
-                                <div className="panel-header" style={{ padding: '20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', textTransform: 'capitalize' }}>
-                                        {activePanel === 'colors' ? 'Colours' : activePanel === 'text' ? 'Add Text' : activePanel}
-                                    </h3>
-                                </div>
 
-                                {/* SEARCH BAR (For Text and Library) */}
-                                {(activePanel === 'text' || activePanel === 'library') && (
-                                   <div style={{ padding: '0 20px 20px 20px', borderBottom: '1px solid #eee' }}>
-                                        <label style={{ fontSize: '12px', color: '#666', marginBottom: '8px', display: 'block', fontWeight: '600' }}>
-                                            TYPE YOUR TEXT HERE
-                                        </label>
-                                        <input 
-                                            key={selectedId}
-                                            type="text" 
-                                            placeholder="Enter your text..." 
-                                            autoFocus
-                                            // 🟢 Bind this to the selected text layer's text
-                                            value={activeTextConfig?.text || ''} 
-                                            onChange={(e) => {
-                                                // Pass 'false' for isFinal so it updates the shirt instantly without lagging the app
-                                                updateActiveLayer('text', e.target.value, false); 
-                                            }}
-                                            // Add onBlur to save the final word to history once the user clicks out
-                                            onBlur={(e) => {
-                                                updateActiveLayer('text', e.target.value, true);
-                                            }}
-                                            style={{ 
-                                                width: '100%', 
-                                                padding: '12px', 
-                                                borderRadius: '8px', 
-                                                border: '2px solid #0d375b', // Using your theme color
-                                                fontSize: '16px',
-                                                fontWeight: '500',
-                                                outline: 'none'
-                                            }} 
-                                        />
-                                    </div> 
-                                )}
+                        {/* 🟢 SIDE PANELS */}
+                                    {activePanel === 'text' && (
+                                        <div className="side-panel-container">
+                                            <div className="panel-header">
+                                                <h3 className="panel-title">Add text</h3>
+                                                <button className="panel-close-btn" onClick={() => setActivePanel('none')}>✕</button>
+                                            </div>
 
-                                <div className="panel-scroll-area" style={{ flex: 1, overflowY: 'auto' }}>
-                                    
-                                 {activePanel === 'text' && (
-                                <div className="side-panel-container">
-                                    <div className="panel-header">
-                                        <h3 className="panel-title">Add text</h3>
-                                        <button className="panel-close-btn" onClick={() => setActivePanel('none')}>✕</button>
-                                    </div>
+                                            {/* 1. FONT SEARCH */}
+                                            <div className="panel-search-container">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search fonts..."
+                                                    className="panel-search-input"
+                                                    value={librarySearchTerm} 
+                                                    onChange={(e) => setLibrarySearchTerm(e.target.value)}
+                                                />
+                                            </div>
 
-                                    {/* 1. FONT SEARCH */}
-                                    <div className="panel-search-container">
-                                        <input 
-                                            type="text" 
-                                            placeholder="Search fonts..." 
-                                            className="panel-search-input" 
-                                            value={librarySearchTerm} // Reusing search state
-                                            onChange={(e) => setLibrarySearchTerm(e.target.value)}
-                                        />
-                                    </div>
+                                            <div className="panel-scroll-area">
+                                                {/* 2. CRITICAL: THE CUSTOM TEXT ENTRY BOX */}
+                                                <div className="panel-section" style={{ padding: '0 15px 20px 15px', borderBottom: '1px solid #eee' }}>
+                                                    <label style={{ fontSize: '11px', color: '#888', fontWeight: '700', marginBottom: '10px', display: 'block' }}>
+                                                        EDIT CONTENT
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        autoFocus
+                                                        placeholder="Type your words here..."
+                                                        value={activeTextConfig?.text || ''}
+                                                        onChange={(e) => updateActiveLayer('text', e.target.value, true)}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '12px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #bec1c4ff',
+                                                            fontSize: '12px',
+                                                            outline: 'none',
+                                                            backgroundColor: '#fff'
+                                                        }}
+                                                    />
+                                                </div>
 
-                                    <div className="panel-scroll-area">
-                                        {/* 2. CRITICAL: THE CUSTOM TEXT ENTRY BOX */}
-                                        <div className="panel-section" style={{ padding: '0 15px 20px 15px', borderBottom: '1px solid #eee' }}>
-                                            <label style={{ fontSize: '11px', color: '#888', fontWeight: '700', marginBottom: '8px', display: 'block' }}>
-                                                EDIT CONTENT
-                                            </label>
-                                            <input 
-                                                type="text"
-                                                autoFocus
-                                                placeholder="Type your words here..."
-                                                value={activeTextConfig?.text || ''}
-                                                onChange={(e) => updateActiveLayer('text', e.target.value, true)}
-                                                style={{ 
-                                                    width: '100%', 
-                                                    padding: '12px', 
-                                                    borderRadius: '8px', 
-                                                    border: '2px solid #0d375b', 
-                                                    fontSize: '16px',
-                                                    outline: 'none',
-                                                    backgroundColor: '#fff'
-                                                }}
-                                            />
-                                        </div>
-
-                                        {/* 3. STYLES SECTION */}
-                                        <div className="panel-section">
-                                            <div className="panel-section-title">Styles</div>
-                                            <div className="curved-text-grid">
-                                                {TEXT_STYLES_CONFIG.map((style) => (
-                                                    <div key={style.id} className="curved-text-card" onClick={() => handleTextSelection(style)}>
-                                                        {style.img ? (
-                                                            <img src={style.img} alt={style.label} className="curved-text-img" />
-                                                        ) : (
-                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '10px', textAlign: 'center', fontWeight: 700, color: '#0d375b' }}>
-                                                                {style.label}
+                                                {/* 3. STYLES SECTION */}
+                                                <div className="panel-section">
+                                                    <div className="panel-section-title">Styles</div>
+                                                    <div className="curved-text-grid">
+                                                        {TEXT_STYLES_CONFIG.map((style) => (
+                                                            <div key={style.id} className="curved-text-card" onClick={() => handleTextSelection(style)}>
+                                                                {style.img ? (
+                                                                    <img src={style.img} alt={style.label} className="curved-text-img" />
+                                                                ) : (
+                                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '10px', textAlign: 'center', fontWeight: 700, color: '#0d375b' }}>
+                                                                        {style.label}
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                        )}
+                                                        ))}
                                                     </div>
-                                                ))}
+                                                </div>
+
+                                                {/* 4. FONTS SECTION */}
+                                                <div className="panel-section" style={{ borderBottom: 'none' }}>
+                                                    <div className="panel-section-title">Fonts</div>
+                                                    {FONT_LIST.filter(f => f.toLowerCase().includes(librarySearchTerm.toLowerCase())).map((font) => (
+                                                        <div key={font} className="font-list-item" onClick={() => handleFontSelection(font)}>
+                                                            <span style={{ fontFamily: font }}>{font}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
-
-                                        {/* 4. FONTS SECTION */}
-                                        <div className="panel-section" style={{ borderBottom: 'none' }}>
-                                            <div className="panel-section-title">Fonts</div>
-                                            {FONT_LIST.filter(f => f.toLowerCase().includes(librarySearchTerm.toLowerCase())).map((font) => (
-                                                <div key={font} className="font-list-item" onClick={() => handleFontSelection(font)}>
-                                                    <span style={{ fontFamily: font }}>{font}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                                    )}
 
 
                                     {/* COLOURS PANEL (With Transparency Slider) */}
-                                     {activePanel === 'colors' && (
+                                    {activePanel === 'colors' && (
                                         <div className="side-panel-container">
                                             <div className="panel-header">
                                                 <h3 className="panel-title">Text Colour</h3>
@@ -1369,7 +1699,7 @@ export default function DesignTool() {
                                                     <div className="panel-section-title">Choose a colour</div>
                                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '15px' }}>
                                                         {TEXT_COLORS.map((colorHex) => (
-                                                            <div key={colorHex} onClick={() => { const newText = activeTextConfig ? { ...activeTextConfig, color: colorHex } : null; if(newText) { setActiveTextConfig(newText, true); }}}
+                                                            <div key={colorHex} onClick={() => { const newText = activeTextConfig ? { ...activeTextConfig, color: colorHex } : null; if (newText) { setActiveTextConfig(newText, true); } }}
                                                                 style={{ width: '100%', aspectRatio: '1 / 1', borderRadius: '50%', backgroundColor: colorHex, cursor: 'pointer', border: '1px solid #ddd', boxShadow: activeTextConfig?.color === colorHex ? '0 0 0 3px #0d375b' : 'none', transition: 'transform 0.1s' }}
                                                                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                                             />
@@ -1380,7 +1710,7 @@ export default function DesignTool() {
                                                     <div className="panel-section-title">Custom Colour</div>
                                                     <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                                         <div style={{ width: '100%' }}>
-                                                            <label style={{ fontSize: '11px', color: '#888', marginBottom: '4px', display: 'block', textTransform:'uppercase', fontWeight:'600' }}>Tap to pick shade</label>
+                                                            <label style={{ fontSize: '11px', color: '#888', marginBottom: '4px', display: 'block', textTransform: 'uppercase', fontWeight: '600' }}>Tap to pick shade</label>
                                                             <input type="color" value={activeTextConfig?.color || '#000000'} onChange={(e) => { if (activeTextConfig) { setActiveTextConfig({ ...activeTextConfig, color: e.target.value }); } }} onBlur={() => { if (activeTextConfig) { setActiveTextConfig(activeTextConfig, true); } }} style={{ width: '100%', height: '45px', cursor: 'pointer', border: '1px solid #ddd', borderRadius: '8px', padding: '3px', backgroundColor: 'white' }} />
                                                         </div>
                                                     </div>
@@ -1395,538 +1725,705 @@ export default function DesignTool() {
                                         </div>
                                     )}
 
-                                    {/* SIZE PANEL (Scale, Rotation, X/Y) */}
-                                     {activePanel === 'size' && (
+                                   {/* SIZE PANEL (Scale, Rotation, X/Y, Spacing, Curve) */}
+                                    {activePanel === 'size' && (
                                         <div className="side-panel-container">
-                                            <div className="panel-header">
-                                                <h3 className="panel-title">Size & Position</h3>
+                                            <div className="panel-header" style={{ padding: '12px 15px' }}>
+                                                <h3 className="panel-title" style={{ fontSize: '15px' }}>Size & Effects</h3>
                                                 <button className="panel-close-btn" onClick={() => setActivePanel('none')}>✕</button>
                                             </div>
                                             <div className="panel-scroll-area">
                                                 <div className="panel-section">
-                                                    <div className="panel-section-title">Adjust Layer</div>
-                                                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '25px' }}>
-                                                        
-                                                        {/* 🟢 1. SCALE (Existing) */}
+                                                    <div className="panel-section-title" style={{ fontSize: '12px', padding: '10px 15px' }}>Adjust Layer</div>
+                                                    <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}> {/* 🟢 Reduced Gap */}
+
+                                                        {/* 1. SCALE */}
                                                         <div>
-                                                            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px', fontSize:'14px', fontWeight:'600', color:'#555'}}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', fontWeight: '600', color: '#555' }}>
                                                                 <span>Scale</span>
                                                                 <span>{Math.round(getCurrentValue('scale') * 100)}%</span>
                                                             </div>
-                                                            <input 
-                                                                type="range" min="0.2" max="3" step="0.1" 
-                                                                value={getCurrentValue('scale')} 
-                                                                onChange={(e) => updateActiveLayer('scale', parseFloat(e.target.value), false)} 
-                                                                onMouseUp={(e) => updateActiveLayer('scale', parseFloat((e.target as HTMLInputElement).value), true)} 
-                                                                style={{ width: '100%', accentColor: '#0d375b', cursor:'pointer', height:'6px' }} 
+                                                            <input
+                                                                type="range" min="0.2" max="3" step="0.1"
+                                                                value={getCurrentValue('scale')}
+                                                                onChange={(e) => updateActiveLayer('scale', parseFloat(e.target.value), false)}
+                                                                style={{ width: '100%', accentColor: '#0d375b', cursor: 'pointer', height: '4px' }}
                                                             />
                                                         </div>
 
-                                                        {/* 🟢 2. ROTATION (Restored) */}
+                                                        {/* 2. ROTATION */}
                                                         <div>
-                                                            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px', fontSize:'14px', fontWeight:'600', color:'#555'}}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', fontWeight: '600', color: '#555' }}>
                                                                 <span>Rotation</span>
                                                                 <span>{Math.round(getCurrentValue('rotation'))}°</span>
                                                             </div>
-                                                            <input 
-                                                                type="range" min="-180" max="180" step="1" 
-                                                                value={getCurrentValue('rotation')} 
-                                                                onChange={(e) => updateActiveLayer('rotation', parseFloat(e.target.value), false)} 
-                                                                onMouseUp={(e) => updateActiveLayer('rotation', parseFloat((e.target as HTMLInputElement).value), true)} 
-                                                                style={{ width: '100%', accentColor: '#0d375b', cursor:'pointer', height:'6px' }} 
+                                                            <input
+                                                                type="range" min="-180" max="180" step="1"
+                                                                value={getCurrentValue('rotation')}
+                                                                onChange={(e) => updateActiveLayer('rotation', parseFloat(e.target.value), false)}
+                                                                style={{ width: '100%', accentColor: '#0d375b', cursor: 'pointer', height: '4px' }}
                                                             />
                                                         </div>
 
-                                                        {/* 🟢 3. X POSITION (Restored) */}
+                                                        {/* 3. X POSITION */}
                                                         <div>
-                                                            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px', fontSize:'14px', fontWeight:'600', color:'#555'}}>
-                                                                <span>Position X (Left/Right)</span>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', fontWeight: '600', color: '#555' }}>
+                                                                <span>Position X</span>
                                                                 <span>{Math.round(getCurrentValue('x'))}px</span>
                                                             </div>
-                                                            <input 
-                                                                type="range" min="-300" max="300" step="1" 
-                                                                value={getCurrentValue('x')} 
-                                                                onChange={(e) => updateActiveLayer('x', parseFloat(e.target.value), false)} 
-                                                                onMouseUp={(e) => updateActiveLayer('x', parseFloat((e.target as HTMLInputElement).value), true)} 
-                                                                style={{ width: '100%', accentColor: '#0d375b', cursor:'pointer', height:'6px' }} 
+                                                            <input
+                                                                type="range" min="-300" max="300" step="1"
+                                                                value={getCurrentValue('x')}
+                                                                onChange={(e) => updateActiveLayer('x', parseFloat(e.target.value), false)}
+                                                                style={{ width: '100%', accentColor: '#0d375b', cursor: 'pointer', height: '4px' }}
                                                             />
                                                         </div>
 
-                                                        {/* 🟢 4. Y POSITION (Restored) */}
+                                                        {/* 4. Y POSITION */}
                                                         <div>
-                                                            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px', fontSize:'14px', fontWeight:'600', color:'#555'}}>
-                                                                <span>Position Y (Up/Down)</span>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', fontWeight: '600', color: '#555' }}>
+                                                                <span>Position Y</span>
                                                                 <span>{Math.round(getCurrentValue('y'))}px</span>
                                                             </div>
-                                                            <input 
-                                                                type="range" min="-400" max="400" step="1" 
-                                                                value={getCurrentValue('y')} 
-                                                                onChange={(e) => updateActiveLayer('y', parseFloat(e.target.value), false)} 
-                                                                onMouseUp={(e) => updateActiveLayer('y', parseFloat((e.target as HTMLInputElement).value), true)} 
-                                                                style={{ width: '100%', accentColor: '#0d375b', cursor:'pointer', height:'6px' }} 
+                                                            <input
+                                                                type="range" min="-400" max="400" step="1"
+                                                                value={getCurrentValue('y')}
+                                                                onChange={(e) => updateActiveLayer('y', parseFloat(e.target.value), false)}
+                                                                style={{ width: '100%', accentColor: '#0d375b', cursor: 'pointer', height: '4px' }}
                                                             />
                                                         </div>
+
+                                                        {/* 🟢 NEW FEATURES: Only show if a Text Layer is selected */}
+                                                        {textLayers.some(t => t.id === selectedId) && (
+                                                            <>
+                                                                <hr style={{ border: '0', borderTop: '1px solid #eee', margin: '5px 0' }} />
+                                                                
+                                                                {/* 5. LETTER SPACING */}
+                                                                <div>
+                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', fontWeight: '600', color: '#555' }}>
+                                                                        <span>Letter Spacing</span>
+                                                                        <span>{getCurrentValue('letterSpacing') || 0}</span>
+                                                                    </div>
+                                                                    <input
+                                                                        type="range" min="-5" max="20" step="1"
+                                                                        value={getCurrentValue('letterSpacing') || 0}
+                                                                        onChange={(e) => updateActiveLayer('letterSpacing', parseFloat(e.target.value), false)}
+                                                                        style={{ width: '100%', accentColor: '#0d375b', cursor: 'pointer', height: '4px' }}
+                                                                    />
+                                                                </div>
+
+                                                                {/* 6. CURVE */}
+                                                                <div>
+                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', fontWeight: '600', color: '#555' }}>
+                                                                        <span>Curve (Invert/Outvert)</span>
+                                                                        <span>{getCurrentValue('curve') || 0}</span>
+                                                                    </div>
+                                                                    <input
+                                                                        type="range" min="-100" max="100" step="1"
+                                                                        value={getCurrentValue('curve') || 0}
+                                                                        onChange={(e) => updateActiveLayer('curve', parseFloat(e.target.value), false)}
+                                                                        style={{ width: '100%', accentColor: '#0d375b', cursor: 'pointer', height: '4px' }}
+                                                                    />
+                                                                </div>
+                                                            </>
+                                                        )}
 
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     )}
- 
-                                    {activePanel === 'layers' && (
-                                        <div className="side-panel-container">
-                                            <div className="panel-header">
-                                                <h3 className="panel-title">Layers</h3>
-                                                <button className="panel-close-btn" onClick={() => setActivePanel('none')}>✕</button>
-                                            </div>
-                                            <div className="panel-scroll-area">
-                                                <div className="panel-section">
-                                                    <div className="panel-section-title">Manage Elements</div>
-                                                    <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                                        
-                                                        {/* 🟢 UNIFIED SORTED LIST: Orders cards by their actual Z-Index */}
-                                                        {[
-                                                            ...imageLayers.map((img, idx) => ({ ...img, type: 'image', label: `Image ${idx + 1}` })),
-                                                            ...textLayers.map((txt, idx) => ({ ...txt, type: 'text', label: `Text ${idx + 1}` }))
-                                                        ]
-                                                        .sort((a, b) => b.zIndex - a.zIndex) // 🟢 Higher zIndex (top layers) appear at the top of the list
+
+                                   {activePanel === 'layers' && (
+                                    <div className="side-panel-container">
+                                        <div className="panel-header">
+                                            <h3 className="panel-title">Layers</h3>
+                                            <button className="panel-close-btn" onClick={() => setActivePanel('none')}>✕</button>
+                                        </div>
+                                        <div className="panel-scroll-area">
+                                            <div className="panel-section">
+                                                <div className="panel-section-title">Manage Elements</div>
+                                                <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+                                                    {[
+                                                        ...imageLayers.map((img, idx) => ({ ...img, type: 'image', label: `Image ${idx + 1}` })),
+                                                        ...textLayers.map((txt, idx) => ({ ...txt, type: 'text', label: `Text ${idx + 1}` }))
+                                                    ]
+                                                        .sort((a, b) => b.zIndex - a.zIndex)
                                                         .map((layer) => (
-                                                            <div 
-                                                                key={`${layer.type}-${layer.id}`} 
-                                                                className="layer-row" 
-                                                                style={{ 
-                                                                    display: 'flex', 
-                                                                    alignItems: 'center', 
-                                                                    justifyContent: 'space-between', 
-                                                                    padding: '15px', 
-                                                                    border: selectedId === layer.id ? '2px solid #0d375b' : '1px solid #ddd', 
-                                                                    borderRadius: '12px', 
-                                                                    backgroundColor: '#fff', 
-                                                                    boxShadow: '0 4px 6px rgba(0,0,0,0.05)', 
-                                                                    cursor: 'pointer' 
-                                                                }} 
+                                                            <div
+                                                                key={`${layer.type}-${layer.id}`}
+                                                                className="layer-row"
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'space-between',
+                                                                    padding: '10px', // 🟢 Slimmer rows
+                                                                    border: selectedId === layer.id ? '2px solid #0d375b' : '1px solid #ddd',
+                                                                    borderRadius: '10px',
+                                                                    backgroundColor: '#fff',
+                                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                                                                    cursor: 'pointer'
+                                                                }}
                                                                 onClick={() => {
                                                                     setSelectedId(layer.id);
                                                                     if (layer.type === 'text') setActivePanel('text');
                                                                 }}
                                                             >
-                                                                <div style={{ 
-                                                                        width: '40px', 
-                                                                        height: '40px', 
-                                                                        borderRadius: '6px', 
-                                                                        backgroundColor: '#f5f5f5', 
-                                                                        display: 'flex', 
-                                                                        alignItems: 'center', 
-                                                                        justifyContent: 'center',
-                                                                        overflow: 'hidden',
-                                                                        border: '1px solid #eee'
-                                                                    }}>
-                                                                        {/* 🟢 FIXED: Using type assertion (as any) or checking the layer type explicitly */}
-                                                                        {layer.type === 'image' ? (
-                                                                            <img 
-                                                                                src={(layer as ImageLayer).src} 
-                                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                                                            />
-                                                                        ) : (
-                                                                            <div style={{ 
-                                                                                fontSize: '12px', 
-                                                                                fontWeight: 'bold', 
-                                                                                color: '#0d375b',
-                                                                                fontFamily: (layer as TextConfig).font // Optional: shows a font preview
-                                                                            }}>
-                                                                                Aa
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
+                                                                {/* Thumbnail */}
+                                                                <div style={{
+                                                                    width: '34px', // 🟢 Smaller thumbnail
+                                                                    height: '34px',
+                                                                    borderRadius: '6px',
+                                                                    backgroundColor: '#f5f5f5',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    overflow: 'hidden',
+                                                                    border: '1px solid #eee'
+                                                                }}>
+                                                                    {layer.type === 'image' ? (
+                                                                        <img
+                                                                            src={(layer as ImageLayer).src}
+                                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                        />
+                                                                    ) : (
+                                                                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#0d375b' }}>Aa</div>
+                                                                    )}
+                                                                </div>
 
-                                                                <div style={{ display:'flex', gap:'6px' }}>
-                                                                    <button onClick={(e) => { e.stopPropagation(); moveLayer(layer.id, 'up'); }} style={{ width:'32px', height:'32px', cursor:'pointer', border:'1px solid #ddd', background:'white', borderRadius:'6px' }}>↑</button>
-                                                                    <button onClick={(e) => { e.stopPropagation(); moveLayer(layer.id, 'down'); }} style={{ width:'32px', height:'32px', cursor:'pointer', border:'1px solid #ddd', background:'white', borderRadius:'6px' }}>↓</button>
-                                                                    <button onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        if(!window.confirm("Remove layer?")) return;
-                                                                        if (layer.type === 'text') {
-                                                                            const updated = textLayers.filter(t => t.id !== layer.id);
-                                                                            setTextLayers(updated);
-                                                                            addToHistory(imageLayers, updated);
-                                                                        } else {
-                                                                            const updated = imageLayers.filter(i => i.id !== layer.id);
-                                                                            setImageLayers(updated);
-                                                                            addToHistory(updated, textLayers);
-                                                                        }
-                                                                        if (selectedId === layer.id) setSelectedId(null);
-                                                                    }} style={{ width:'32px', height:'32px', cursor:'pointer', border:'none', background:'#fee2e2', color:'#dc2626', borderRadius:'6px' }}>🗑</button>
+                                                                {/* Control Buttons */}
+                                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); moveLayer(layer.id, 'up'); }} 
+                                                                        style={{ width: '28px', height: '28px', cursor: 'pointer', border: '1px solid #ddd', background: 'white', borderRadius: '6px', fontSize: '12px' }}
+                                                                    >↑</button>
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); moveLayer(layer.id, 'down'); }} 
+                                                                        style={{ width: '28px', height: '28px', cursor: 'pointer', border: '1px solid #ddd', background: 'white', borderRadius: '6px', fontSize: '12px' }}
+                                                                    >↓</button>
+                                                                    <button 
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (!window.confirm("Remove layer?")) return;
+                                                                            if (layer.type === 'text') {
+                                                                                const updated = textLayers.filter(t => t.id !== layer.id);
+                                                                                setTextLayers(updated);
+                                                                            } else {
+                                                                                const updated = imageLayers.filter(i => i.id !== layer.id);
+                                                                                setImageLayers(updated);
+                                                                            }
+                                                                            if (selectedId === layer.id) setSelectedId(null);
+                                                                        }} 
+                                                                        style={{ width: '28px', height: '28px', cursor: 'pointer', border: 'none', background: '#fee2e2', color: '#dc2626', borderRadius: '6px', fontSize: '12px' }}
+                                                                    >🗑</button>
                                                                 </div>
                                                             </div>
                                                         ))}
-                                                        
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    )}
-                                       {activePanel === 'library' && (
-                                        <div className="side-panel-container">
-                                            <div className="panel-header">
-                                                <h3 className="panel-title">My library</h3>
-                                                <button className="panel-close-btn" onClick={() => setActivePanel('none')}>✕</button>
+                                    </div>
+                                )}
+
+                                {activePanel === 'library' && (
+                                    <div className="side-panel-container">
+                                        {/* PANEL HEADER */}
+                                        <div className="panel-header" style={{ padding: '12px 15px' }}>
+                                            <h3 className="panel-title" style={{ fontSize: '15px' }}>My library</h3>
+                                            <button className="panel-close-btn" onClick={() => setActivePanel('none')}>✕</button>
+                                        </div>
+
+                                        {/* COMPACT SEARCH BAR (Matched to 10px Font) */}
+                                        <div style={{ padding: '0 15px 12px 15px' }}>
+                                            <div style={{ 
+                                                position: 'relative', 
+                                                display: 'flex', 
+                                                alignItems: 'center',
+                                                height: '28px' 
+                                            }}>
+                                                <svg 
+                                                    width="12" 
+                                                    height="12" 
+                                                    viewBox="0 0 24 24" 
+                                                    fill="none" 
+                                                    stroke="#888" 
+                                                    strokeWidth="2.5" 
+                                                    style={{ position: 'absolute', left: '10px' }}
+                                                >
+                                                    <circle cx="11" cy="11" r="8" />
+                                                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                                </svg>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Search library" 
+                                                    value={librarySearchTerm} 
+                                                    onChange={(e) => setLibrarySearchTerm(e.target.value)} 
+                                                    style={{ 
+                                                        width: '100%', 
+                                                        height: '100%',
+                                                        padding: '0 10px 0 30px', 
+                                                        borderRadius: '6px', 
+                                                        border: '1px solid #ddd', 
+                                                        backgroundColor: '#f9f9f9', 
+                                                        fontSize: '10px', 
+                                                        outline: 'none'
+                                                    }} 
+                                                />
                                             </div>
+                                        </div>
+
+                                        {/* CONTROLS ROW */}
+                                        <div style={{ 
+                                            display: 'flex', 
+                                            justifyContent: 'space-between', 
+                                            alignItems: 'center', 
+                                            padding: '0 15px 12px 15px', 
+                                            borderBottom: '1px solid #eee' 
+                                        }}>
+                                            <select 
+                                                value={librarySort} 
+                                                onChange={(e: any) => setLibrarySort(e.target.value)} 
+                                                style={{ padding: '4px 6px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '11px', color: '#333' }}
+                                            >
+                                                <option value="recent">Recently added</option>
+                                                <option value="az">A-Z Name</option>
+                                            </select>
                                             
-                                            {/* Search Bar */}
-                                            <div style={{ padding: '0 15px 15px 15px' }}>
-                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" style={{ position: 'absolute', left: '10px' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                                        <input type="text" placeholder="Search library" value={librarySearchTerm} onChange={(e) => setLibrarySearchTerm(e.target.value)} style={{ width: '100%', padding: '10px 10px 10px 35px', borderRadius: '8px', border: '1px solid #ddd', backgroundColor: '#f9f9f9', fontSize:'14px' }} />
-                                                </div>
-                                            </div>
-
-                                            {/* Controls Row */}
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 15px 15px', borderBottom: '1px solid #eee' }}>
-                                                <select value={librarySort} onChange={(e: any) => setLibrarySort(e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd', backgroundColor: 'white', fontSize:'13px', color:'#333', cursor:'pointer' }}>
-                                                        <option value="recent">Recently added</option>
-                                                        <option value="oldest">Oldest first</option>
-                                                        <option value="az">A-Z Name</option>
-                                                </select>
-                                                <div style={{ display: 'flex', border: '1px solid #ddd', borderRadius: '6px', overflow: 'hidden' }}>
-                                                        <button onClick={() => setLibraryView('grid')} style={{ padding: '6px 10px', background: libraryView === 'grid' ? '#0d375b' : 'white', border: 'none', cursor: 'pointer' }}>
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" stroke={libraryView === 'grid' ? 'white' : '#555'} strokeWidth="2" fill={libraryView === 'grid' ? 'white' : 'none'}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                                                        </button>
-                                                        <button onClick={() => setLibraryView('list')} style={{ padding: '6px 10px', background: libraryView === 'list' ? '#0d375b' : 'white', borderLeft: '1px solid #ddd', border: 'none', cursor: 'pointer' }}>
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" stroke={libraryView === 'list' ? 'white' : '#555'} strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                                                        </button>
-                                                </div>
-                                            </div>
-
-                                            <div style={{ padding: '15px' }}>
-                                                {libraryItems.map((item) => {
-                                                    const fullImageUrl = `${API_URL}${item.url.startsWith('/') ? item.url : '/' + item.url}`;
-                                                    
-                                                    return libraryView === 'grid' ? (
-                                                        <div key={item._id} onClick={() => handleAddFromLibrary(fullImageUrl)} style={{ display: 'inline-block', width:'48%', marginBottom:'10px', marginRight: '2%', border:'1px solid #eee', borderRadius:'8px', overflow:'hidden', cursor:'pointer' }}>
-                                                            <img src={fullImageUrl} alt={item.name} style={{ width: '100%', height: '80px', objectFit: 'contain', padding:'5px' }} />
-                                                        </div>
-                                                    ) : (
-                                                        <div key={item._id} onClick={() => handleAddFromLibrary(fullImageUrl)} style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '10px', backgroundColor: 'white', border: '1px solid #eee', borderRadius: '8px', cursor: 'pointer', marginBottom:'10px' }}>
-                                                            <img src={fullImageUrl} alt={item.name} style={{ width: '50px', height: '50px', objectFit: 'cover' }} />
-                                                            <div style={{ fontWeight: '600', fontSize: '14px' }}>{item.name}</div>
-                                                        </div>
-                                                    );
-                                                })}
+                                            <div style={{ display: 'flex', border: '1px solid #ddd', borderRadius: '6px', overflow: 'hidden' }}>
+                                                <button onClick={() => setLibraryView('grid')} style={{ padding: '4px 8px', background: libraryView === 'grid' ? '#0d375b' : 'white', border: 'none', cursor: 'pointer' }}>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" stroke={libraryView === 'grid' ? 'white' : '#555'} fill="none" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                                                </button>
+                                                <button onClick={() => setLibraryView('list')} style={{ padding: '4px 8px', background: libraryView === 'list' ? '#0d375b' : 'white', border: 'none', cursor: 'pointer' }}>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" stroke={libraryView === 'list' ? 'white' : '#555'} fill="none" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="3.01" y2="6" /></svg>
+                                                </button>
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                            {/* 2. WORKSPACE AREA */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-                                
-                            {/* CANVAS TOOLBAR - Kept clean and at the top */}
-                            <div className="canvas-header" style={{ height: '80px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 25px', backgroundColor: 'white', borderBottom: '1px solid #eee', flexShrink: 0, zIndex: 1100 }}>
-                                <div className="header-controls" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    <button title="Info" style={{border:'none', background:'none', cursor:'pointer'}} onClick={() => setShowInfoPopup(true)}>
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                                    </button>
-                                    <button title="Undo" onClick={handleUndo} disabled={historyIndex === 0} style={{border:'none', background:'none', cursor: historyIndex > 0 ? 'pointer' : 'default', opacity: historyIndex > 0 ? 1 : 0.4 }}>
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
-                                    </button>
-                                    <button title="Redo" onClick={handleRedo} disabled={historyIndex === history.length - 1} style={{border:'none', background:'none', cursor: historyIndex < history.length - 1 ? 'pointer' : 'default', opacity: historyIndex < history.length - 1 ? 1 : 0.4 }}>
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/></svg>
-                                    </button>
-                                </div>
-                                <div style={{ width: '1px', height: '30px', background: '#ddd', margin: '0 10px' }}></div>
 
-                                {/* RESTORED: Tools with SVG Icons and Text Labels */}
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('flipX')} title="Flip Horizontal">
-                                        <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12H20M4 12L8 8M4 12L8 16"/></svg>
-                                        <span style={{marginLeft: '5px'}}>Flip H</span>
+                                        {/* LIBRARY CONTENT AREA (Grid & List with Spacing) */}
+                                        <div style={{ 
+                                            padding: '12px', 
+                                            display: 'flex', 
+                                            flexWrap: 'wrap', 
+                                            gap: '10px', 
+                                            overflowY: 'auto',
+                                            maxHeight: 'calc(100vh - 250px)' 
+                                        }}>
+                                            {libraryItems.map((item) => {
+                                                const fullImageUrl = `${API_URL}${item.url.startsWith('/') ? item.url : '/' + item.url}`;
+
+                                                return libraryView === 'grid' ? (
+                                                    <div 
+                                                        key={item._id} 
+                                                        onClick={() => handleAddFromLibrary(fullImageUrl)} 
+                                                        style={{ 
+                                                            width: 'calc(50% - 5px)', 
+                                                            border: '1px solid #eee', 
+                                                            borderRadius: '8px', 
+                                                            cursor: 'pointer',
+                                                            backgroundColor: '#fff',
+                                                            transition: 'transform 0.1s'
+                                                        }}
+                                                    >
+                                                        <img src={fullImageUrl} alt={item.name} style={{ width: '100%', height: '70px', objectFit: 'contain', padding: '8px' }} />
+                                                    </div>
+                                                ) : (
+                                                    <div 
+                                                        key={item._id} 
+                                                        onClick={() => handleAddFromLibrary(fullImageUrl)} 
+                                                        style={{ 
+                                                            display: 'flex', 
+                                                            alignItems: 'center', 
+                                                            gap: '12px', 
+                                                            padding: '8px', 
+                                                            width: '100%', 
+                                                            backgroundColor: 'white', 
+                                                            border: '1px solid #eee', 
+                                                            borderRadius: '8px', 
+                                                            cursor: 'pointer' 
+                                                        }}
+                                                    >
+                                                        <img src={fullImageUrl} alt={item.name} style={{ width: '35px', height: '35px', objectFit: 'cover', borderRadius: '4px' }} />
+                                                        <div style={{ fontWeight: '600', fontSize: '12px', color: '#333' }}>{item.name}</div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                        {/* 2. WORKSPACE AREA */}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+
+                            {/* CANVAS TOOLBAR - Precision Layout */}
+                            <div className="canvas-header" style={{ 
+                                height: '45px', 
+                                width: '100%', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'space-between', 
+                                padding: '0 20px', 
+                                backgroundColor: 'white', 
+                                borderBottom: '1px solid #eee', 
+                                position: 'relative',
+                                zIndex: 2500, // 🚀 High priority to stay above canvas
+                                pointerEvents: 'auto'
+                            }}>
+                                {/* 🟢 LEFT GROUP */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <button title="Info" style={toolBtnStyle(true)} onClick={() => setShowInfoPopup(true)}>
+                                        <img src="/img/info.png" alt="" style={{ width: '18px', height: '18px' }} />
                                     </button>
-                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('flipY')} title="Flip Vertical">
-                                        <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{transform:'rotate(90deg)'}}><path d="M4 12H20M4 12L8 8M4 12L8 16"/></svg>
-                                        <span style={{marginLeft: '5px'}}>Flip V</span>
+                                    
+                                    {/* Undo/Redo - Using your image files */}
+                                    <button title="Undo" onClick={handleUndo} disabled={historyIndex === 0} style={toolBtnStyle(historyIndex > 0)}>
+                                        <img src="/img/leftarrow.png" alt="" style={{ width: '18px', height: '18px' }} />
                                     </button>
-                                    <button style={toolBtnStyle(isSomethingSelected)} onClick={() => handleImageTool('duplicate')} title="Duplicate">
-                                        <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                        <span style={{marginLeft: '5px'}}>Duplicate</span>
+                                    <button title="Redo" onClick={handleRedo} disabled={historyIndex === history.length - 1} style={toolBtnStyle(historyIndex < history.length - 1)}>
+                                        <img src="/img/rightarrow.png" alt="" style={{ width: '18px', height: '18px' }} />
                                     </button>
-                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('fit')} title="Fit">
-                                        <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 10V4h6"/><path d="M20 10V4h-6"/><path d="M4 14v6h6"/><path d="M20 14v6h-6"/></svg>
-                                        <span style={{marginLeft: '5px'}}>Fit</span>
+                                    
+                                    <div style={{ width: '1px', height: '24px', background: '#e2e8f0', margin: '0 10px' }}></div>
+
+                                    {/* Action Tools - Using Original SVG Icons */}
+                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('flipX')}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 12H20M4 12L8 8M4 12L8 16" /></svg>
+                                        <span style={toolLabelStyle}>Flip H</span>
                                     </button>
-                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('fill')} title="Fill">
-                                        <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
-                                        <span style={{marginLeft: '5px'}}>Fill</span>
+                                    
+                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('flipY')}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: 'rotate(90deg)' }}><path d="M4 12H20M4 12L8 8M4 12L8 16" /></svg>
+                                        <span style={toolLabelStyle}>Flip V</span>
                                     </button>
-                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('crop')} title="Crop">
-                                        <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"></path><path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"></path></svg>
-                                        <span style={{marginLeft: '5px'}}>Crop</span>
-                                    </button>
-                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('cutout')} title="Cutout">
-                                        <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                                        <span style={{marginLeft: '5px'}}>Cutout</span>
+                                    
+                                    <button style={toolBtnStyle(isSomethingSelected)} onClick={() => handleImageTool('duplicate')}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        <span style={toolLabelStyle}>Duplicate</span>
                                     </button>
 
-                                    <div style={{ width: '1px', height: '30px', background: '#ddd', margin: '0 5px' }}></div>
+                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('fit')}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 10V4h6M20 10V4h-6M4 14v6h6M20 14v6h-6" /></svg>
+                                        <span style={toolLabelStyle}>Fit</span>
+                                    </button>
+                                    
+                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('fill')}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
+                                        <span style={toolLabelStyle}>Fill</span>
+                                    </button>
+                                    
+                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('crop')}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"></path><path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"></path></svg>
+                                        <span style={toolLabelStyle}>Crop</span>
+                                    </button>
+                                    
+                                    <button style={toolBtnStyle(isImageSelected)} onClick={() => handleImageTool('cutout')}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                                        <span style={toolLabelStyle}>Cutout</span>
+                                    </button>
 
-                                    <button style={{...toolBtnStyle(isSomethingSelected), color: isSomethingSelected ? '#d32f2f' : '#ccc'}} onClick={() => handleImageTool('delete')} title="Delete">
-                                        <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                                        <span style={{marginLeft: '5px'}}>Delete</span>
+                                    <div style={{ width: '1px', height: '24px', background: '#e2e8f0', margin: '0 10px' }}></div>
+                                    
+                                    {/* 🚀 DELETE - Set to Red Color */}
+                                    <button style={toolBtnStyle(isSomethingSelected, true)} onClick={() => handleImageTool('delete')}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                        <span style={toolLabelStyle}>Delete</span>
                                     </button>
                                 </div>
-                                </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginRight: '60px' }}>
-                                    <div className="mode-toggle" style={{ display: 'flex', backgroundColor: '#f0f0f0', borderRadius: '30px', padding: '4px', border: '1px solid #ddd' }}>
-                                        <button 
-                                            onClick={() => {
-                                                setViewMode('edit');
-                                                setCurrentSide('front'); 
-                                            }} 
-                                            style={{ 
-                                                padding: '8px 24px', 
-                                                borderRadius: '25px', 
-                                                border: 'none', 
-                                                cursor: 'pointer', 
-                                                fontWeight: '600', 
-                                                backgroundColor: viewMode === 'edit' ? '#0d375b' : 'transparent', 
-                                                color: viewMode === 'edit' ? 'white' : '#666' 
-                                            }}
+                                {/* 🟢 RIGHT GROUP */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                    <div className="mode-toggle" style={{ display: 'flex', backgroundColor: '#f1f5f9', borderRadius: '20px', padding: '3px', border: '1px solid #e2e8f0' }}>
+                                        <button
+                                            onClick={() => handleToggleView('edit')}
+                                            style={(viewMode as string) === 'edit' ? activeToggleStyle : inactiveToggleStyle}
                                         >
                                             Edit
                                         </button>
-                                        <button onClick={() => setViewMode('preview')} style={{ padding: '8px 24px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: '600', color: '#666' }}>Preview</button>
+                                        <button
+                                            onClick={() => handleToggleView('preview')}
+                                            style={(viewMode as string) === 'preview' ? activeToggleStyle : inactiveToggleStyle}
+                                        >
+                                            Preview
+                                        </button>
                                     </div>
-                                    <img src="/img/editing.png" alt="Variants" style={{ width: '30px', cursor: 'pointer' }} onClick={() => setShowVariantPopup(true)} />
+
+                                    {/* Variant Icon - Using your image file */}
+                                    <img 
+                                        src="/img/editing.png" 
+                                        alt="Variants" 
+                                        style={{ width: '22px', height: '22px', cursor: 'pointer' }} 
+                                        onClick={() => setShowVariantPopup(true)} 
+                                    />
                                 </div>
                             </div>
 
                             {/* T-SHIRT CANVAS AREA */}
-                            <div className="workspace-scroll-container" style={{ flex: 1, width: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '60px', backgroundColor: '#f5f5f5', minHeight: 0, position: 'relative', zIndex: 1 }}>
-                                {/* 🟢 RESTORED INFO POPUP LOGIC */}
-                                    {showInfoPopup && (
-                                        <div className="product-info-card" style={{
-                                            position: 'absolute',
-                                            top: '20px',
-                                            left: '20px',
-                                            width: '340px',
-                                            backgroundColor: 'white',
-                                            borderRadius: '8px',
-                                            boxShadow: '0 4px 25px rgba(0,0,0,0.15)',
-                                            zIndex: 1500, // Increased to be above everything
-                                            fontSize: '13px',
-                                            color: '#333',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            maxHeight: '90%', 
-                                            overflow: 'hidden'
-                                        }}>
-                                            {/* Header */}
-                                            <div style={{ display:'flex', alignItems:'center', padding:'15px 20px', borderBottom:'1px solid #eee', position: 'relative' }}>
-                                                <h3 style={{margin:0, fontSize:'16px', fontWeight:'700', color:'#222'}}>Important Product Information</h3>
-                                                <span onClick={()=>setShowInfoPopup(false)} style={{ position: 'absolute', right: '15px', top: '15px', cursor:'pointer', fontSize:'18px', color:'#888', fontWeight: 'bold' }}>✕</span>
+                            <div className="workspace-scroll-container" style={{ flex: 1, width: '100%', overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '0px', backgroundColor: '#f5f5f5', minHeight: 0, position: 'relative', zIndex: 1 }}>
+                                {/* 🟢 INFO POPUP LOGIC */}
+                               {showInfoPopup && (
+                                    <div className="product-info-card" style={{
+                                        position: 'absolute',
+                                        top: '10px',
+                                        left: '10px',
+                                        width: '260px',
+                                        backgroundColor: 'white',
+                                        borderRadius: '12px',
+                                        boxShadow: '0 10px 40px rgba(0,0,0,0.12)',
+                                        zIndex: 2500,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        maxHeight: '320px',
+                                        border: '1px solid #f1f5f9',
+                                        overflow: 'hidden'
+                                    }}>
+                                        {/* Header */}
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 15px', borderBottom: '1px solid #f1f5f9', background: '#fff' }}>
+                                            <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '800', color: '#0d375b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Specifications</h3>
+                                            <span onClick={() => setShowInfoPopup(false)} style={{ cursor: 'pointer', fontSize: '16px', color: '#cbd5e1', fontWeight: 'bold' }}>✕</span>
+                                        </div>
+
+                                        {/* Scrollable Content Container */}
+                                        <div style={{ padding: '0 15px', overflowY: 'auto', flex: 1 }} className="custom-scrollbar">
+                                            
+                                            {/* 1. Header Section */}
+                                            <div style={{ display: 'flex', gap: '12px', padding: '15px 0' }}>
+                                                {designImage ? (
+                                                    <img src={designImage} alt="Base" style={{ width: '45px', height: '60px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #eee' }} />
+                                                ) : (
+                                                    <div style={{ width: '45px', height: '60px', backgroundColor: '#f1f5f9', borderRadius: '6px' }} />
+                                                )}
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontWeight: '800', fontSize: '12px', color: '#0f172a', lineHeight: '1.2' }}>{designTitle}</div>
+                                                    <div style={{ color: '#64748b', fontSize: '10px', marginTop: '2px' }}>Professional Grade Base</div>
+                                                    <div style={{ fontWeight: '700', fontSize: '12px', color: '#0d375b', marginTop: '4px' }}>{designPrice}</div>
+                                                </div>
                                             </div>
 
-                                            {/* Scrollable Content */}
-                                            <div style={{padding:'20px', overflowY:'auto'}}>
-                                                <div style={{display:'flex', gap:'15px', marginBottom:'20px'}}>
-                                                    <img src={designImage} alt="Base" style={{width:'70px', height:'90px', objectFit:'cover', borderRadius:'4px', backgroundColor:'#f5f5f5'}} />
-                                                    <div>
-                                                        <div style={{fontWeight:'700', fontSize:'15px', marginBottom:'2px'}}>{designTitle}</div>
-                                                        <div style={{color:'#666', fontSize:'12px'}}>Bella+Canvas 3001</div>
-                                                        <div style={{color:'#666', fontSize:'11px', marginTop:'2px'}}>Fulfilled by Cre8tify Choice</div>
-                                                    </div>
-                                                </div>
-                                                <div style={{borderTop:'1px solid #eee', padding:'12px 0', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                                                    <span>Base T-shirt cost:</span>
-                                                    <span style={{fontWeight:'600'}}>{designPrice}</span>
-                                                </div>
-                                                <div style={{backgroundColor:'#f5f9ff', padding:'15px', borderRadius:'6px', marginTop:'10px', border:'1px solid #e1eaf7'}}>
-                                                    <div style={{display:'flex', alignItems:'center', gap:'8px', color:'#0d375b', fontWeight:'700', marginBottom:'10px', fontSize:'13px'}}>
-                                                        ℹ Product and design guidelines
-                                                    </div>
-                                                    <div style={{lineHeight:'1.5', color:'#666', fontSize:'12px'}}>
-                                                        Using DTG technique, pigmented water-based inks are applied to the garment's surface and are absorbed by the product's fibers.
-                                                    </div>
+                                            {/* 2. Product Details Section (with top separator) */}
+                                            <div style={{ borderTop: '1px solid #f1f5f9', padding: '15px 0' }}>
+                                                <h4 style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px' }}>Product Details</h4>
+                                                <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.6', margin: 0 }}>
+                                                    This premium blank is engineered specifically for high-end digital printing. Featuring a tight-knit 24-singles 
+                                                    construction, the surface provides an ultra-smooth canvas that ensures ink pigments bond deeply with the 
+                                                    cotton fibers.
+                                                </p>
+                                            </div>
+
+                                            {/* 3. Print Guidelines Section (with top separator) */}
+                                            <div style={{ borderTop: '1px solid #f1f5f9', padding: '15px 0' }}>
+                                                <h4 style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px' }}>Print Guidelines</h4>
+                                                <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '11px', color: '#475569', lineHeight: '1.6' }}>
+                                                    <li>Upload high-resolution PNGs with transparent backgrounds (300 DPI).</li>
+                                                    <li>Avoid fine lines thinner than 0.5pt to prevent "ink bleeding."</li>
+                                                    <li>Ensure all colors are within the CMYK gamut for accuracy.</li>
+                                                </ul>
+                                            </div>
+
+                                            {/* 4. Maintenance Section (with top separator) */}
+                                            <div style={{ borderTop: '1px solid #f1f5f9', padding: '15px 0 20px' }}>
+                                                <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                                                    <h4 style={{ fontSize: '10px', fontWeight: '800', color: '#0d375b', marginBottom: '5px' }}>Fulfillment Note</h4>
+                                                    <p style={{ fontSize: '10px', color: '#64748b', lineHeight: '1.5', margin: 0 }}>
+                                                        Our quality control team inspects every print. Standard processing time is 24-48 hours before shipping.
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
-                                    )}
-                                    
-                                    <div style={{ padding: '40px 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    </div>
+                                )}
 
+                                <div style={{ padding: '20px 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    {/* 🟢 WRAPPER TO COMPENSATE FOR SCALED HEIGHT */}
+                                    {/* `tshirt-capture-area` acts as a 800px layout block regardless of scale. 
+                                         We restrict the wrapper height to the actual visual footprint so it won't scroll excessively. */}
+                                    <div style={{ height: `${800 * mockupScale}px`, display: 'flex', justifyContent: 'center' }}>
+                                        {renderTShirtWorkspace()}
+                                    </div>
+
+                                   {/* SUBMIT BUTTON */}
+                                        <div style={{ marginTop: '30px', marginBottom: '40px', zIndex: 100 }}>
+                                            <button 
+                                                className="finish-btn" 
+                                                onClick={handleSaveProduct} 
+                                                disabled={isSaving} 
+                                                style={{ 
+                                                    backgroundColor: '#0d375b', 
+                                                    color: 'white', 
+                                                    padding: '12px 50px', 
+                                                    borderRadius: '30px', 
+                                                    fontWeight: '800', 
+                                                    fontSize: '14px',
+                                                    border: 'none', 
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 4px 15px rgba(13, 55, 91, 0.2)',
+                                                    transition: 'transform 0.2s, background-color 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0a2a45'}
+                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0d375b'}
+                                            >
+                                                {isSaving ? "Saving..." : "Submit Product"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                ) : (
+                    /* --- PREVIEW MODE LAYOUT --- */
+                    <div className="preview-layout" style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        width: '100vw',
+                        height: '100vh',
+                        backgroundColor: '#f5f5f5',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        overflow: 'hidden',
+                        zIndex: 1000
+                    }}>
+
+
+                        {/* 🟢 MAIN AREA */}
+                        <div className="preview-layout-container">
+                            <div className="preview-main-area">
+                                {/* 🟢 Similar Wrapper here for preview mode */}
+                                <div style={{ height: `${800 * mockupScale}px`, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                     {renderTShirtWorkspace()}
+                                </div>
+                            </div>
 
-                                    <div style={{ marginTop: '20px', zIndex: 100 }}>
-                                        <div style={{ padding: '10px 28px', borderRadius: '30px', backgroundColor: '#082749', color: 'white', fontSize: '14px', fontWeight: '700' }}>
-                                            Front Side Only
-                                        </div>
+                            <div className="preview-sidebar">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                                    <h3 style={{ fontSize: '14px', fontWeight: '700', margin: 0 }}>Mockup view</h3>
+                                    <div className="mode-toggle" style={{ display: 'flex', backgroundColor: '#f0f0f0', borderRadius: '20px', padding: '3px', border: '1px solid #ddd' }}>
+                                        <button onClick={() => setViewMode('edit')} style={{ padding: '5px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '11px', color: '#666', background: 'transparent' }}>Edit</button>
+                                        <button onClick={() => setViewMode('preview')} style={{ padding: '5px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '11px', backgroundColor: '#0d375b', color: 'white' }}>Preview</button>
+                                    </div>
+                                </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                                    {Object.entries(MOCKUP_CONFIG).map(([key, config]: any) => {
+                                        // Use the same mask logic from your main workspace
+                                        const maskSrc = config.mask || config.img;
+
+                                        return (
+                                            <div key={key} onClick={() => setCurrentSide(key)} style={{ cursor: 'pointer', textAlign: 'center' }}>
+                                                <div style={{
+                                                    border: currentSide === key ? '2px solid #0d375b' : '1px solid #ddd',
+                                                    borderRadius: '8px',
+                                                    padding: '6px',
+                                                    height: '110px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    backgroundColor: '#f9f9f9',
+                                                    overflow: 'hidden',
+                                                    position: 'relative',
+                                                    isolation: 'isolate'
+                                                }}>
+
+                                                    {/* 1. Base Mockup Image (The White Shirt) */}
+                                                    <img
+                                                        src={config.img}
+                                                        alt={config.label}
+                                                        style={{
+                                                            maxWidth: '100%',
+                                                            height: '100%',
+                                                            objectFit: 'contain',
+                                                            position: 'relative',
+                                                            zIndex: 1
+                                                        }}
+                                                    />
+
+
+                                                    {/* 2. Color Overlay (Masked to the T-shirt shape) */}
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        inset: 0,
+                                                        backgroundColor: selectedTshirtColor,
+                                                        mixBlendMode: 'multiply',
+                                                        WebkitMaskImage: `url(${maskSrc})`,
+                                                        maskImage: `url(${maskSrc})`,
+
+                                                        WebkitMaskSize: config.thumbnailMaskScale || '90%',
+                                                        maskSize: config.thumbnailMaskScale || '90%',
+
+                                                        WebkitMaskPosition: 'center',
+                                                        maskPosition: 'center',
+                                                        WebkitMaskRepeat: 'no-repeat',
+                                                        maskRepeat: 'no-repeat',
+                                                        zIndex: 2,
+                                                        pointerEvents: 'none',
+                                                        boxSizing: 'border-box'
+                                                    }}></div>
+
+                                                    {/* 3. Design/Logo Overlay */}
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        inset: 0,
+                                                        zIndex: 10,
+                                                        pointerEvents: 'none',
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        overflow: 'hidden'
+                                                    }}>
+                                                        {/* @ts-ignore */}
+                                                        {renderThumbnailDesign(key)}
+                                                    </div>
+                                                </div>
+                                                <p style={{ marginTop: '4px', fontSize: '11px', fontWeight: 500 }}>{config.label}</p>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div style={{ marginTop: '14px', borderTop: '1px solid #eee', paddingTop: '12px' }}>
+                                    <h4 style={{ fontSize: '12px', marginBottom: '8px', color: '#666' }}>T-shirt color</h4>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                        {VARIANT_COLORS.map((color: any) => (
+                                            <button key={color.hex} onClick={() => setSelectedTshirtColor(color.hex)} style={{ width: '22px', height: '22px', borderRadius: '50%', backgroundColor: color.hex, border: selectedTshirtColor === color.hex ? '2px solid #0d375b' : '1px solid #ddd', cursor: 'pointer' }} />
+                                        ))}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                ) : (
-                   /* --- PREVIEW MODE LAYOUT --- */
-                <div className="preview-layout" style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    width: '100vw', 
-                    height: '100vh', 
-                    backgroundColor: '#f5f5f5', 
-                    position: 'absolute', 
-                    top: 0, 
-                    left: 0, 
-                    overflow: 'hidden', 
-                    zIndex: 1000 
-                }}>
-   
 
-                {/* 🟢 MAIN AREA */}
-                <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-                    <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-                        {renderTShirtWorkspace()}
-                    </div>
-                    
-                    <div style={{ width: '450px', backgroundColor: 'white', borderLeft: '1px solid #eee', padding: '30px', display: 'flex', flexDirection: 'column', overflowY: 'auto', flexShrink: 0 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-                            <h3 style={{ fontSize: '20px', fontWeight: '700', margin: 0 }}>Mockup view</h3>
-                            <div className="mode-toggle" style={{ display: 'flex', backgroundColor: '#f0f0f0', borderRadius: '30px', padding: '4px', border: '1px solid #ddd' }}>
-                                <button onClick={() => setViewMode('edit')} style={{ padding: '8px 24px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: '600', color: '#666', background: 'transparent' }}>Edit</button>
-                                <button onClick={() => setViewMode('preview')} style={{ padding: '8px 24px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: '#0d375b', color: 'white' }}>Preview</button>
-                            </div>
-                        </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
-                            {Object.entries(MOCKUP_CONFIG).map(([key, config]: any) => {
-                                // Use the same mask logic from your main workspace
-                                const maskSrc = config.mask || config.img;
-                                
-                                return (
-                                    <div key={key} onClick={() => setCurrentSide(key)} style={{ cursor: 'pointer', textAlign: 'center' }}>
-                                        <div style={{ 
-                                            border: currentSide === key ? '2px solid #0d375b' : '1px solid #ddd', 
-                                            borderRadius: '8px', 
-                                            padding: '10px', 
-                                            height: '180px', 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'center', 
-                                            backgroundColor: '#f9f9f9', // Box background
-                                            overflow: 'hidden', 
-                                            position: 'relative',
-                                            isolation: 'isolate' // Keeps blend modes contained
-                                        }}>
-                                            
-                                            {/* 1. Base Mockup Image (The White Shirt) */}
-                                            <img 
-                                                src={config.img} 
-                                                alt={config.label} 
-                                                style={{ 
-                                                    width: '100%', 
-                                                    height: '100%', 
-                                                    objectFit: 'contain',
-                                                    position: 'relative',
-                                                    zIndex: 1
-                                                }} 
-                                            />
-
-                                           
-                                            {/* 2. Color Overlay (Masked to the T-shirt shape) */}
-                                            <div style={{ 
-                                                position: 'absolute', 
-                                                inset: 0, 
-                                                backgroundColor: selectedTshirtColor, 
-                                                mixBlendMode: 'multiply',
-                                                WebkitMaskImage: `url(${maskSrc})`, 
-                                                maskImage: `url(${maskSrc})`, 
-
-                                                WebkitMaskSize: config.thumbnailMaskScale || '90%', 
-    maskSize: config.thumbnailMaskScale || '90%',
-
-                                                WebkitMaskPosition: 'center', 
-                                                maskPosition: 'center', 
-                                                WebkitMaskRepeat: 'no-repeat', 
-                                                maskRepeat: 'no-repeat', 
-                                                zIndex: 2, 
-                                                pointerEvents: 'none',
-                                                boxSizing: 'border-box'
-                                            }}></div>
-
-                                            {/* 3. Design/Logo Overlay */}
-                                            <div style={{ 
-                                                position: 'absolute', 
-                                                inset: 0, 
-                                                zIndex: 10, 
-                                                pointerEvents: 'none',
-                                                width: '100%',
-                                                height: '100%',
-                                                overflow: 'hidden'
-                                            }}>
-                                                {/* @ts-ignore */}
-                                                {renderThumbnailDesign(key)}
-                                            </div>
-                                        </div>
-                                        <p style={{ marginTop: '8px', fontWeight: 500 }}>{config.label}</p>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <div style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-                            <h4 style={{ fontSize: '16px', marginBottom: '15px', color: '#666' }}>T-shirt color</h4>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                                {VARIANT_COLORS.map((color: any) => (
-                                    <button key={color.hex} onClick={() => setSelectedTshirtColor(color.hex)} style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: color.hex, border: selectedTshirtColor === color.hex ? '2px solid #0d375b' : '1px solid #ddd', cursor: 'pointer' }} />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 🟢 FOOTER INSIDE PREVIEW */}
-                <div style={{ flexShrink: 0, backgroundColor: 'white', borderTop: '1px solid #eee' }}>
-                    <Footer />
-                </div>
-            </div>
-            )}
-
-            {/* 🟢 PINNED BOTTOM BAR (FOR EDIT MODE) */}
-                        <div 
-                            className="bottom-pinned-wrapper" 
-                            style={{ 
-                                flexShrink: 0, 
-                                zIndex: 1300, 
-                                backgroundColor: 'white', 
-                                borderTop: '1px solid #eee',
-                                display: viewMode === 'edit' ? 'block' : 'none' 
-                            }}
-                        >
-                            <div className="finish-button-container" style={{ padding: '15px 40px', display: 'flex', justifyContent: 'flex-end' }}>
-                                <button className="finish-btn" onClick={handleSaveProduct} disabled={isSaving} style={{ backgroundColor: '#0d375b', color: 'white', padding: '12px 40px', borderRadius: '10px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
-                                    {isSaving ? "Saving..." : "Submit Product"}
-                                </button>
-                            </div>
-                            
+                        {/* 🟢 FOOTER INSIDE PREVIEW */}
+                        <div style={{ flexShrink: 0, backgroundColor: 'white', borderTop: '1px solid #eee' }}>
                             <Footer />
                         </div>
+                    </div>
+                )}
 
-                        {/* 🟢 CROP MODAL (MUST BE INSIDE THE DASHBOARD CONTAINER) */}
-                        {showCropModal && cropImageSrc && (
-                            <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '15px', maxWidth: '90vw' }}>
-                                    <h3 style={{ marginBottom: '15px' }}>Adjust Crop</h3>
-                                    <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)} aspect={cropAspect}>
-                                        <img src={cropImageSrc || ''} style={{ maxHeight: '60vh' }} />
-                                    </ReactCrop>
-                                    <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
-                                        <button onClick={() => setShowCropModal(false)} style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>Cancel</button>
-                                        <button onClick={handleSaveCrop} style={{ padding: '10px 20px', borderRadius: '8px', backgroundColor: '#0d375b', color: 'white', border: 'none', cursor: 'pointer' }}>Apply Crop</button>
-                                    </div>
-                                </div>
+                <Footer />
+
+                {/* 🟢 CROP MODAL (MUST BE INSIDE THE DASHBOARD CONTAINER) */}
+                {showCropModal && cropImageSrc && (
+                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '15px', maxWidth: '90vw' }}>
+                            <h3 style={{ marginBottom: '15px' }}>Adjust Crop</h3>
+                            <ReactCrop 
+                                crop={crop} 
+                                onChange={(c) => setCrop(c)} 
+                                onComplete={(c) => setCompletedCrop(c)} 
+                                aspect={cropAspect}
+                            >
+                                <img 
+                                    ref={imgRef} // 🚀 This connects the image to the handleApplyCrop function
+                                    src={cropImageSrc || ''} 
+                                    style={{ maxHeight: '60vh' }} 
+                                    alt="Crop preview"
+                                />
+                            </ReactCrop>
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
+                                <button onClick={() => setShowCropModal(false)} style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>Cancel</button>
+                                <button onClick={handleSaveCrop} style={{ padding: '10px 20px', borderRadius: '8px', backgroundColor: '#0d375b', color: 'white', border: 'none', cursor: 'pointer' }}>Apply Crop</button>
                             </div>
-                        )}
                         </div>
-                    </div> // This closes main-content (or dashboard-container depending on your start)
-                ); // This closes the return (
-            } // This closes the export default function
+                    </div>
+                )}
+            </div>
+        </div> // This closes main-content (or dashboard-container depending on your start)
+    ); // This closes the return (
+} // This closes the export default function

@@ -1,175 +1,131 @@
 import React, { useState, useEffect } from 'react'; 
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar'; 
+import { useCart } from '../context/CartContext';
 import Footer from '../components/Footer'; 
-import Header from '../components/Header'; // 🟢 Importing the Smart Header
+import Header from '../components/Header';
 import '../styles/dashboard.css';            
+
+// 1. Static Product Data
+const productsData = [
+    { id: 1, title: 'Women Boxy T-shirt', price: 1350, sales: '02', likes: 12, img: '/img/shop1.png', tag: 'New' },
+    { id: 2, title: 'Moon Child Tee', price: 1450, sales: '15', likes: 45, img: '/img/shop2.png', tag: 'Hot' },
+    { id: 3, title: 'Retro Vibe Print', price: 1250, sales: '08', likes: 22, img: '/img/shop3.png' },
+    { id: 4, title: 'Abstract Art Tee', price: 1600, sales: '05', likes: 18, img: '/img/shop4.png' },
+    { id: 5, title: 'Minimalist Line', price: 1350, sales: '12', likes: 30, img: '/img/shop1.png' },
+    { id: 6, title: 'Dark Soul Edition', price: 1550, sales: '09', likes: 27, img: '/img/shop2.png' },
+    { id: 7, title: 'Urban Streetwear', price: 1400, sales: '20', likes: 56, img: '/img/shop3.png', tag: 'Sale' },
+    { id: 8, title: 'Classic White', price: 1150, sales: '30', likes: 89, img: '/img/shop4.png' },
+];
 
 const CustomerDashboard = () => {
     const navigate = useNavigate();
-    
-    // --- 1. DYNAMIC STATE FOR GREETING ---
     const [greeting, setGreeting] = useState("Welcome");
+    const [likedProducts, setLikedProducts] = useState<number[]>([]);
 
-    // --- 2. EFFECT TO HANDLE PERSONALIZATION & SYNC ---
-    useEffect(() => {
-        const handleSync = () => {
-            const storedUser = localStorage.getItem('userInfo');
-            if (storedUser) {
-                const userObj = JSON.parse(storedUser);
-                const name = userObj.name || "Customer";
-                
-                // Handle Greeting Logic based on user's name
-                const createdAt = new Date(userObj.createdAt || Date.now()).getTime();
-                const currentTime = new Date().getTime();
-                const isBrandNew = (currentTime - createdAt) < 120000;
+    // 🛡️ Cart Context Setup
+    const cartContext = useCart();
+    const addToCart = cartContext ? cartContext.addToCart : null;
 
-                if (isBrandNew) {
-                    setGreeting(`Welcome, ${name}.`);
-                } else {
-                    setGreeting(`Welcome back, ${name}.`);
-                }
-            }
+    // 🚀 Handle Add to Cart (Increases quantityInCart)
+    const handleAddToCart = (item: any) => {
+        if (!item || !addToCart) return;
+
+        const productWithDefaults = {
+            id: item.id, 
+            title: item.title,
+            price: item.price,
+            image: item.img,
+            size: 'Choose Size', 
+            color: 'Choose Color',
+            quantity: 1, 
+            selected: true,
+            type: 'physical'
         };
 
-        handleSync();
-        // 🟢 Listen for changes from the Profile Page update
-        window.addEventListener('storage', handleSync);
-        return () => window.removeEventListener('storage', handleSync);
+        addToCart(productWithDefaults);
+        alert(`${item.title} added! 🛒`);
+    };
+
+    // 💖 Toggle Like Logic
+    const toggleLike = (id: any) => { 
+        setLikedProducts((prev: any) => {
+            const updated = prev.includes(id) 
+                ? prev.filter((item: any) => item !== id) 
+                : [...prev, id];
+            
+            // SAVE TO LOCAL STORAGE
+            localStorage.setItem('wishlist', JSON.stringify(updated));
+            return updated;
+        });
+    };
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem('userInfo');
+        if (storedUser) {
+            const userObj = JSON.parse(storedUser);
+            setGreeting(`Welcome back, ${userObj.name || "Customer"}.`);
+        }
     }, []);
 
-    const products = [
-        { id: 1, title: 'Women Boxy T-shirt', price: 'LKR 1350', sales: '02', img: '/img/shop1.png', tag: 'New', customScale: '1.4', basePrice: 650, designerCharge: 350, serviceCharge: 200},
-        { id: 2, title: 'Moon Child Tee', price: 'LKR 1450', sales: '15', img: '/img/shop2.png', tag: 'Hot', customScale: '1.0'},
-        { id: 3, title: 'Retro Vibe Print', price: 'LKR 1250', sales: '08', img: '/img/shop3.png', customScale: '1.1' },
-        { id: 4, title: 'Abstract Art Tee', price: 'LKR 1600', sales: '05', img: '/img/shop4.png', customScale: '1.3' },
-        { id: 5, title: 'Minimalist Line', price: 'LKR 1350', sales: '12', img: '/img/shop1.png', customScale: '1.4' },
-        { id: 6, title: 'Dark Soul Edition', price: 'LKR 1550', sales: '09', img: '/img/shop2.png', customScale: '1.0' },
-        { id: 7, title: 'Urban Streetwear', price: 'LKR 1400', sales: '20', img: '/img/shop3.png', tag: 'Sale' , customScale: '1.1'},
-        { id: 8, title: 'Classic White', price: 'LKR 1150', sales: '30', img: '/img/shop4.png' , customScale: '1.3'},
-    ];
+    const getSmartScale = (imgName: string) => {
+        return (imgName.includes('shop1.png') || imgName.includes('shop4.png')) ? 1.05 : 1.1;
+    };
 
     return (
         <div className="dashboard-container">
             <Sidebar variant="customer" />
-
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
-                
-                {/* 🟢 REPLACED MANUAL HEADER WITH SMART HEADER 
-                    This handles the navProfileImg sync automatically now. */}
                 <Header mode="search" />
-
-                {/* --- CONTENT AREA --- */}
-                {/* Added 140px margin to clear the Industrial Header overlap */}
-                <div className="content-wrapper" style={{ padding: '40px', overflowX: 'hidden', marginTop: '140px' }}>
+                <div className="content-wrapper customer-content" style={{ overflowX: 'hidden', marginTop: '0px', paddingTop: '25px' }}>
                     
-                    {/* GREETING BANNER */}
                     <div style={bannerStyle}>
-                        <h1 style={greetingTextStyle}>
-                            {greeting}
-                        </h1>
-                        <p style={{ fontSize: '22px', opacity: 0.9, letterSpacing: '1px', fontWeight: '300', margin: 0 }}>
-                            Wear Your Imagination.
-                        </p>
+                        <h1 style={greetingTextStyle}>{greeting}</h1>
+                        <p style={{ fontSize: '11px', opacity: 0.9, letterSpacing: '1px', fontWeight: '300', margin: 0 }}>Wear Your Imagination.</p>
                     </div>
 
-                    {/* CATEGORY CIRCLES */}
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '100px', marginBottom: '90px' }}>
-                        <CategoryCircle title="MEN" img="/img/men.png" position="top" onClick={() => navigate('/men-collection')} />
-                        <CategoryCircle title="WOMEN" img="/img/women.png" position="top 20%" scale="1.15" onClick={() => navigate('/women-collection')} />
-                        <CategoryCircle title="KIDS" img="/img/kids.png" position="top" onClick={() => navigate('/kids-collection')} />
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '45px', marginBottom: '35px' }}>
+                        <CategoryCircle title="MEN" img="/img/men.png" onClick={() => navigate('/men-collection')} />
+                        <CategoryCircle title="WOMEN" img="/img/women.png" scale="1.15" position="top 20%" onClick={() => navigate('/women-collection')} />
+                        <CategoryCircle title="KIDS" img="/img/kids.png" onClick={() => navigate('/kids-collection')} />
                     </div>
 
-                    {/* NEW ARRIVALS STRIPE */}
                     <div style={newArrivalsStripe}>
                         <div style={zigzagStyle}></div>
                         <div style={stripeLabel}>New Arrivals</div>
                         <div style={zigzagStyle}></div>
                     </div>
 
-                    {/* PRODUCT GRID */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '40px' }}>
-                        {products.map((item, index) => {
-                            
-                            // 🚀 1. THE SMART SCALER (Matches WomenCollection)
-                            // Adjusts shop1 and shop4 so they don't look "extra large"
-                            const getSmartScale = (imgName: string) => {
-                                if (imgName.includes('shop1.png') || imgName.includes('shop4.png')) {
-                                    return 1.05; // Matches the "just a lil bigger" adjustment we did
-                                }
-                                return item.customScale || 1.1; // Fallback to item scale or default
-                            };
-
-                            // 🚀 2. THE NAVIGATION LOGIC
-                            const handleNavigate = () => {
-                                console.log("Navigating to:", item.title);
-                                navigate(`/product/${item.id}`, { 
-                                    state: { 
-                                        product: {
-                                            ...item,
-                                            // Formats price for the Detail page comma logic
-                                            price: item.price.toString().includes('LKR') 
-                                                ? item.price 
-                                                : `LKR ${item.price.toLocaleString()}`
-                                        } 
-                                    } 
-                                });
-                            };
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
+                        {productsData.map((item) => {
+                            // LIVE SYNC: Checks context for real-time quantity
+                            const quantityInCart = cartContext?.cartItems?.find((c: any) => c.id === item.id)?.quantity || 0;
 
                             return (
-                                <div key={index} className="product-card" style={cardStyle}>
+                                <div key={item.id} className="product-card" style={cardStyle}>
                                     {item.tag && <div style={tagStyle}>{item.tag}</div>}
-
-                                    {/* 🚀 IMAGE IS NOW CLICKABLE & SCALED */}
-                                    <div 
-                                        style={{ ...imgWrapperStyle, cursor: 'pointer', padding: '15px' }} 
-                                        onClick={handleNavigate}
-                                    >
-                                        <img 
-                                            src={item.img} 
-                                            alt={item.title} 
-                                            style={{ 
-                                                maxWidth: '90%', 
-                                                maxHeight: '90%', 
-                                                objectFit: 'contain', 
-                                                // 🚀 APPLY SMART SCALE
-                                                transform: `scale(${getSmartScale(item.img)})`,
-                                                filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.12))',
-                                                transition: 'transform 0.3s ease'
-                                            }} 
-                                        />
+                                    <div style={imgWrapperStyle} onClick={() => navigate(`/product/${item.id}`, { state: { product: item } })}>
+                                        <img src={item.img} alt={item.title} style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', transform: `scale(${getSmartScale(item.img)})`, filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.12))' }} />
                                     </div>
-                                    
-                                    <div style={{ padding: '0 5px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                                            {/* 🚀 TITLE IS NOW CLICKABLE */}
-                                            <h4 
-                                                onClick={handleNavigate}
-                                                style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#1e293b', cursor: 'pointer' }}
-                                            >
-                                                {item.title}
-                                            </h4>
-
-                                            <span onClick={handleNavigate} style={detailsLink}>
-                                                View Details
-                                            </span>
+                                    <div style={{ padding: '0 3px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '5px' }}>
+                                            <h4 style={{ margin: '0', fontSize: '10px', fontWeight: '800', color: '#1e293b' }}>{item.title}</h4>
+                                            <span style={detailsLink} onClick={() => navigate(`/product/${item.id}`, { state: { product: item } })}>View Details</span>
                                         </div>
-
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
-                                                {/* 🚀 FIXED: Added thousands separator logic for the Dashboard */}
-                                                <div style={{ color: '#ef4444', fontWeight: '800', fontSize: '20px' }}>
-                                                    {item.price.toString().includes('LKR') 
-                                                        ? item.price.replace(/\B(?=(\d{3})+(?!\d))/g, ",") 
-                                                        : `LKR ${item.price.toLocaleString()}`}
-                                                    {/* Adding .00 only if it's not already in the string */}
-                                                    {!item.price.toString().includes('.00') && '.00'}
-                                                </div>
-                                                <div style={{ fontSize: '13px', color: '#94a3b8' }}>Sales {item.sales}</div>
+                                                <div style={{ color: '#ef4444', fontWeight: '800', fontSize: '10px' }}>LKR {item.price.toLocaleString()}</div>
+                                                <div style={{ fontSize: '7px', color: '#94a3b8' }}>Sales {item.sales}</div>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '12px' }}>
-                                                <img src="/img/heart.png" alt="Like" style={{ width: '24px', opacity: 0.7, cursor: 'pointer' }} />
-                                                <img src="/img/cart.png" alt="Add" style={{ width: '24px', opacity: 0.7, cursor: 'pointer' }} />
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <div onClick={() => toggleLike(item.id)} style={{ display: 'flex', alignItems: 'center', gap: '2px', cursor: 'pointer' }}>
+                                                    <img src="/img/heart.png" style={{ width: '10px', filter: likedProducts.includes(item.id) ? 'invert(15%) sepia(95%) saturate(6932%) hue-rotate(358deg) brightness(95%) contrast(112%)' : 'none', opacity: likedProducts.includes(item.id) ? 1 : 0.7 }} alt="" />
+                                                    <span style={{ fontSize: '7px', color: '#64748b', fontWeight: '600' }}>{likedProducts.includes(item.id) ? (item.likes + 1) : item.likes}</span>
+                                                </div>
+                                                <div onClick={() => handleAddToCart(item)} style={{ display: 'flex', alignItems: 'center', gap: '2px', cursor: 'pointer' }}>
+                                                    <img src="/img/cart.png" style={{ width: '10px', opacity: 0.7 }} alt="" />
+                                                    <span style={{ fontSize: '7px', color: '#64748b', fontWeight: '600' }}>{quantityInCart}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -178,13 +134,9 @@ const CustomerDashboard = () => {
                         })}
                     </div>
 
-                    {/* EXPLORE MORE BUTTON */}
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '100px', marginBottom: '50px' }}>
-                        <button style={exploreBtn} onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}>
-                            Explore More ➜
-                        </button>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px', marginBottom: '20px' }}>
+                        <button style={exploreBtn} onClick={() => navigate('/men-collection')}>Explore More ➜</button>
                     </div>
-
                 </div>
                 <Footer />
             </div>
@@ -192,80 +144,58 @@ const CustomerDashboard = () => {
     );
 };
 
-// --- STYLES (Preserving your specific design tweaks) ---
+// ==================== STYLES & SUB-COMPONENTS ====================
+
+const CategoryCircle = ({ title, img, position = 'center', scale = '1', onClick }: any) => (
+    <div onClick={onClick} style={{ textAlign: 'center', cursor: 'pointer' }}>
+        <div style={{ width: '100px', height: '100px', borderRadius: '50%', overflow: 'hidden', marginBottom: '12px', border: '2px solid white', boxShadow: '0 10px 20px rgba(0,0,0,0.15)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position, transform: `scale(${scale})` }} />
+        </div>
+        <div style={{ fontWeight: '800', fontSize: '11px', letterSpacing: '1px', color: '#334155' }}>{title}</div>
+    </div>
+);
+
 const bannerStyle: React.CSSProperties = { 
     background: 'linear-gradient(135deg, #0d375b 0%, #1e40af 100%)', 
-    borderRadius: '30px', padding: '50px 60px', color: 'white', 
-    marginBottom: '80px', display: 'flex', flexDirection: 'column', 
-    boxShadow: '0 20px 40px rgba(13, 55, 91, 0.25)' 
+    borderRadius: '12px', padding: '25px 35px', color: 'white', 
+    marginBottom: '35px', display: 'flex', flexDirection: 'column', 
+    boxShadow: '0 10px 20px rgba(13, 55, 91, 0.25)' 
 };
 
 const greetingTextStyle: React.CSSProperties = { 
-    fontFamily: '"Instrument Serif", serif', fontSize: '64px', 
-    margin: '0 0 10px 0', fontStyle: 'italic', lineHeight: '1' 
+    fontFamily: '"Instrument Serif", serif', fontSize: '30px', margin: '0 0 5px 0', fontStyle: 'italic', lineHeight: '1' 
 };
 
 const newArrivalsStripe: React.CSSProperties = { 
-    display: 'flex', alignItems: 'center', marginBottom: '70px', 
-    marginLeft: '-40px', marginRight: '-40px', width: 'calc(100% + 80px)' 
+    display: 'flex', alignItems: 'center', marginBottom: '25px', marginLeft: '-20px', marginRight: '-20px', width: 'calc(100% + 40px)' 
 };
 
 const zigzagStyle: React.CSSProperties = { 
-    height: '32px', flex: 1, 
-    background: 'repeating-linear-gradient(45deg, #0d375b 0, #0d375b 20px, transparent 20px, transparent 40px)' 
+    height: '16px', flex: 1, background: 'repeating-linear-gradient(45deg, #0d375b 0, #0d375b 10px, transparent 10px, transparent 20px)' 
 };
 
 const stripeLabel: React.CSSProperties = { 
-    background: '#0d375b', color: 'white', padding: '12px 60px', 
-    fontWeight: 'bold', fontSize: '24px', letterSpacing: '4px', textTransform: 'uppercase' 
+    background: '#0d375b', color: 'white', padding: '6px 30px', fontWeight: 'bold', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase' 
 };
 
 const cardStyle: React.CSSProperties = { 
-    background: 'white', padding: '20px', borderRadius: '25px', 
-    boxShadow: '0 12px 30px rgba(0,0,0,0.06)', position: 'relative', 
-    cursor: 'pointer', width: '100%' 
+    background: 'white', padding: '10px', borderRadius: '13px', boxShadow: '0 6px 15px rgba(0,0,0,0.06)', position: 'relative'
 };
 
 const tagStyle: React.CSSProperties = { 
-    position: 'absolute', top: '15px', right: '15px', background: '#0d375b', 
-    color: 'white', fontSize: '11px', fontWeight: '700', padding: '6px 12px', 
-    borderRadius: '12px', textTransform: 'uppercase', zIndex: 100 
+    position: 'absolute', top: '8px', right: '8px', background: '#0d375b', color: 'white', fontSize: '6px', fontWeight: '700', padding: '3px 6px', borderRadius: '6px', textTransform: 'uppercase', zIndex: 100 
 };
 
 const imgWrapperStyle: React.CSSProperties = { 
-    height: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-    marginBottom: '25px', background: '#f1f5f9', borderRadius: '20px', 
-    position: 'relative', overflow: 'hidden' 
+    height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '13px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer'
 };
 
 const detailsLink: React.CSSProperties = { 
-    fontSize: '13px', color: '#64748b', fontStyle: 'italic', 
-    cursor: 'pointer', textDecoration: 'underline' 
+    fontSize: '7px', color: '#64748b', fontStyle: 'italic', cursor: 'pointer', textDecoration: 'underline' 
 };
 
 const exploreBtn: React.CSSProperties = { 
-    padding: '18px 60px', borderRadius: '50px', background: '#93c5fd', 
-    color: '#0f172a', border: 'none', fontWeight: '700', fontSize: '20px', 
-    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', 
-    boxShadow: '0 8px 25px rgba(147, 197, 253, 0.5)', transition: 'transform 0.2s' 
+    padding: '9px 30px', borderRadius: '25px', background: '#93c5fd', color: '#0f172a', border: 'none', fontWeight: '700', fontSize: '10px', cursor: 'pointer', boxShadow: '0 4px 13px rgba(147, 197, 253, 0.5)'
 };
-
-const CategoryCircle = ({ title, img, position = 'center', scale = '1', onClick }: any) => (
-    <div
-        onClick={onClick}
-        style={{ textAlign: 'center', cursor: 'pointer', transition: 'transform 0.2s' }}
-        onMouseOver={(e) => e.currentTarget.style.transform='scale(1.05)'}
-        onMouseOut={(e) => e.currentTarget.style.transform='scale(1)'}
-    >
-        <div style={{ 
-            width: '220px', height: '220px', borderRadius: '50%', overflow: 'hidden', 
-            marginBottom: '25px', border: '6px solid white', boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
-            background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-            <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position, transform: `scale(${scale})` }} />
-        </div>
-        <div style={{ fontWeight: '800', fontSize: '22px', letterSpacing: '1px', color: '#334155' }}>{title}</div>
-    </div>
-);
 
 export default CustomerDashboard;

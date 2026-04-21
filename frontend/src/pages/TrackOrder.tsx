@@ -56,7 +56,7 @@ const TrackOrder = () => {
                 {`
                 @keyframes pulse-blue {
                     0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); }
-                    70% { transform: scale(1.15); box-shadow: 0 0 0 15px rgba(52, 152, 219, 0); }
+                    70% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(52, 152, 219, 0); }
                     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
                 }
                 `}
@@ -78,7 +78,7 @@ const TrackOrder = () => {
 
             <div style={contentContainer}>
                 <div style={whiteContentBox}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                         <h1 style={mainTitle}>Track Order #{orderId}</h1>
                         <div style={statusBadge}>In Transit</div>
                     </div>
@@ -92,7 +92,7 @@ const TrackOrder = () => {
                                             <div style={{
                                                 ...dot, 
                                                 background: step.status === 'complete' ? '#2ecc71' : step.status === 'active' ? '#0d375b' : '#ccc',
-                                                border: step.status === 'active' ? '4px solid #3498db' : 'none',
+                                                border: step.status === 'active' ? '2px solid #3498db' : 'none',
                                                 animation: step.status === 'active' ? 'pulse-blue 2s infinite' : 'none'
                                             }}>
                                                 {step.status === 'complete' && "✔"}
@@ -113,8 +113,8 @@ const TrackOrder = () => {
                             <div style={shippingCard}>
                                 <h3 style={sectionHeading}>Delivery Details</h3>
                                 <div style={addressBox}>
-                                    <p style={{fontWeight: 800, margin: '0 0 5px 0', fontSize: '20px'}}>{customerName}</p>
-                                    <p style={{margin: 0, color: '#555', lineHeight: '1.6', fontSize: '18px'}}>{address}</p>
+                                    <p style={{fontWeight: 800, margin: '0 0 3px 0', fontSize: '10px'}}>{customerName}</p>
+                                    <p style={{margin: 0, color: '#555', lineHeight: '1.6', fontSize: '9px'}}>{address}</p>
                                 </div>
                                 <div style={courierSmallInfo}>
                                     <p><strong>Carrier:</strong> Cre8tify Express (Pvt) Ltd</p>
@@ -152,35 +152,35 @@ const TrackOrder = () => {
 
 // --- STYLES ---
 const pageWrapper: React.CSSProperties = { background: '#f4f7f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' };
-const blueHeader: React.CSSProperties = { background: '#0d375b', color: '#fff', padding: '50px 8%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
-const headerCenterTitle: React.CSSProperties = { fontSize: '32px', fontWeight: 900, margin: 0 };
-const backArea: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', fontWeight: 700, fontSize: '22px' };
-const backIcon: React.CSSProperties = { width: '25px', filter: 'brightness(0) invert(1)' };
-const headerIconGroup: React.CSSProperties = { display: 'flex', gap: '30px' };
-const navIcon: React.CSSProperties = { width: '40px', height: '40px', filter: 'invert(0)', objectFit: 'contain' };
-const contentContainer: React.CSSProperties = { width: '85%', margin: '60px auto', flex: 1 };
-const whiteContentBox: React.CSSProperties = { background: '#fff', padding: '60px', borderRadius: '30px', boxShadow: '0 15px 40px rgba(0,0,0,0.04)' };
-const mainTitle: React.CSSProperties = { fontSize: '36px', fontWeight: 900, color: '#0d375b', margin: 0 };
-const statusBadge: React.CSSProperties = { background: '#e3f2fd', color: '#0d47a1', padding: '10px 25px', borderRadius: '50px', fontWeight: 800, fontSize: '18px' };
-const mainGrid: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px' };
-const leftPanel: React.CSSProperties = { paddingRight: '20px' };
+const blueHeader: React.CSSProperties = { background: '#0d375b', color: '#fff', padding: '25px 8%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
+const headerCenterTitle: React.CSSProperties = { fontSize: '16px', fontWeight: 900, margin: 0 };
+const backArea: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '11px' };
+const backIcon: React.CSSProperties = { width: '13px', filter: 'brightness(0) invert(1)' };
+const headerIconGroup: React.CSSProperties = { display: 'flex', gap: '15px' };
+const navIcon: React.CSSProperties = { width: '20px', height: '20px', filter: 'invert(0)', objectFit: 'contain' };
+const contentContainer: React.CSSProperties = { width: '85%', margin: '30px auto', flex: 1 };
+const whiteContentBox: React.CSSProperties = { background: '#fff', padding: '30px', borderRadius: '15px', boxShadow: '0 8px 20px rgba(0,0,0,0.04)' };
+const mainTitle: React.CSSProperties = { fontSize: '18px', fontWeight: 900, color: '#0d375b', margin: 0 };
+const statusBadge: React.CSSProperties = { background: '#e3f2fd', color: '#0d47a1', padding: '5px 13px', borderRadius: '25px', fontWeight: 800, fontSize: '9px' };
+const mainGrid: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' };
+const leftPanel: React.CSSProperties = { paddingRight: '10px' };
 const timelineContainer: React.CSSProperties = { display: 'flex', flexDirection: 'column' };
-const stepRow: React.CSSProperties = { display: 'flex', gap: '30px', minHeight: '130px' };
+const stepRow: React.CSSProperties = { display: 'flex', gap: '15px', minHeight: '65px' };
 const indicatorColumn: React.CSSProperties = { display: 'flex', flexDirection: 'column', alignItems: 'center' };
-const dot: React.CSSProperties = { width: '40px', height: '40px', borderRadius: '50%', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, zIndex: 2 };
-const line: React.CSSProperties = { width: '4px', flex: 1, background: '#f0f0f0', margin: '5px 0' };
+const dot: React.CSSProperties = { width: '20px', height: '20px', borderRadius: '50%', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 800, zIndex: 2 };
+const line: React.CSSProperties = { width: '2px', flex: 1, background: '#f0f0f0', margin: '3px 0' };
 const textColumn: React.CSSProperties = { paddingTop: '0px' };
-const stepTitle: React.CSSProperties = { margin: '0 0 5px 0', fontSize: '24px', fontWeight: 800, color: '#333' };
-const stepDesc: React.CSSProperties = { margin: '0 0 5px 0', fontSize: '16px', color: '#666', fontWeight: 500 };
-const stepDate: React.CSSProperties = { margin: 0, color: '#999', fontSize: '14px', fontWeight: 600 };
+const stepTitle: React.CSSProperties = { margin: '0 0 3px 0', fontSize: '12px', fontWeight: 800, color: '#333' };
+const stepDesc: React.CSSProperties = { margin: '0 0 3px 0', fontSize: '8px', color: '#666', fontWeight: 500 };
+const stepDate: React.CSSProperties = { margin: 0, color: '#999', fontSize: '7px', fontWeight: 600 };
 const rightPanel: React.CSSProperties = { display: 'flex', flexDirection: 'column', justifyContent: 'space-between' };
-const shippingCard: React.CSSProperties = { border: '1px solid #eee', borderRadius: '25px', padding: '40px', background: '#fafafa' };
-const sectionHeading: React.CSSProperties = { fontSize: '26px', fontWeight: 800, color: '#0d375b', marginBottom: '25px' };
-const addressBox: React.CSSProperties = { marginBottom: '25px' };
-const courierSmallInfo: React.CSSProperties = { background: '#fff', padding: '15px 20px', borderRadius: '12px', marginBottom: '25px', border: '1px solid #f0f0f0', fontSize: '16px' };
-const mapContainer: React.CSSProperties = { borderRadius: '20px', overflow: 'hidden', border: '1px solid #ddd', boxShadow: '0 5px 15px rgba(0,0,0,0.05)' };
-const helpBtn: React.CSSProperties = { background: '#0d375b', color: '#fff', padding: '18px 45px', borderRadius: '50px', border: 'none', fontWeight: 800, fontSize: '18px', cursor: 'pointer', alignSelf: 'flex-end', marginTop: '30px', boxShadow: '0 8px 20px rgba(13, 55, 91, 0.2)' };
-const siteFooter: React.CSSProperties = { background: '#0d375b', padding: '60px 8%', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '25px' };
-const footerLinks: React.CSSProperties = { display: 'flex', gap: '35px', fontWeight: 500 };
+const shippingCard: React.CSSProperties = { border: '1px solid #eee', borderRadius: '13px', padding: '20px', background: '#fafafa' };
+const sectionHeading: React.CSSProperties = { fontSize: '13px', fontWeight: 800, color: '#0d375b', marginBottom: '13px' };
+const addressBox: React.CSSProperties = { marginBottom: '13px' };
+const courierSmallInfo: React.CSSProperties = { background: '#fff', padding: '8px 10px', borderRadius: '6px', marginBottom: '13px', border: '1px solid #f0f0f0', fontSize: '8px' };
+const mapContainer: React.CSSProperties = { borderRadius: '10px', overflow: 'hidden', border: '1px solid #ddd', boxShadow: '0 3px 8px rgba(0,0,0,0.05)' };
+const helpBtn: React.CSSProperties = { background: '#0d375b', color: '#fff', padding: '9px 23px', borderRadius: '25px', border: 'none', fontWeight: 800, fontSize: '9px', cursor: 'pointer', alignSelf: 'flex-end', marginTop: '15px', boxShadow: '0 4px 10px rgba(13, 55, 91, 0.2)' };
+const siteFooter: React.CSSProperties = { background: '#0d375b', padding: '30px 8%', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' };
+const footerLinks: React.CSSProperties = { display: 'flex', gap: '18px', fontWeight: 500 };
 
 export default TrackOrder;

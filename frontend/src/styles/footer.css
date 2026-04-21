@@ -2,11 +2,11 @@
 .site-footer {
     background-color: #0d375b; /* Dark Blue */
     color: white;
-    padding: 60px 5%;
+    padding: 30px 5%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 25px; /* Use the size you confirmed */
+    font-size: 13px; /* Use the size you confirmed */
     border-top: 1px solid rgba(255,255,255,0.1);
     width: 100%;
     position: relative; /* Ensures it sits naturally */
@@ -20,7 +20,7 @@
 
 .footer-center {
     display: flex;
-    gap: 20px;
+    gap: 10px;
 }
 .footer-center span {
     cursor: pointer;

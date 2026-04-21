@@ -160,26 +160,27 @@ const ProductSubmission = () => {
     return (
         <div className="dashboard-container"> 
             <style>{`
-                .main-content { padding-top: 100px !important; }
+                .main-content { padding-top: 48px !important; }
                 .top-header {
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     position: fixed;
                     top: 0;
-                    left: 350px;
+                    left: 0;
                     right: 0;
-                    height: 100px;
+                    height: 44px;
                     background: #0d375b;
-                    z-index: 1000;
+                    z-index: 500;
                     box-sizing: border-box;
+                    padding: 0 16px;
                 }
                 .header-left {
                     position: absolute;
-                    left: 40px;
+                    left: 20px;
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    gap: 8px;
                     cursor: pointer;
                     color: white;
                 }
@@ -187,34 +188,34 @@ const ProductSubmission = () => {
                     margin: 0 !important;
                     text-align: center;
                     color: white !important;
-                    font-size: 32px !important;
+                    font-size: 14px !important;
                     width: auto;
                 }
-                body { font-size: 18px; }
-                .main-content h3 { font-size: 30px !important; margin-bottom: 25px; }
-                .switch { position: relative; display: inline-block; width: 60px; height: 32px; }
+                body { font-size: 14px; }
+                .main-content h3 { font-size: 18px !important; margin-bottom: 14px; }
+                .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
                 .switch input { opacity: 0; width: 0; height: 0; }
                 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-                .slider:before { position: absolute; content: ""; height: 24px; width: 24px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+                .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
                 input:checked + .slider { background-color: #0d375b; }
-                input:checked + .slider:before { transform: translateX(28px); }
-                .ql-toolbar.ql-snow button { scale: 1.4; margin-right: 12px !important; }
-                .ql-editor { font-size: 19px !important; min-height: 200px; }
+                input:checked + .slider:before { transform: translateX(20px); }
+                .ql-toolbar.ql-snow button { scale: 1; margin-right: 6px !important; }
+                .ql-editor { font-size: 14px !important; min-height: 120px; }
                 .admin-specs-box { 
-                    background: #f1f5f9; padding: 25px; border-radius: 15px 15px 0 0; 
-                    border: 2px solid #cbd5e1; border-bottom: none; font-size: 17px; color: #475569;
+                    background: #f1f5f9; padding: 14px; border-radius: 10px 10px 0 0; 
+                    border: 1px solid #cbd5e1; border-bottom: none; font-size: 13px; color: #475569;
                 }
                 .price-item { 
                     display: grid; 
-                    grid-template-columns: 450px 30px 1fr; 
-                    gap: 15px; 
+                    grid-template-columns: 240px 20px 1fr; 
+                    gap: 10px; 
                     align-items: center; 
-                    font-size: 26px; 
-                    margin-bottom: 35px; 
+                    font-size: 15px; 
+                    margin-bottom: 18px; 
                     font-weight: 600; 
                 }
                 .final-price-text {
-                    font-size: 56px !important;
+                    font-size: 28px !important;
                     font-weight: 900 !important;
                     color: #0d375b !important;
                 }
@@ -225,25 +226,25 @@ const ProductSubmission = () => {
             <div className="main-content">
                 <div className="top-header">
                     <div className="header-left" onClick={() => navigate(-1)}>
-                        <img src="/img/back.png" alt="Back" className="nav-icon-small" />
-                        <span style={{ fontSize: '22px', fontWeight: 'bold' }}>Back</span>
+                        <img src="/img/back.png" alt="Back" className="nav-icon-small" style={{ width: '12px', height: '12px' }} />
+                        <span style={{ fontSize: '10px', fontWeight: 'bold' }}>Back</span>
                     </div>
                     <h2>Submit Product</h2>
                 </div>
 
-                <div className="content-wrapper" style={{ marginTop: '50px', paddingBottom: '100px' }}>
+                <div className="content-wrapper" style={{ marginTop: '20px', paddingBottom: '50px' }}>
                     
                     {/* PREVIEW SECTION */}
                     <div style={blueCardStyle}> 
-                        <h2 style={{ color: '#0d375b', fontWeight: '800', marginBottom: '20px', fontSize: '42px' }}>{productType}</h2>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', fontWeight: '700', fontSize: '24px', marginBottom: '60px' }}>
-                            <span style={{ width: '28px', height: '28px', background: tshirtColor, borderRadius: '50%', border: '2px solid black' }}></span>
+                        <h2 style={{ color: '#0d375b', fontWeight: '800', marginBottom: '10px', fontSize: '22px' }}>{productType}</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700', fontSize: '14px', marginBottom: '20px' }}>
+                            <span style={{ width: '16px', height: '16px', background: tshirtColor, borderRadius: '50%', border: '2px solid black' }}></span>
                             Color: {getColorName(tshirtColor)}
                         </div>
 
-                        <div style={{ display: 'flex', gap: '50px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                             {/* Main image: front mockup + color + front design */}
-                            <div style={{ width: '500px', height: '500px', background: 'white', borderRadius: '20px', boxShadow: '0 8px 20px rgba(0,0,0,0.1)', overflow: 'hidden', position: 'relative' }}>
+                            <div style={{ width: '260px', height: '260px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                                 <MockupPreview
                                     mockupSrc={frontMockup || productImages[0]}
                                     maskSrc={frontMockup || productImages[0]}
@@ -256,9 +257,9 @@ const ProductSubmission = () => {
                                 />
                             </div>
 
-                            <div style={{ display: 'flex', gap: '20px' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                                 <div>
-                                    <div style={{ width: '150px', height: '150px', background: 'white', borderRadius: '15px', border: '1px solid #ddd', overflow: 'hidden' }}>
+                                    <div style={{ width: '90px', height: '90px', background: 'white', borderRadius: '10px', border: '1px solid #ddd', overflow: 'hidden' }}>
                                         <MockupPreview
                                             mockupSrc={frontMockup || productImages[0]}
                                             maskSrc={frontMockup || productImages[0]}
@@ -269,11 +270,11 @@ const ProductSubmission = () => {
                                             designSrc={frontDesign}
                                         />
                                     </div>
-                                    <div style={{ fontSize: '16px', marginTop: '10px', color: '#666', textAlign: 'center', fontWeight: '600' }}>View 1</div>
+                                    <div style={{ fontSize: '11px', marginTop: '6px', color: '#666', textAlign: 'center', fontWeight: '600' }}>Front</div>
                                 </div>
 
                                 <div>
-                                    <div style={{ width: '150px', height: '150px', background: 'white', borderRadius: '15px', border: '1px solid #ddd', overflow: 'hidden' }}>
+                                    <div style={{ width: '90px', height: '90px', background: 'white', borderRadius: '10px', border: '1px solid #ddd', overflow: 'hidden' }}>
                                         <MockupPreview
                                             mockupSrc={productImages[1] || "/img/womenback-mockup.png"}
                                             maskSrc={productImages[1] || "/img/womenback-mockup.png"}
@@ -282,25 +283,24 @@ const ProductSubmission = () => {
                                             tshirtColor={tshirtColor}
                                         />
                                     </div>
-                                    <div style={{ fontSize: '16px', marginTop: '10px', color: '#666', textAlign: 'center', fontWeight: '600' }}>View 2</div>
+                                    <div style={{ fontSize: '11px', marginTop: '6px', color: '#666', textAlign: 'center', fontWeight: '600' }}>Back</div>
                                 </div>
 
                                 <div>
-                                    <div style={{ width: '150px', height: '150px', background: 'white', borderRadius: '15px', border: '1px solid #ddd', overflow: 'hidden' }}>
+                                    <div style={{ width: '90px', height: '90px', background: 'white', borderRadius: '10px', border: '1px solid #ddd', overflow: 'hidden' }}>
                                         <MockupPreview
                                             mockupSrc={productImages[2] || "/img/mockups/collar.png"}
                                             maskSrc={productImages[2] || "/img/mockups/collar.png"}
                                             maskSize="contain"
                                             maskPosition="center"
                                             tshirtColor={tshirtColor}
-                                            
                                         />
                                     </div>
-                                    <div style={{ fontSize: '16px', marginTop: '10px', color: '#666', textAlign: 'center', fontWeight: '600' }}>View 3</div>
+                                    <div style={{ fontSize: '11px', marginTop: '6px', color: '#666', textAlign: 'center', fontWeight: '600' }}>Neck</div>
                                 </div>
 
                                 <div>
-                                    <div style={{ width: '150px', height: '150px', background: 'white', borderRadius: '15px', border: '1px solid #ddd', overflow: 'hidden' }}>
+                                    <div style={{ width: '90px', height: '90px', background: 'white', borderRadius: '10px', border: '1px solid #ddd', overflow: 'hidden' }}>
                                         <MockupPreview
                                             mockupSrc={foldedMockup || productImages[3]}
                                             maskSrc={foldedMask || foldedMockup || productImages[3]}
@@ -311,7 +311,7 @@ const ProductSubmission = () => {
                                             designSrc={foldedDesign}
                                         />
                                     </div>
-                                    <div style={{ fontSize: '16px', marginTop: '10px', color: '#666', textAlign: 'center', fontWeight: '600' }}>View 4</div>
+                                    <div style={{ fontSize: '11px', marginTop: '6px', color: '#666', textAlign: 'center', fontWeight: '600' }}>Folded</div>
                                 </div>
                             </div>
                         </div>
@@ -323,9 +323,9 @@ const ProductSubmission = () => {
                         <label style={largeLabelStyle}>Title</label>
                         <input type="text" value={formData.title} onChange={(e) => handleInputChange('title', e.target.value)} style={largeInputStyle} placeholder="Enter a title to your design..." />
                         
-                        <label style={{ ...largeLabelStyle, marginTop: '40px' }}>Description</label>
+                        <label style={{ ...largeLabelStyle, marginTop: '20px' }}>Description</label>
                         <div className="admin-specs-box" dangerouslySetInnerHTML={{ __html: ADMIN_SPECS }} />
-                        <div style={{ background: 'white', borderRadius: '0 0 15px 15px', border: '2px solid #cbd5e1', overflow: 'hidden' }}>
+                        <div style={{ background: 'white', borderRadius: '0 0 10px 10px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
                             <ReactQuill 
                                 theme="snow" 
                                 value={formData.designDescription} 
@@ -338,25 +338,25 @@ const ProductSubmission = () => {
                     {/* POLICY SECTION */}
                     <div style={blueCardStyle}>
                         <h3 style={{ color: '#0d375b' }}>Design Personalization Policy</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '35px' }}>
-                            <div style={{ display: 'flex', gap: '25px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                                 <label className="switch">
                                     <input type="checkbox" checked={formData.allowUserCustomization} onChange={(e) => handleInputChange('allowUserCustomization', e.target.checked)} />
                                     <span className="slider"></span>
                                 </label>
                                 <div>
-                                    <div style={{ fontWeight: '700', fontSize: '22px' }}>Allow User Customization</div>
-                                    <div style={{ color: '#555', fontSize: '17px' }}>Users can use the Live Editor for small edits.</div>
+                                    <div style={{ fontWeight: '700', fontSize: '14px' }}>Allow User Customization</div>
+                                    <div style={{ color: '#555', fontSize: '12px' }}>Users can use the Live Editor for small edits.</div>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '25px', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                                 <label className="switch">
                                     <input type="checkbox" checked={formData.allowEditRequests} onChange={(e) => handleInputChange('allowEditRequests', e.target.checked)} />
                                     <span className="slider"></span>
                                 </label>
                                 <div>
-                                    <div style={{ fontWeight: '700', fontSize: '22px' }}>Allow Designer-Handled Edit Requests</div>
-                                    <div style={{ color: '#555', fontSize: '17px' }}>Users can request custom edits through you.</div>
+                                    <div style={{ fontWeight: '700', fontSize: '14px' }}>Allow Designer-Handled Edit Requests</div>
+                                    <div style={{ color: '#555', fontSize: '12px' }}>Users can request custom edits through you.</div>
                                 </div>
                             </div>
                         </div>
@@ -367,7 +367,7 @@ const ProductSubmission = () => {
                         <h3 style={{ color: '#0d375b' }}>Pricing Setup</h3>
                         
                         <div className="price-item">
-                            <span>Base Price <small style={{fontSize:'16px', color:'#666'}}>(Fixed Production Cost)</small></span>
+                            <span>Base Price <small style={{fontSize:'11px', color:'#666'}}>(Fixed Production Cost)</small></span>
                             <span>:</span>
                             <span style={{ fontWeight: '800' }}>LKR {BASE_PRICE}</span>
                         </div>
@@ -375,36 +375,36 @@ const ProductSubmission = () => {
                         <div className="price-item">
                             <span>Designer Markup (Your Profit)</span>
                             <span>:</span>
-                            <div style={{ display: 'flex', alignItems: 'center', border: '3px solid #0d375b', borderRadius: '12px', padding: '12px 20px', width: '280px', background: 'white' }}>
-                                <span style={{ marginRight: '10px', fontWeight: 'bold' }}>LKR</span>
-                                <input type="number" value={formData.markup} onChange={(e) => handleInputChange('markup', e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', fontWeight: '800', fontSize: '24px' }} />
+                            <div style={{ display: 'flex', alignItems: 'center', border: '2px solid #0d375b', borderRadius: '8px', padding: '8px 12px', width: '160px', background: 'white' }}>
+                                <span style={{ marginRight: '6px', fontWeight: 'bold', fontSize: '13px' }}>LKR</span>
+                                <input type="number" value={formData.markup} onChange={(e) => handleInputChange('markup', e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', fontWeight: '800', fontSize: '14px' }} />
                             </div>
                         </div>
 
                         <div className="price-item">
-                            <span>Service Fee <small style={{fontSize:'16px', color:'#666'}}>(Platform Hosting)</small></span>
+                            <span>Service Fee <small style={{fontSize:'11px', color:'#666'}}>(Platform Hosting)</small></span>
                             <span>:</span>
                             <span style={{ fontWeight: '800' }}>LKR {SERVICE_FEE}</span>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '400px 30px 1fr', gap: '15px', marginTop: '40px', borderTop: '2px solid #cbd5e1', paddingTop: '40px' }}>
-                            <strong style={{ color: '#0d375b', fontSize: '32px' }}>Final Selling Price</strong>
-                            <strong style={{ fontSize: '32px' }}>:</strong>
+                        <div style={{ display: 'grid', gridTemplateColumns: '200px 20px 1fr', gap: '10px', marginTop: '20px', borderTop: '1px solid #cbd5e1', paddingTop: '20px' }}>
+                            <strong style={{ color: '#0d375b', fontSize: '16px' }}>Final Selling Price</strong>
+                            <strong style={{ fontSize: '16px' }}>:</strong>
                             <strong className="final-price-text">LKR {finalPrice}</strong>
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '30px', marginTop: '60px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '30px' }}>
                         <button 
                             onClick={() => submitProduct('Draft')} 
-                            style={{ padding: '20px 50px', borderRadius: '40px', border: '2px solid #ccc', background: 'white', fontWeight: 'bold', fontSize: '20px', cursor: 'pointer' }}
+                            style={{ padding: '10px 28px', borderRadius: '24px', border: '2px solid #ccc', background: 'white', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
                         >
                             Save Draft
                         </button>
 
                         <button 
                             onClick={() => submitProduct('Pending')} 
-                            style={{ padding: '20px 80px', borderRadius: '40px', background: '#0d375b', color: 'white', fontWeight: '900', fontSize: '24px', cursor: 'pointer', boxShadow: '0 10px 25px rgba(13,55,91,0.3)' }}
+                            style={{ padding: '10px 40px', borderRadius: '24px', background: '#0d375b', color: 'white', fontWeight: '900', fontSize: '14px', cursor: 'pointer', boxShadow: '0 6px 14px rgba(13,55,91,0.3)' }}
                         >
                             Publish
                         </button>
@@ -424,9 +424,9 @@ const ProductSubmission = () => {
     );
 };
 
-const blueCardStyle: React.CSSProperties = { background: '#dfe9f5', padding: '60px', borderRadius: '40px', marginBottom: '50px' };
-const largeLabelStyle: React.CSSProperties = { display: 'block', fontWeight: '800', fontSize: '30px', marginBottom: '15px' };
-const largeInputStyle: React.CSSProperties = { width: '100%', padding: '25px', borderRadius: '18px', border: '3px solid #cbd5e1', fontSize: '22px', fontWeight: '700', outline: 'none' };
+const blueCardStyle: React.CSSProperties = { background: '#dfe9f5', padding: '28px', borderRadius: '20px', marginBottom: '24px' };
+const largeLabelStyle: React.CSSProperties = { display: 'block', fontWeight: '800', fontSize: '15px', marginBottom: '8px' };
+const largeInputStyle: React.CSSProperties = { width: '100%', padding: '12px 14px', borderRadius: '10px', border: '2px solid #cbd5e1', fontSize: '14px', fontWeight: '700', outline: 'none', boxSizing: 'border-box' };
 
 type PrintArea = { top: string; left: string; width: string; height: string; rotation?: number };
 type MockupPreviewProps = {

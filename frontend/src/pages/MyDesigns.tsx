@@ -2,47 +2,84 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
-import '../styles/dashboard.css'; 
+import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000";
 
 interface DesignItem {
-    id: number;
+    id: string | number;
     title: string;
-    price: number;
+    price: number | string;
     image: string;
     sales: number;
-    scale: number;
+    likes: number;
+    status: string;
     description?: string;
 }
 
 const MyDesigns = () => {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedDesign, setSelectedDesign] = useState<DesignItem | null>(null);
-    
+    const [allDesigns, setAllDesigns] = useState<DesignItem[]>([]);
+
     // 🟢 DYNAMIC USER STATES
-    const [userName, setUserName] = useState("Designer");
+    const [userName, setUserName] = useState("Artisa LK");
     const [navProfileImg, setNavProfileImg] = useState("/img/profile-picture.png");
 
-    // Interactive states for the modal
-    const [selectedSize, setSelectedSize] = useState('M');
-    const [selectedColor, setSelectedColor] = useState('#000000');
+    const fallbackDesigns: DesignItem[] = [
+        { id: 1, title: 'Taste & See Minimal', price: 1200, image: '/img/shop1.png', sales: 6, likes: 56, status: 'Approved' },
+        { id: 2, title: 'Abstract Line Art', price: 1450, image: '/img/shop2.png', sales: 12, likes: 32, status: 'Approved' },
+        { id: 3, title: 'Vintage Oversized', price: 1350, image: '/img/shop3.png', sales: 24, likes: 89, status: 'Submitted' },
+        { id: 4, title: 'Neon Genesis Print', price: 1600, image: '/img/shop4.png', sales: 8, likes: 45, status: 'Approved' },
+    ];
 
-    // 🟢 LOAD USER DATA ON MOUNT
+    // 🟢 LOAD USER DESIGN DATA ON MOUNT
     useEffect(() => {
-        const storedUser = localStorage.getItem('userInfo');
-        if (storedUser) {
-            const userObj = JSON.parse(storedUser);
-            setUserName(userObj.name || "Designer");
+        const fetchMyDesigns = async () => {
+            const storedUser = localStorage.getItem('userInfo');
+            if (storedUser) {
+                const userObj = JSON.parse(storedUser);
+                setUserName(userObj.name || "Artisa LK");
 
-            if (userObj.profileImage) {
-                const fullUrl = userObj.profileImage.startsWith('http') 
-                    ? userObj.profileImage 
-                    : `${API_URL}${userObj.profileImage.startsWith('/') ? '' : '/'}${userObj.profileImage}`;
-                setNavProfileImg(fullUrl);
+                if (userObj.profileImage) {
+                    const fullUrl = userObj.profileImage.startsWith('http')
+                        ? userObj.profileImage
+                        : `${API_URL}${userObj.profileImage.startsWith('/') ? '' : '/'}${userObj.profileImage}`;
+                    setNavProfileImg(fullUrl);
+                }
+
+                // API LOGIC
+                try {
+                    const response = await fetch(`${API_URL}/api/products/my-designs`, {
+                        headers: { 'Authorization': `Bearer ${userObj.token}` }
+                    });
+                    const data = await response.json();
+
+                    const formattedDB = data.map((item: any) => ({
+                        id: item._id,
+                        title: item.title,
+                        price: item.price,
+                        image: item.mockupImages && item.mockupImages.length > 0 ? item.mockupImages[0] : '/img/placeholder.png',
+                        status: item.status === 'Pending' ? 'Submitted' : item.status,
+                        sales: item.salesCount || 0,
+                        likes: item.likes || 0,
+                        description: item.description ? item.description.replace(/<[^>]*>?/gm, '') : '',
+                    }));
+
+                    // 🟢 Only Approved and Submitted designs are shown
+                    const filtered = formattedDB.filter((d: any) => d.status === 'Approved' || d.status === 'Submitted');
+
+                    setAllDesigns(filtered.length > 0 ? filtered : fallbackDesigns);
+                } catch (error) {
+                    console.error("Failed to fetch designs", error);
+                    setAllDesigns(fallbackDesigns);
+                }
+            } else {
+                setAllDesigns(fallbackDesigns);
             }
-        }
+        };
+
+        fetchMyDesigns();
     }, []);
 
     // 🟢 SECURE LOGOUT
@@ -54,157 +91,184 @@ const MyDesigns = () => {
         }
     };
 
-    const designs: DesignItem[] = [
-        { 
-            id: 1, title: 'Women Boxy T-shirt', price: 1350, image: '/img/shop1.png', sales: 2, scale: 1.3,
-            description: "A minimal abstract representation of the Spider Lily flower, symbolizing memory and transformation. Perfect for casual streetwear."
-        },
-        { 
-            id: 2, title: 'Dark Moon Phase', price: 1350, image: '/img/shop2.png', sales: 2, scale: 0.9,
-            description: "Detailed lunar cycle illustration on a dark aesthetic background. High-quality print suitable for night outs."
-        },
-        { 
-            id: 3, title: 'Evangelion Retro', price: 1350, image: '/img/shop3.png', sales: 2, scale: 1.0,
-            description: "Retro anime style graphic featuring iconic mecha elements. A tribute to 90s classic animation."
-        },
-        { 
-            id: 4, title: 'Wave Aesthetic', price: 1350, image: '/img/shop4.png', sales: 2, scale: 1.2,
-            description: "Blue wave patterns inspired by Japanese woodblock prints. Calming and artistic."
-        },
-        { 
-            id: 5, title: 'One Piece Blue', price: 1350, image: '/img/shop5.png', sales: 2, scale: 1.4,
-            description: "Fan art concept for One Piece. Draft version."
-        },
-        { 
-            id: 6, title: 'Glow Cross Tee', price: 1350, image: '/img/shop6.png', sales: 2, scale: 1.1,
-            description: "Neon cross design with glow effects."
-        },
-    ];
+    const filteredDesigns = allDesigns.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const filteredDesigns = designs.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    const openModal = (design: DesignItem) => {
-        setSelectedDesign(design);
-        setSelectedSize('M'); 
-        setSelectedColor('#000000');
+    // 🟢 NAVIGATE DIRECTLY TO CUSTOMER OVERVIEW
+    const handleNavigate = (item: DesignItem) => {
+        navigate(`/product/${item.id}`, {
+            state: {
+                product: {
+                    ...item,
+                    img: item.image, // Product page anticipates 'img'
+                    price: typeof item.price === 'string' && item.price.includes('LKR')
+                        ? item.price
+                        : `LKR ${Number(item.price).toLocaleString()}.00`
+                },
+                fromDesignerPreview: true
+            }
+        });
     };
 
     return (
         <div className="dashboard-container">
             <Sidebar />
-            
+
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
                 {`
-                    @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+                    @keyframes slideUpFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
                     .animate-load { animation: slideUpFade 0.5s ease-out forwards; }
-                    .design-card { transition: all 0.3s ease; cursor: pointer; }
-                    .design-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.08) !important; }
+                    .design-card { transition: all 0.3s ease; }
+                    .design-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important; }
                     .icon-btn { transition: transform 0.2s; cursor: pointer; opacity: 0.7; }
                     .icon-btn:hover { transform: scale(1.15); opacity: 1; }
                     .search-input::placeholder { color: white !important; opacity: 0.8; }
-                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                    @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-                    .modal-scroll::-webkit-scrollbar { width: 6px; }
-                    .modal-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
-                    .modal-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
                 `}
             </style>
 
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%)' }}>
-                
+
                 {/* HEADER */}
-                <div className="top-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 40px', height: '90px' }}>
-                    <div style={{ fontFamily: '"Instrument Serif", serif', fontSize: '48px', color: 'white', letterSpacing: '1px', fontStyle: 'italic', flex: 1 }}>
+                <div className="top-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', height: '45px' }}>
+                    <div style={{ fontFamily: '"Instrument Serif", serif', fontSize: '24px', color: 'white', letterSpacing: '1px', fontStyle: 'italic', flex: 1 }}>
                         My Designs
                     </div>
 
-                    <div className="search-bar" style={{ 
-                        flex: 2, maxWidth: '500px', display: 'flex', alignItems: 'center', 
-                        background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(5px)',
-                        padding: '10px 20px', borderRadius: '30px', margin: '0 20px', border: '1px solid rgba(255,255,255,0.2)'
+                    <div className="search-bar" style={{
+                        flex: 2, maxWidth: '250px', display: 'flex', alignItems: 'center',
+                        background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(3px)',
+                        padding: '5px 10px', borderRadius: '15px', margin: '0 10px', border: '1px solid rgba(255,255,255,0.2)'
                     }}>
-                        <img src="/img/search.png" alt="Search" style={{ width: '20px', opacity: 0.8 }} />
-                        <input 
+                        <img src="/img/search.png" alt="Search" style={{ width: '10px', opacity: 0.8 }} />
+                        <input
                             className="search-input"
-                            type="text" placeholder="Search here" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} 
-                            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', marginLeft: '10px', width: '100%', fontSize: '16px' }} 
+                            type="text" placeholder="Search here" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', marginLeft: '5px', width: '100%', fontSize: '8px' }}
                         />
                     </div>
 
-                    <div className="header-icons" style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '30px', alignItems: 'center' }}>
-                        {/* 🟢 UPDATED PROFILE ICON */}
-                        <img 
-                            src={navProfileImg} 
-                            alt="Profile" 
-                            className="nav-icon" 
-                            style={{ 
-                                cursor: 'pointer', width: '45px', height: '45px', 
-                                borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.3)' 
-                            }} 
+                    <div className="header-icons" style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '15px', alignItems: 'center' }}>
+                        {/* 🟢 PROFILE ICON */}
+                        <img
+                            src={navProfileImg}
+                            alt="Profile"
+                            className="nav-icon"
+                            style={{
+                                cursor: 'pointer', width: '23px', height: '23px',
+                                borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.3)'
+                            }}
                             onClick={() => navigate('/profile')}
                             onError={(e) => { (e.target as HTMLImageElement).src = "/img/profile-picture.png"; }}
                         />
-                        <img src="/img/notifi.png" className="nav-icon" alt="Notif" style={{ width: '25px', height: '25px' }} />
-                        <img 
-                            src="/img/logout.png" 
-                            className="nav-icon" 
-                            alt="Logout" 
+                        <img src="/img/notifi.png" className="nav-icon" alt="Notif" style={{ width: '13px', height: '13px' }} />
+                        <img
+                            src="/img/logout.png"
+                            className="nav-icon"
+                            alt="Logout"
                             onClick={handleLogout}
-                            style={{ width: '25px', height: '25px', cursor: 'pointer' }} 
+                            style={{ width: '13px', height: '13px', cursor: 'pointer' }}
                         />
                     </div>
                 </div>
 
                 {/* CONTENT */}
-                <div className="content-wrapper animate-load" style={{ padding: '40px', flex: 1, maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-                    
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                        <div style={{ fontSize: '16px', color: '#64748b', fontWeight: '500' }}>
+                <div className="content-wrapper animate-load" style={{ padding: '20px', flex: 1, maxWidth: '700px', margin: '0 auto', width: '100%' }}>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                        <div style={{ fontSize: '8px', color: '#64748b', fontWeight: '500' }}>
                             Showing <span style={{ fontWeight: '700', color: '#0f172a' }}>{filteredDesigns.length}</span> Results
                         </div>
-                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                            <span style={{ fontSize: '14px', color: '#64748b' }}>Sort by:</span>
-                            <select style={{ padding: '8px 15px', borderRadius: '20px', border: '1px solid #cbd5e1', background: 'white', color: '#0f172a', fontWeight: '600', cursor: 'pointer', outline: 'none' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ fontSize: '7px', color: '#64748b' }}>Sort by:</span>
+                            <select style={{ padding: '4px 8px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#0f172a', fontWeight: '600', cursor: 'pointer', outline: 'none' }}>
                                 <option>Newest First</option>
                                 <option>Price: Low to High</option>
                                 <option>Price: High to Low</option>
                             </select>
                         </div>
                     </div>
-                    
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '40px' }}>
-                        {filteredDesigns.map((design) => (
-                            <div key={design.id} className="design-card" style={{ background: 'white', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-                                <div style={{ height: '320px', background: '#f8fafc', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', overflow: 'hidden' }}>
-                                    <img 
-                                        src={design.image} 
-                                        alt="T-shirt" 
-                                        style={{ width: '100%', height: '100%', objectFit: 'contain', transform: `scale(${design.scale})`, filter: 'drop-shadow(0 15px 25px rgba(0,0,0,0.08))' }} 
+
+                    {/* PRODUCT GRID - UPDATED TO MATCH CUSTOMER COLLECTION */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
+                        {filteredDesigns.map((item) => (
+                            <div key={item.id} className="product-card design-card" style={{ background: 'white', padding: '8px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', position: 'relative' }}>
+
+                                {/* CLICKABLE IMAGE WRAPPER */}
+                                <div
+                                    onClick={() => handleNavigate(item)}
+                                    style={{
+                                        background: '#f8fafc',
+                                        borderRadius: '9px',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        marginBottom: '8px',
+                                        height: '170px',
+                                        alignItems: 'center',
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        padding: '8px'
+                                    }}
+                                >
+                                    <img
+                                        src={item.image}
+                                        alt={item.title}
+                                        style={{
+                                            maxWidth: '85%',
+                                            maxHeight: '85%',
+                                            objectFit: 'contain',
+                                            filter: 'drop-shadow(0 8px 13px rgba(0,0,0,0.08))'
+                                        }}
                                     />
                                 </div>
+
                                 <div style={{ padding: '0 5px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                                        <div style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}>
-                                            {design.title}
+                                    {/* Header: Brand & View Details */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '3px' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '6px', fontStyle: 'italic', color: '#94a3b8', marginBottom: '1px' }}>{userName}</div>
+                                            <h3
+                                                onClick={() => handleNavigate(item)}
+                                                style={{ fontSize: '13px', fontWeight: '800', margin: '0', color: '#1e293b', lineHeight: '1.2', cursor: 'pointer' }}
+                                            >
+                                                {item.title}
+                                            </h3>
                                         </div>
-                                        <div 
-                                            onClick={() => openModal(design)}
-                                            style={{ fontSize: '12px', fontStyle: 'italic', textDecoration: 'underline', color: '#64748b', cursor: 'pointer', marginTop: '4px' }}
+                                        <span
+                                            onClick={() => handleNavigate(item)}
+                                            style={{ fontSize: '6px', color: '#64748b', fontStyle: 'italic', textDecoration: 'underline', cursor: 'pointer', marginLeft: '5px' }}
                                         >
                                             View Details
-                                        </div>
+                                        </span>
                                     </div>
-                                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#ef4444', marginBottom: '15px', letterSpacing: '0.5px' }}>
-                                        LKR {design.price}
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '15px' }}>
-                                        <div style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>
-                                            Sales: {design.sales.toString().padStart(2, '0')}
+
+                                    {/* FOOTER: Price Left, Icons Right */}
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        borderTop: '1px solid #f1f5f9',
+                                        paddingTop: '8px',
+                                        marginTop: '6px'
+                                    }}>
+                                        {/* Formatted Price */}
+                                        <div style={{ fontSize: '9px', fontWeight: '900', color: '#ef4444' }}>
+                                            {typeof item.price === 'string' && item.price.includes('LKR') ? item.price : `LKR ${Number(item.price).toLocaleString()}.00`}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '15px' }}>
-                                            <img src="/img/heart.png" alt="Like" className="icon-btn" style={{ width: '22px', height: '22px' }} />
-                                            <img src="/img/cart.png" alt="Add to Cart" className="icon-btn" style={{ width: '22px', height: '22px' }} />
+
+                                        {/* Icons */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                <img src="/img/heart.png" alt="Likes" style={{ width: '9px', opacity: 0.6 }} />
+                                                <span style={{ fontSize: '6px', color: '#64748b', fontWeight: '700' }}>
+                                                    {item.likes}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                <img src="/img/cart.png" alt="Sales" style={{ width: '9px', opacity: 0.7 }} />
+                                                <span style={{ fontSize: '6px', color: '#64748b', fontWeight: '700' }}>
+                                                    {item.sales}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -214,44 +278,6 @@ const MyDesigns = () => {
                 </div>
                 <Footer />
             </div>
-
-            {/* PRODUCT DETAIL MODAL */}
-            {selectedDesign && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000, animation: 'fadeIn 0.2s ease-out', backdropFilter: 'blur(4px)' }}>
-                    <div className="modal-scroll" style={{ background: 'white', width: '1100px', height: '85vh', borderRadius: '20px', overflowY: 'auto', display: 'flex', animation: 'scaleUp 0.3s ease-out', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-                        <button onClick={() => setSelectedDesign(null)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'white', border: '1px solid #e2e8f0', width: '40px', height: '40px', borderRadius: '50%', fontSize: '24px', cursor: 'pointer', color: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>&times;</button>
-                        <div style={{ flex: 1, background: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', position: 'sticky', top: 0 }}>
-                            <img src={selectedDesign.image} alt={selectedDesign.title} style={{ width: '90%', maxHeight: '80%', objectFit: 'contain', transform: `scale(${selectedDesign.scale})`, filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.15))' }} />
-                        </div>
-                        <div style={{ flex: 1, padding: '50px', background: 'white' }}>
-                            <div style={{ fontSize: '13px', fontWeight: '700', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '10px' }}>Brand New Arrival</div>
-                            <h1 style={{ fontFamily: '"Instrument Serif", serif', fontSize: '48px', fontStyle: 'italic', marginBottom: '10px', lineHeight: '1', color: '#0f172a' }}>{selectedDesign.title}</h1>
-                            <div style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', marginBottom: '30px' }}>LKR {selectedDesign.price.toLocaleString()}.00</div>
-                            <p style={{ fontSize: '16px', color: '#475569', lineHeight: '1.7', marginBottom: '30px' }}>{selectedDesign.description}</p>
-                            <div style={{ marginBottom: '25px' }}>
-                                <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '10px', color: '#1e293b' }}>Colors</div>
-                                <div style={{ display: 'flex', gap: '15px' }}>
-                                    {['#000000', '#ffffff', '#1e293b', '#64748b', '#ef4444'].map((c) => (
-                                        <div key={c} onClick={() => setSelectedColor(c)} style={{ width: '32px', height: '32px', borderRadius: '50%', background: c, border: selectedColor === c ? '2px solid #0f172a' : '1px solid #e2e8f0', cursor: 'pointer', transform: selectedColor === c ? 'scale(1.1)' : 'scale(1)', transition: 'all 0.2s' }}></div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div style={{ marginBottom: '40px' }}>
-                                <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '10px', color: '#1e293b' }}>Sizes</div>
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((s) => (
-                                        <div key={s} onClick={() => setSelectedSize(s)} style={{ width: '45px', height: '45px', border: selectedSize === s ? '2px solid #0f172a' : '1px solid #e2e8f0', background: selectedSize === s ? '#0f172a' : 'white', color: selectedSize === s ? 'white' : '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '600', cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s' }}>{s}</div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: '20px', marginBottom: '40px' }}>
-                                <button style={{ flex: 1, padding: '18px', background: 'white', color: '#0f172a', border: '2px solid #0f172a', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: 'pointer' }}>Add to Cart</button>
-                                <button style={{ flex: 1, padding: '18px', background: '#0f172a', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: 'pointer' }}>Buy Now</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

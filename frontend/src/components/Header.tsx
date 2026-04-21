@@ -90,65 +90,65 @@ const Header: React.FC<HeaderProps> = ({ mode = 'search', title = "Cre8tify" }) 
 // --- STYLES (Keeping your requested Industrial "MAX" tweaks) ---
 const headerStyle: React.CSSProperties = {
     background: '#0d375b',
-    padding: '45px 3%', 
+    padding: '22px 3%', 
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
     boxSizing: 'border-box',
     zIndex: 1000,
-    marginBottom: '-140px',
+    marginBottom: '0px',
     position: 'relative' 
 };
 
 const backContainer: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: '5px',
     cursor: 'pointer',
-    minWidth: '100px'
+    minWidth: '50px'
 };
 
 const backIconStyle: React.CSSProperties = {
-    width: '25px',
+    width: '13px',
     filter: 'invert(1)' 
 };
 
 const backTextStyle: React.CSSProperties = {
     color: '#fff',
     fontWeight: 700,
-    fontSize: '22px' // Kept your size
+    fontSize: '11px' // Kept your size
 };
 
 const centerSection: React.CSSProperties = {
     flex: 3, 
     display: 'flex',
     justifyContent: 'center',
-    padding: '0 40px'
+    padding: '0 20px'
 };
 
 const searchWrapper: React.CSSProperties = {
     position: 'relative',
     width: '80%', 
-    maxWidth: '1100px' 
+    maxWidth: '450px' 
 };
 
 const searchIconInside: React.CSSProperties = {
     position: 'absolute',
-    left: '25px',
+    left: '13px',
     top: '50%',
     transform: 'translateY(-50%)',
-    width: '22px',
+    width: '11px',
     filter: 'invert(0)',
     opacity: 0.8
 };
 
 const maxSearchInput: React.CSSProperties = {
     width: '100%',
-    padding: '18px 30px 18px 65px',
-    borderRadius: '80px', 
+    padding: '9px 15px 9px 33px',
+    borderRadius: '40px', 
     border: 'none',
-    fontSize: '18px',
+    fontSize: '9px',
     background: 'rgba(255,255,255,0.12)',
     color: '#fff',
     outline: 'none',
@@ -157,30 +157,30 @@ const maxSearchInput: React.CSSProperties = {
 
 const pageTitleStyle: React.CSSProperties = {
     color: '#fff',
-    fontSize: '34px',
+    fontSize: '17px',
     fontWeight: 900,
     margin: 0
 };
 
 const iconGroupStyle: React.CSSProperties = {
     display: 'flex',
-    gap: '40px', 
+    gap: '20px', 
     alignItems: 'center',
     justifyContent: 'flex-end'
 };
 
 const profileIconStyle: React.CSSProperties = {
-    width: '55px', // Increased to match your visual preference
-    height: '55px',
+    width: '28px', // Increased to match your visual preference
+    height: '28px',
     borderRadius: '50%',
     cursor: 'pointer',
     objectFit: 'cover',
-    border: '2px solid rgba(255,255,255,0.3)'
+    border: '1px solid rgba(255,255,255,0.3)'
 };
 
 const utilityIcon: React.CSSProperties = {
-    width: '45px', 
-    height: '45px',
+    width: '23px', 
+    height: '23px',
     filter: 'invert(0)', 
     cursor: 'pointer'
 };
@@ -193,11 +193,11 @@ const dotBadge: React.CSSProperties = {
     position: 'absolute',
     top: '0px',
     right: '0px',
-    width: '12px',
-    height: '12px',
+    width: '6px',
+    height: '6px',
     background: '#ff4757',
     borderRadius: '50%',
-    border: '2px solid #0d375b'
+    border: '1px solid #0d375b'
 };
 
 export default Header;

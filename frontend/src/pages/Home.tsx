@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/home.css'; 
+import '../styles/home.css';
 import Footer from '../components/Footer';
 
 const Home = () => {
@@ -8,20 +8,20 @@ const Home = () => {
 
     return (
         <div className="home-container">
-            
+
             {/* --- HERO SECTION --- */}
             <div className="hero-section">
-                
+
                 {/* LEFT SIDE */}
                 <div className="hero-left">
                     <div className="left-content-wrapper">
-                       
+
                         <div className="logo-section">
-                            <img src="/img/logo.png" alt="Cre8tify Logo" /> 
+                            <img src="/img/logo.png" alt="Cre8tify Logo" />
                         </div>
 
                         {/* Text Content */}
-                        <div className="hero-text-box"style={{ marginTop: '60px'}}>
+                        <div className="hero-text-box" style={{ marginTop: '30px' }}>
                             <div className="hero-headline">
                                 Your own, <span className="highlight-text">all-in-one web application</span> for <br />
                                 custom t-shirt designing and buying in <br />
@@ -54,23 +54,23 @@ const Home = () => {
                         <h2>WELCOME TO CRE8TIFY</h2>
                         <span className="slogan">The only platform where you can virtually fit your design before you purchase.</span>
 
-                        
+
                         <label>Login as a:</label>
-                        
+
                         <button className="btn-primary" onClick={() => navigate('/login', { state: { role: 'buyer' } })}>
                             CUSTOMER LOGIN
                         </button>
 
-                        <button 
-                            className="btn-primary" 
-                            style={{ background: 'white', color: '#0d375b', border: '2px solid #0d375b', marginTop: '20px' }}
+                        <button
+                            className="btn-primary"
+                            style={{ background: 'white', color: '#0d375b', border: '1px solid #0d375b', marginTop: '10px' }}
                             onClick={() => navigate('/login', { state: { role: 'designer' } })}
                         >
                             Designer Login
                         </button>
 
                         <div className="sign-up-link">
-                            New to Cre8tify? <span onClick={() => window.scrollTo({ top: 800, behavior: 'smooth' })}>Scroll down to Sign Up</span>
+                            New to Cre8tify? <span onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}>Scroll down to Sign Up</span>
                         </div>
                     </div>
 
@@ -88,8 +88,8 @@ const Home = () => {
                     <img src="/img/about.png" alt="Fabric Texture" className="about-bg-image" />
                     <div className="glass-overlay">
                         <p>
-                            Cre8tify is a Sri Lankan custom t-shirt designing platform made for both buyers and designers. 
-                            Our goal is to give a simple, creative and local-friendly place where anyone can design, customize or purchase t-shirts 
+                            Cre8tify is a Sri Lankan custom t-shirt designing platform made for both buyers and designers.
+                            Our goal is to give a simple, creative and local-friendly place where anyone can design, customize or purchase t-shirts
                             without facing global restrictions, high costs or complicated payment methods.
                             <br /><br />
                             We support young designers who want to showcase their creativity, and we support buyers who love unique, personalized clothing.
@@ -180,7 +180,7 @@ const Home = () => {
                     <div className="purpose-header">
                         <span className="star">★</span> Why Cre8tify Is Different ?
                     </div>
-                    <ul className="purpose-list" style={{ marginTop: '50px' }}>
+                    <ul className="purpose-list" style={{ marginTop: '25px' }}>
                         <li>100% Sri Lankan-focused platform</li>
                         <li>Local payment methods</li>
                         <li>No global fees or PayPal restrictions</li>

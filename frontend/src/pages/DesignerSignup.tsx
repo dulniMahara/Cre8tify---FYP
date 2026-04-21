@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 const initialFormState = {
   name: '',
   username: '',
-  email: '',
+  email: '',  
   contact: '',
   password: '',
   confirmPassword: '',
@@ -72,11 +72,11 @@ export default function DesignerSignup() {
   };
 
   const fillingBarStyle: React.CSSProperties = {
-    border: '2px solid #475569', 
+    border: '1px solid #475569', 
     background: '#f8fafc', 
-    borderRadius: '16px',
-    padding: '20px', 
-    fontSize: '22px', 
+    borderRadius: '8px',
+    padding: '10px', 
+    fontSize: '11px', 
     width: '100%',
     outline: 'none',
     color: '#0d375b', 
@@ -86,7 +86,7 @@ export default function DesignerSignup() {
 
   const eyeIconStyle: React.CSSProperties = {
     position: 'absolute',
-    right: '20px',
+    right: '10px',
     top: '50%',
     transform: 'translateY(-50%)',
     cursor: 'pointer',
@@ -99,7 +99,7 @@ export default function DesignerSignup() {
     <>
       <style>{`
         @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(30px); }
+          from { opacity: 0; transform: translateY(15px); }
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes fadeInScale {
@@ -131,47 +131,47 @@ export default function DesignerSignup() {
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
-            padding: '40px', 
+            padding: '20px', 
             background: '#fcfcfc',
             overflowX: 'auto',
             minWidth: '0'
         }}>
           <div className="blue-card-container" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
             <div className="white-form-card" style={{ 
-                width: '1000px', 
-                minWidth: '1000px',
-                padding: '40px 40px', 
-                borderRadius: '40px',
+                width: '500px', 
+                minWidth: '500px',
+                padding: '20px 20px', 
+                borderRadius: '20px',
                 background: '#fff',
                 margin:'auto',
-                boxShadow: '0 25px 70px rgba(0,0,0,0.07)'
+                boxShadow: '0 13px 35px rgba(0,0,0,0.07)'
             }}>
 
-              <h2 className="form-title" style={{ fontSize: '42px', marginBottom: '40px', textAlign: 'center', fontWeight: '900', color: '#0d375b' }}>
+              <h2 className="form-title" style={{ fontSize: '21px', marginBottom: '20px', textAlign: 'center', fontWeight: '900', color: '#0d375b' }}>
                   DESIGNER APPLICATION
               </h2>
               
               <form onSubmit={handleSignup} autoComplete="off">
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '30px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
                     <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '22px', color: '#0d375b', marginBottom: '10px', display: 'block' }}>Full Name</label>
+                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Full Name</label>
                       <input type="text" name="name" value={formData.name} onChange={handleChange} style={fillingBarStyle} required autoComplete="off" />
                     </div>
                     <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '22px', color: '#0d375b', marginBottom: '10px', display: 'block' }}>Username</label>
+                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Username</label>
                       <input type="text" name="username" value={formData.username} onChange={handleChange} style={fillingBarStyle} required autoComplete="off" />
                     </div>
                     <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '22px', color: '#0d375b', marginBottom: '10px', display: 'block' }}>Email Address</label>
+                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Email Address</label>
                       <input type="email" name="email" value={formData.email} onChange={handleChange} style={fillingBarStyle} required />
                     </div>
                     <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '22px', color: '#0d375b', marginBottom: '10px', display: 'block' }}>Contact Number</label>
+                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Contact Number</label>
                       <input type="text" name="contact" value={formData.contact} onChange={handleChange} style={fillingBarStyle} />
                     </div>
 
                     <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '22px', color: '#0d375b', marginBottom: '10px', display: 'block' }}>Password</label>
+                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Password</label>
                       <div style={{ position: 'relative' }}>
                         <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} style={fillingBarStyle} required autoComplete="new-password" />
                         <div style={eyeIconStyle} onClick={() => setShowPassword(!showPassword)}>
@@ -181,7 +181,7 @@ export default function DesignerSignup() {
                     </div>
 
                     <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '22px', color: '#0d375b', marginBottom: '10px', display: 'block' }}>Confirm Password</label>
+                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Confirm Password</label>
                       <div style={{ position: 'relative' }}>
                         <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} style={fillingBarStyle} required />
                         <div style={eyeIconStyle} onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
@@ -191,35 +191,35 @@ export default function DesignerSignup() {
                     </div>
 
                     <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '22px', color: '#0d375b', marginBottom: '10px', display: 'block' }}>Shop Name</label>
+                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Shop Name</label>
                       <input type="text" name="shopName" value={formData.shopName} onChange={handleChange} style={fillingBarStyle} />
                     </div>
                     <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '22px', color: '#0d375b', marginBottom: '10px', display: 'block' }}>Portfolio Link</label>
+                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Portfolio Link</label>
                       <input type="text" name="portfolio" value={formData.portfolio} onChange={handleChange} style={fillingBarStyle} />
                     </div>
                 </div>
 
-                <div className="form-group" style={{ marginBottom: '35px' }}>
-                  <label style={{ fontWeight: '800', fontSize: '22px', color: '#0d375b', marginBottom: '10px', display: 'block' }}>Description</label>
-                  <textarea name="description" value={formData.description} onChange={handleChange} style={{ ...fillingBarStyle, minHeight: '160px', resize: 'vertical' }}></textarea>
+                <div className="form-group" style={{ marginBottom: '18px' }}>
+                  <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Description</label>
+                  <textarea name="description" value={formData.description} onChange={handleChange} style={{ ...fillingBarStyle, minHeight: '80px', resize: 'vertical' }}></textarea>
                 </div>
 
-                <div className="checkbox-group" style={{ marginBottom: '35px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <input type="checkbox" id="terms" required style={{ width: '20px', height: '20px' }} />
-                  <label htmlFor="terms" style={{ margin: 0, fontWeight: 600, fontSize: '22px', color: '#64748b' }}>
+                <div className="checkbox-group" style={{ marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input type="checkbox" id="terms" required style={{ width: '10px', height: '10px' }} />
+                  <label htmlFor="terms" style={{ margin: 0, fontWeight: 600, fontSize: '11px', color: '#64748b' }}>
                     I agree to the Terms & Conditions
                   </label>
                 </div>
 
                 <button type="submit" className="btn-signup" style={{ 
-                    width: '100%', padding: '22px', fontSize: '24px', fontWeight: '900', borderRadius: '20px', backgroundColor: '#0d375b', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 15px 35px rgba(13, 55, 91, 0.3)'
+                    width: '100%', padding: '11px', fontSize: '12px', fontWeight: '900', borderRadius: '10px', backgroundColor: '#0d375b', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 8px 18px rgba(13, 55, 91, 0.3)'
                 }}>
                   SIGN UP
                 </button>
               </form>
 
-              <div className="login-redirect" style={{ marginTop: '30px', textAlign: 'center', fontSize: '18px' }}>
+              <div className="login-redirect" style={{ marginTop: '15px', textAlign: 'center', fontSize: '9px' }}>
                 <span style={{ color: '#64748b' }}>Already have an account? </span>
                 <Link to="/login" state={{ role: 'designer' }} style={{ color: '#0d375b', fontWeight: '800', textDecoration: 'none' }}>Login here</Link>
               </div>

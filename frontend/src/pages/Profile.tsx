@@ -177,46 +177,64 @@ export default function Profile() {
                     </div>
                 </header>
 
-                <div className="content-wrapper" style={{ padding: '60px', background: '#f8fafc' }}>
+                <div 
+                    className="content-wrapper" 
+                    style={{ 
+                        padding: '24px',
+                        background: '#f8fafc',
+                        width: '100%',
+                        boxSizing: 'border-box'
+                    }}
+                >
                     <div style={{ marginBottom: '40px' }}>
-                        <h1 style={{ fontFamily: '"Instrument Serif", serif', fontSize: '48px', color: '#0d375b', margin: 0 }}>
+                        <h1 style={{ fontFamily: '"Instrument Serif", serif', fontSize: '32px', color: '#0d375b', margin: 0 }}>
                             My Profile
                         </h1>
-                        <p style={{ color: '#64748b', fontSize: '18px' }}>Manage your personal information and preferences.</p>
+                        <p style={{ color: '#64748b', fontSize: '14px' }}>Manage your personal information and preferences.</p>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
-                        <div style={{ flex: 2, background: 'white', padding: '40px', borderRadius: '30px', boxShadow: '0 20px 50px rgba(13, 55, 91, 0.1)' }}>
+                    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start',  flexWrap: 'wrap'  }}>
+                        <div 
+                            style={{ 
+                                flex: '2 1 600px',   // 👈 responsive behavior
+                                width: '100%',
+                                maxWidth: '800px',
+                                background: 'white', 
+                                padding: '24px', 
+                                borderRadius: '16px',
+                                boxShadow: '0 10px 30px rgba(13, 55, 91, 0.08)' 
+                            }}
+                        >
                             <form onSubmit={handleUpdate}>
-                                <h2 style={{ marginBottom: '30px', color: '#0d375b', borderBottom: '2px solid #e2e8f0', paddingBottom: '15px', fontSize: '32px', fontWeight: '700' }}>
+                                <h2 style={{ marginBottom: '20px', color: '#0d375b', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', fontSize: '22px', fontWeight: '700' }}>
                                     Personal Details
                                 </h2>
                                 
                                 <div className="form-grid-2-col">
                                     <div className="form-group">
-                                        <label style={{ fontSize: '22px', fontWeight: '600' }}>Full Name</label>
-                                        <input type="text" name="name" className="form-input" value={formData.name} onChange={handleChange} style={{ height: '60px', fontSize: '18px' }} />
+                                        <label style={{ fontSize: '14px', fontWeight: '600' }}>Full Name</label>
+                                        <input type="text" name="name" className="form-input" value={formData.name} onChange={handleChange} style={{ height: '40px', fontSize: '14px' }} />
                                     </div>
                                     <div className="form-group">
-                                        <label style={{ fontSize: '22px', fontWeight: '600' }}>Email Address</label>
-                                        <input type="email" className="form-input" value={formData.email} disabled style={{ background: '#f1f5f9', cursor: 'not-allowed', height: '60px', fontSize: '18px' }} />
+                                        <label style={{ fontSize: '14px', fontWeight: '600' }}>Email Address</label>
+                                        <input type="email" className="form-input" value={formData.email} disabled style={{ background: '#f1f5f9', cursor: 'not-allowed', height: '40px', fontSize: '14px' }} />
                                     </div>
                                 </div>
 
                                 <div className="form-group">
-                                    <label style={{ fontSize: '22px', fontWeight: '600' }}>Contact Number</label>
-                                    <input type="text" name="phone" className="form-input" value={formData.phone} onChange={handleChange} style={{ height: '60px', fontSize: '18px' }} />
+                                    <label style={{ fontSize: '14px', fontWeight: '600' }}>Contact Number</label>
+                                    <input type="text" name="phone" className="form-input" value={formData.phone} onChange={handleChange} style={{ height: '40px', fontSize: '14px' }} />
                                 </div>
 
                                 {userRole === 'buyer' && (
                                     <>
                                         <div className="form-group">
-                                            <label style={{ fontSize: '22px', fontWeight: '600' }}>Default Shipping Address</label>
-                                            <input type="text" name="address" className="form-input" value={formData.address} onChange={handleChange} style={{ height: '60px', fontSize: '18px' }} />
+                                            <label style={{ fontSize: '14px', fontWeight: '600' }}>Default Shipping Address</label>
+                                            <input type="text" name="address" className="form-input" value={formData.address} onChange={handleChange} style={{ height: '40px', fontSize: '14px' }} />
                                         </div>
                                         <div className="form-group">
-                                            <label style={{ fontSize: '22px', fontWeight: '600' }}>Primary Interest</label>
-                                            <input type="text" name="interest" className="form-input" value={formData.interest} onChange={handleChange} style={{ height: '60px', fontSize: '18px' }} />
+                                            <label style={{ fontSize: '14px', fontWeight: '600' }}>Primary Interest</label>
+                                            <input type="text" name="interest" className="form-input" value={formData.interest} onChange={handleChange} style={{ height: '40px', fontSize: '14px' }} />
                                         </div>
                                     </>
                                 )}
@@ -224,11 +242,11 @@ export default function Profile() {
                                 {userRole === 'designer' && (
                                     <>
                                         <div className="form-group">
-                                            <label style={{ fontSize: '22px', fontWeight: '600' }}>Shop Name</label>
-                                            <input type="text" name="shopName" className="form-input" value={formData.shopName} onChange={handleChange} style={{ height: '60px', fontSize: '18px' }} />
+                                            <label style={{ fontSize: '14px', fontWeight: '600' }}>Shop Name</label>
+                                            <input type="text" name="shopName" className="form-input" value={formData.shopName} onChange={handleChange} style={{ height: '40px', fontSize: '14px' }} />
                                         </div>
                                         <div className="form-group">
-                                            <label style={{ fontSize: '22px', fontWeight: '600' }}>Portfolio Link</label>
+                                            <label style={{ fontSize: '14px', fontWeight: '600' }}>Portfolio Link</label>
                                             <input 
                                                 type="url" 
                                                 name="portfolio" 
@@ -236,25 +254,32 @@ export default function Profile() {
                                                 value={formData.portfolio} 
                                                 onChange={handleChange} 
                                                 placeholder="https://yourportfolio.com"
-                                                style={{ height: '60px', fontSize: '18px' }} 
+                                                style={{ height: '40px', fontSize: '14px' }} 
                                             />
                                         </div>
                                         <div className="form-group">
-                                            <label style={{ fontSize: '22px', fontWeight: '600' }}>About Me (Bio)</label>
-                                            <textarea name="bio" className="form-input" rows={4} value={formData.bio} onChange={handleChange} style={{ resize: 'none', fontSize: '18px', padding: '15px' }} />
+                                            <label style={{ fontSize: '14px', fontWeight: '600' }}>About Me (Bio)</label>
+                                            <textarea name="bio" className="form-input" rows={4} value={formData.bio} onChange={handleChange} style={{ resize: 'none', fontSize: '14px', padding: '12px' }} />
                                         </div>
                                     </>
                                 )}
 
-                                <button type="submit" className="btn-signup" style={{ marginTop: '30px', width: '100%', height: '70px', fontSize: '22px', borderRadius: '15px', fontWeight: 'bold' }}>
+                                <button type="submit" className="btn-signup" style={{ marginTop: '20px', width: '100%', height: '48px', fontSize: '16px', borderRadius: '8px', fontWeight: 'bold' }}>
                                     UPDATE MY PROFILE
                                 </button>
                             </form>
                         </div>
 
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '30px' }}>
-                            <div style={{ background: 'white', padding: '40px 30px', borderRadius: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(13, 55, 91, 0.05)' }}>
-                                <div style={{ position: 'relative', width: '160px', height: '160px', margin: '0 auto 25px' }}>
+                        <div style={{ 
+                            flex: '1 1 300px',   // 👈 responsive width
+                            width: '100%',
+                            maxWidth: '350px',
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: '24px' 
+                        }}>
+                            <div style={{ background: 'white', padding: '32px 24px', borderRadius: '16px', textAlign: 'center', boxShadow: '0 10px 30px rgba(13, 55, 91, 0.05)' }}>
+                                <div style={{ position: 'relative', width: '120px', height: '120px', margin: '0 auto 20px' }}>
                                     
                                     <img 
                                         src={formData.profileImage 
@@ -284,8 +309,8 @@ export default function Profile() {
                                         <img src="/img/search.png" style={{ width: '18px', filter: 'brightness(0) saturate(100%) invert(13%) sepia(35%)' }} alt="edit" />
                                     </button>
                                 </div>
-                                <h3 style={{ margin: '0 0 5px 0', color: '#0d375b', fontSize: '24px' }}>{formData.name}</h3>
-                                <p style={{ color: '#64748b', fontSize: '16px', fontWeight: '600', letterSpacing: '1px', marginBottom: '10px' }}>{userRole.toUpperCase()}</p>
+                                <h3 style={{ margin: '0 0 5px 0', color: '#0d375b', fontSize: '18px' }}>{formData.name}</h3>
+                                <p style={{ color: '#64748b', fontSize: '12px', fontWeight: '600', letterSpacing: '1px', marginBottom: '8px' }}>{userRole.toUpperCase()}</p>
                                 
                                 {/* 🟢 REMOVE PHOTO BUTTON */}
                                 {formData.profileImage && (
@@ -303,17 +328,17 @@ export default function Profile() {
                                 )}
                             </div>
 
-                            <div style={{ background: '#0d375b', padding: '40px 35px', borderRadius: '30px', color: 'white', minHeight: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <h4 style={{ margin: '0 0 25px 0', fontSize: '24px', opacity: 0.9, fontWeight: '700', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '10px' }}>
+                            <div style={{ background: '#0d375b', padding: '32px 24px', borderRadius: '16px', color: 'white', minHeight: '180px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <h4 style={{ margin: '0 0 20px 0', fontSize: '18px', opacity: 0.9, fontWeight: '700', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '10px' }}>
                                     {userRole === 'designer' ? 'Sales Performance' : 'Activity Overview'}
                                 </h4>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '20px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '14px' }}>
                                     <span>{userRole === 'designer' ? 'Published Designs' : 'Wishlist Items'}</span>
-                                    <strong style={{ fontSize: '24px' }}>{userRole === 'designer' ? '08' : '12'}</strong>
+                                    <strong style={{ fontSize: '18px' }}>{userRole === 'designer' ? '08' : '12'}</strong>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                                     <span>{userRole === 'designer' ? 'Total Sales' : 'Total Orders'}</span>
-                                    <strong style={{ fontSize: '24px' }}>{userRole === 'designer' ? '24' : '04'}</strong>
+                                    <strong style={{ fontSize: '18px' }}>{userRole === 'designer' ? '24' : '04'}</strong>
                                 </div>
                             </div>
                         </div>
