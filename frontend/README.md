@@ -1,46 +1,96 @@
-# Getting Started with Create React App
+# Cre8tify 🎨
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Cre8tify is a web-based platform that allows users to design and preview custom T-shirts with ease.
+It provides an interactive design tool where users can create and visualize their ideas in real time.
+The system supports both buyers and designers with role-based features and personalized experiences.
+Users can view their designs across multiple T-shirt mockups to ensure accurate placement and appearance.
+Cre8tify aims to make custom apparel design simple, accessible, and user-friendly for everyone.
 
-## Available Scripts
 
-In the project directory, you can run:
+## 🚀 Features
 
-### `npm start`
+* 🎨 Interactive T-shirt Design Tool
+* 👤 User Authentication (Buyer & Designer roles)
+* 🖼️ Live Design Preview on Mockups
+* 📦 Profile Management
+* 🛍️ Wishlist & Order Tracking (Buyers)
+* 🧵 Design Upload & Sales Tracking (Designers)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## 🖥️ Tech Stack
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+* Frontend: React, TypeScript, CSS
+* Backend: Node.js, Express
+* Database: MongoDB
+* Version Control: Git & GitHub
 
-### `npm test`
+## 📂 Project Structure
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+* `/frontend` – React frontend
+* `/backend` – Node.js backend
 
-### `npm run build`
+## ⚙️ Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Clone the repository
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+git clone https://github.com/dulniMahara/Cre8tify---FYP.git
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+2. Navigate into the project
 
-### `npm run eject`
+```bash
+cd cre8tify
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+3. Install dependencies
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Frontend:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+```bash
+cd frontend
+npm install
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Backend:
 
-## Learn More
+```bash
+cd backend
+npm install
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+4. Run the application
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Frontend:
+
+```bash
+npm start
+```
+
+Backend:
+
+```bash
+npm run dev
+```
+
+## 📸 Preview Feature
+
+Cre8tify provides advanced preview capabilities to help users visualize their designs before making a purchase:
+
+* **Live Preview** – Users can upload their own image and view how the selected T-shirt design appears on their body in real time, giving a more personalized and realistic experience.
+
+* **360° Dummy Preview** – Users can select a dummy figure based on their gender and view the T-shirt design from multiple angles, allowing them to better understand the overall look and fit.
+
+These preview features ensure accurate placement, scaling, and a more confident purchasing decision.
+
+
+## 🧪 Future Improvements
+
+* Payment Integration
+* Order Management System
+* Advanced Design Tools
+* Mobile Optimization
+
+## 👩‍💻 Author
+
+Dulni Mahara
+Final Year Project – 2026

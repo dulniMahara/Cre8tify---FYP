@@ -531,6 +531,7 @@
     color: white;
     border-color: #dc2626;
 }
+
 /* Responsive Preview Layout */
 .preview-layout-container {
     display: flex;
@@ -564,10 +565,12 @@
         flex-direction: column;
         overflow-y: auto;
     }
+
     .preview-main-area {
         height: 50vh;
         flex: none;
     }
+
     .preview-sidebar {
         width: 100%;
         border-left: none;
