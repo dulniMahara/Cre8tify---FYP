@@ -22,9 +22,9 @@ connectDB();
 
 const port = process.env.PORT || 5000;
 
-// 3. Body Parsers
-app.use(express.json()); 
-app.use(express.urlencoded({ extended: false }));
+// 3. Body Parsers - set limits high for base64 mockup images
+app.use(express.json({ limit: '50mb' })); 
+app.use(express.urlencoded({ limit: '50mb', extended: false }));
 
 // 4. Static Folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -39,6 +39,8 @@ app.use('/api/base-products', require('./routes/baseProductRoutes'));
 app.use('/api/products', productRoutes);
 app.use('/api/cutout', cutoutRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/tryon', require('./routes/tryonRoutes'));
+
 
 
 app.get('/', (req, res) => {
@@ -84,4 +86,7 @@ app.post('/api/cutout', uploadMemory.single('image'), async (req, res) => {
         console.error("AI Cutout Error:", error);
         res.status(500).send("AI processing failed. Check server memory.");
     }
-});
+});// trigger restart
+
+
+//app.get('/test-ping', (req, res) => res.json({ status: 'ok' }));

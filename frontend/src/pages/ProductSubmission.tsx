@@ -1,30 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import ReactQuill from 'react-quill-new'; 
+import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
 import Sidebar from '../components/Sidebar';
-import '../styles/dashboard.css'; 
+import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000";
 
 // --- HELPERS ---
 const VARIANT_COLORS = [
-    { name: "White", hex: "#ffffff" },
-    { name: "Black", hex: "#000000" },
-    { name: "Athletic Heather", hex: "#cfcfcf" }, 
-    { name: "Dark Grey", hex: "#555555" },
-    { name: "Navy", hex: "#000080" },
-    { name: "Red", hex: "#d32f2f" },
-    { name: "Royal Blue", hex: "#1565c0" },
-    { name: "Maroon", hex: "#800000" },
-    { name: "Forest Green", hex: "#228b22" },
-    { name: "Gold", hex: "#ffd700" },
+    { name: 'White', hex: '#FFFFFF', gradient: 'linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%)', isAvailable: true },
+    { name: 'Kiwi', hex: '#8fa749', gradient: 'linear-gradient(135deg, #a4be54 0%, #8fa749 100%)', isAvailable: true },
+    { name: 'Yellow Haze', hex: '#fadfa6', gradient: 'linear-gradient(135deg, #fff2cc 0%, #fadfa6 100%)', isAvailable: true },
+    { name: 'Cornsilk', hex: '#f7ef8f', gradient: 'linear-gradient(135deg, #fffbc7 0%, #f7ef8f 100%)', isAvailable: true },
+    { name: 'Light Blue', hex: '#d6e6f7', gradient: 'linear-gradient(135deg, #ebf4ff 0%, #d6e6f7 100%)', isAvailable: true },
+    { name: 'Light Pink', hex: '#fee0eb', gradient: 'linear-gradient(135deg, #fff0f6 0%, #fee0eb 100%)', isAvailable: true },
+    { name: 'Charcoal', hex: '#2C2C2C', gradient: 'linear-gradient(135deg, #434343 0%, #2C2C2C 100%)', isAvailable: true },
+    { name: 'Khaki', hex: '#F0E68C', gradient: 'linear-gradient(135deg, #f0e68c 0%, #e6d96a 100%)', isAvailable: true },
+    { name: 'Baby Blue', hex: '#E0FFFF', gradient: 'linear-gradient(135deg, #e0ffff 0%, #c7f2f2 100%)', isAvailable: true },
+    { name: 'Lavender', hex: '#E6E6FA', gradient: 'linear-gradient(135deg, #e6e6fa 0%, #d8d8f5 100%)', isAvailable: true },
+    { name: 'Beige', hex: '#F5F5DC', gradient: 'linear-gradient(135deg, #f5f5dc 0%, #e8e8c8 100%)', isAvailable: true },
+    { name: 'Standard Grey', hex: '#808080', gradient: 'linear-gradient(135deg, #a3a3a3 0%, #808080 100%)', isAvailable: true },
+    { name: 'Silver', hex: '#C0C0C0', gradient: 'linear-gradient(135deg, #e0e0e0 0%, #c0c0c0 100%)', isAvailable: true },
+    { name: 'Light Salmon', hex: '#FFA07A', gradient: 'linear-gradient(135deg, #ffa07a 0%, #f08d66 100%)', isAvailable: true },
+    { name: 'Sky Blue', hex: '#87CEFA', gradient: 'linear-gradient(135deg, #87cefa 0%, #70b0e0 100%)', isAvailable: true },
+    { name: 'Pale Turquoise', hex: '#AFEEEE', gradient: 'linear-gradient(135deg, #afeeee 0%, #96dede 100%)', isAvailable: true },
+    { name: 'Plum Light', hex: '#DDA0DD', gradient: 'linear-gradient(135deg, #dda0dd 0%, #c68dc6 100%)', isAvailable: true },
+    { name: 'Mint Green', hex: '#98FB98', gradient: 'linear-gradient(135deg, #98fb98 0%, #7ee07e 100%)', isAvailable: true }
 ];
 
 const getColorName = (hex: string) => {
     if (!hex) return "Default White";
-    const color = VARIANT_COLORS.find((c: { name: string, hex: string }) => 
+    const color = VARIANT_COLORS.find((c: { name: string, hex: string }) =>
         c.hex.toLowerCase() === hex.toLowerCase()
     );
     return color ? color.name : "Custom Color";
@@ -49,18 +57,50 @@ const ProductSubmission = () => {
         productType = 'Boxy T-shirt',
         tshirtColor = '#ffffff',
         canvasState = { imageLayers: [], textLayers: [] },
-        frontMockup = "/img/womenfront-mockup.png",
-        frontPrintArea = { top: '50%', left: '50%', width: '25%', height: '40%', rotation: 0 },
+
+        // Design Snapshots
         frontDesign = fallbackSnapshots.frontDesign || "",
+        backDesign = fallbackSnapshots.backDesign || "",
+        neckDesign = fallbackSnapshots.neckDesign || "",
+        foldedDesign = fallbackSnapshots.foldedDesign || "",
+
+        // Mockups
+        frontMockup = "/img/womenfront-mockup.png",
+        backMockup = "/img/womenback-mockup.png",
+        neckMockup = "/img/mockups/collar.png",
         foldedMockup = "/img/mockups/folded.png",
         foldedMask = "/img/mockups/foldedmask.png",
+
+        // Print Areas (passed from MOCKUP_CONFIG)
+        frontPrintArea = { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 },
+        backPrintArea = { top: '35%', left: '50%', width: '45%', height: '22%', rotation: 0 },
+        neckPrintArea = { top: '70%', left: '60%', width: '35%', height: '25%', rotation: 0 },
+        foldedPrintArea = { top: '56%', left: '46%', width: '30%', height: '42%', rotation: 5 },
+
+        // Scaling Helpers
+        frontPrintAreaPx = fallbackSnapshots.frontPrintAreaPx || null,
+        neckPrintAreaPx = fallbackSnapshots.neckPrintAreaPx || null,
+        foldedPrintAreaPx = fallbackSnapshots.foldedPrintAreaPx || null,
+        backPrintAreaPx = fallbackSnapshots.backPrintAreaPx || null,
+
+        frontDesignScale = 1.0,
+        neckDesignScale = 1.3,
+        foldedDesignScale = 0.9,
+        backDesignScale = 1.0,
+
+        frontAreaScale = 1.0,
+        neckAreaScale = 1.0,
+        foldedAreaScale = 1.0,
+        backAreaScale = 1.0,
+
+        editorMockupScale = 1,
         foldedMaskPosition = "center",
         foldedMaskSize = "contain",
-        foldedPrintArea = { top: '56%', left: '46%', width: '36%', height: '42%', rotation: 5 },
-        foldedDesign = fallbackSnapshots.foldedDesign || "",
-        frontPrintAreaPx = fallbackSnapshots.frontPrintAreaPx || null,
-        foldedPrintAreaPx = fallbackSnapshots.foldedPrintAreaPx || null,
     } = (location.state || {});
+
+    // 🚀 ADJUST THIS LINE to change the size of the T-shirt in the Pricing Setup box
+    const pricingMockupScale = 1.5;
+
 
     const ADMIN_SPECS = `
         <div style="margin-bottom: 25px;">
@@ -83,9 +123,9 @@ const ProductSubmission = () => {
 
     const [formData, setFormData] = useState({
         title: '',
-        designDescription: '', 
+        designDescription: '',
         markup: 0,
-        allowUserCustomization: true,
+        allowUserCustomization: false,
         allowEditRequests: false,
         status: 'Pending'
     });
@@ -93,31 +133,34 @@ const ProductSubmission = () => {
     const BASE_PRICE = 1200;
     const SERVICE_FEE = 100;
     const [finalPrice, setFinalPrice] = useState(0);
-    const [showModal, setShowModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState({ show: false, type: 'Draft' });
 
     useEffect(() => {
         const markupValue = Number(formData.markup) || 0;
         setFinalPrice(BASE_PRICE + SERVICE_FEE + markupValue);
     }, [formData.markup]);
 
-
     const handleInputChange = (field: string, value: any) => {
         setFormData({ ...formData, [field]: value });
     };
 
-   const submitProduct = async (submissionStatus: string) => {
+    const formatPrice = (price: number) => {
+        return `LKR ${price.toLocaleString('en-US')}.00`;
+    };
+
+    const submitProduct = async (submissionStatus: string) => {
         const storedUser = localStorage.getItem('userInfo');
         if (!storedUser) return alert("Please log in.");
         const { token } = JSON.parse(storedUser);
 
-        let finalImage = productImages[0];
+        const thumbnailImage = productImages[0] || frontDesign;
 
         try {
             const response = await fetch(`${API_URL}/api/products`, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'Authorization': `Bearer ${token}` 
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     title: formData.title,
@@ -125,71 +168,80 @@ const ProductSubmission = () => {
                     baseProduct: productType,
                     markup: formData.markup,
                     price: finalPrice,
-                    mockupImages: [finalImage],
+                    mockupImages: [thumbnailImage, ...productImages.slice(1)],
                     canvasState: canvasState,
-                    allowCustomization: formData.allowUserCustomization,
-                    // 🟢 We set the status to 'Awaiting Payment' initially
-                    status: 'Awaiting Payment' 
+                    tshirtColor: tshirtColor,
+                    allowUserCustomization: formData.allowUserCustomization,
+                    allowEditRequests: formData.allowEditRequests,
+                    status: submissionStatus,
+                    // 🟢 Passing design snapshots using destructured variables
+                    frontDesign: frontDesign,
+                    frontPrintArea: frontPrintArea,
+                    frontPrintAreaPx: frontPrintAreaPx,
+
+                    backDesign: backDesign,
+                    backPrintArea: backPrintArea,
+                    backPrintAreaPx: backPrintAreaPx,
+
+                    neckDesign: neckDesign,
+                    neckPrintArea: neckPrintArea,
+                    neckPrintAreaPx: neckPrintAreaPx,
+
+                    foldedDesign: foldedDesign,
+                    foldedPrintArea: foldedPrintArea,
+                    foldedPrintAreaPx: foldedPrintAreaPx
                 })
             });
 
-            const result = await response.json();
-
             if (response.ok) {
-                // Remove temporary drafts
                 localStorage.removeItem('temp_design_state');
-                
-                // 🟢 NAVIGATE TO CHECKOUT
-                // We pass the product ID and the price so the checkout page knows what to bill
-                navigate('/checkout', { 
-                    state: { 
-                        productId: result._id, // Ensure your backend returns the new product object
-                        amount: finalPrice,
-                        title: formData.title,
-                        previewImage: productImages[0] // Pass the design snapshot
-                    } 
-                });
+                localStorage.removeItem('RECOVERY_DESIGN');
+                setShowSuccessModal({ show: true, type: submissionStatus });
             } else {
-                alert(result.message || "Failed to create product.");
+                const result = await response.json();
+                alert(result.message || "Failed to submit product.");
             }
-        } catch (err) { 
+        } catch (err) {
             console.error(err);
-            alert("Server error."); 
+            alert("Error connecting to server.");
         }
     };
     return (
-        <div className="dashboard-container"> 
+        <div className="dashboard-container">
             <style>{`
-                .main-content { padding-top: 48px !important; }
+        .main-content { padding-top: 60px !important; } /* Increased to clear the fixed header */
                 .top-header {
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     position: fixed;
                     top: 0;
-                    left: 0;
+                    left: 200px; /* 🚀 Matches sidebar width so it's not hidden behind it */
                     right: 0;
-                    height: 44px;
+                    height: 50px;
                     background: #0d375b;
-                    z-index: 500;
+                    z-index: 2000; /* 🚀 High z-index to stay on top of everything */
                     box-sizing: border-box;
-                    padding: 0 16px;
+                    padding: 0 20px;
+                    border-left: 1px solid #0d375b; 
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
                 }
                 .header-left {
                     position: absolute;
                     left: 20px;
                     display: flex;
                     align-items: center;
-                    gap: 8px;
+                    gap: 10px;
                     cursor: pointer;
                     color: white;
+                    transition: opacity 0.2s;
                 }
+                .header-left:hover { opacity: 0.8; }
                 .top-header h2 {
                     margin: 0 !important;
-                    text-align: center;
                     color: white !important;
-                    font-size: 14px !important;
-                    width: auto;
+                    font-size: 16px !important;
+                    font-weight: 700;
                 }
                 body { font-size: 14px; }
                 .main-content h3 { font-size: 18px !important; margin-bottom: 14px; }
@@ -226,110 +278,29 @@ const ProductSubmission = () => {
             <div className="main-content">
                 <div className="top-header">
                     <div className="header-left" onClick={() => navigate(-1)}>
-                        <img src="/img/back.png" alt="Back" className="nav-icon-small" style={{ width: '12px', height: '12px' }} />
-                        <span style={{ fontSize: '10px', fontWeight: 'bold' }}>Back</span>
+                        <img src="/img/back.png" alt="Back" style={{ width: '12px', filter: 'invert(1)' }} />
+                        <span style={{ fontWeight: 'bold' }}>Back to Editor</span>
                     </div>
                     <h2>Submit Product</h2>
                 </div>
 
+
                 <div className="content-wrapper" style={{ marginTop: '20px', paddingBottom: '50px' }}>
-                    
-                    {/* PREVIEW SECTION */}
-                    <div style={blueCardStyle}> 
-                        <h2 style={{ color: '#0d375b', fontWeight: '800', marginBottom: '10px', fontSize: '22px' }}>{productType}</h2>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700', fontSize: '14px', marginBottom: '20px' }}>
-                            <span style={{ width: '16px', height: '16px', background: tshirtColor, borderRadius: '50%', border: '2px solid black' }}></span>
-                            Color: {getColorName(tshirtColor)}
-                        </div>
 
-                        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                            {/* Main image: front mockup + color + front design */}
-                            <div style={{ width: '260px', height: '260px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
-                                <MockupPreview
-                                    mockupSrc={frontMockup || productImages[0]}
-                                    maskSrc={frontMockup || productImages[0]}
-                                    maskSize="contain"
-                                    maskPosition="center"
-                                    tshirtColor={tshirtColor}
-                                    printArea={frontPrintArea}
-                                    designSrc={frontDesign}
-                                    originalPrintAreaPx={frontPrintAreaPx}
-                                />
-                            </div>
-
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                                <div>
-                                    <div style={{ width: '90px', height: '90px', background: 'white', borderRadius: '10px', border: '1px solid #ddd', overflow: 'hidden' }}>
-                                        <MockupPreview
-                                            mockupSrc={frontMockup || productImages[0]}
-                                            maskSrc={frontMockup || productImages[0]}
-                                            maskSize="contain"
-                                            maskPosition="center"
-                                            tshirtColor={tshirtColor}
-                                            printArea={frontPrintArea}
-                                            designSrc={frontDesign}
-                                        />
-                                    </div>
-                                    <div style={{ fontSize: '11px', marginTop: '6px', color: '#666', textAlign: 'center', fontWeight: '600' }}>Front</div>
-                                </div>
-
-                                <div>
-                                    <div style={{ width: '90px', height: '90px', background: 'white', borderRadius: '10px', border: '1px solid #ddd', overflow: 'hidden' }}>
-                                        <MockupPreview
-                                            mockupSrc={productImages[1] || "/img/womenback-mockup.png"}
-                                            maskSrc={productImages[1] || "/img/womenback-mockup.png"}
-                                            maskSize="contain"
-                                            maskPosition="center"
-                                            tshirtColor={tshirtColor}
-                                        />
-                                    </div>
-                                    <div style={{ fontSize: '11px', marginTop: '6px', color: '#666', textAlign: 'center', fontWeight: '600' }}>Back</div>
-                                </div>
-
-                                <div>
-                                    <div style={{ width: '90px', height: '90px', background: 'white', borderRadius: '10px', border: '1px solid #ddd', overflow: 'hidden' }}>
-                                        <MockupPreview
-                                            mockupSrc={productImages[2] || "/img/mockups/collar.png"}
-                                            maskSrc={productImages[2] || "/img/mockups/collar.png"}
-                                            maskSize="contain"
-                                            maskPosition="center"
-                                            tshirtColor={tshirtColor}
-                                        />
-                                    </div>
-                                    <div style={{ fontSize: '11px', marginTop: '6px', color: '#666', textAlign: 'center', fontWeight: '600' }}>Neck</div>
-                                </div>
-
-                                <div>
-                                    <div style={{ width: '90px', height: '90px', background: 'white', borderRadius: '10px', border: '1px solid #ddd', overflow: 'hidden' }}>
-                                        <MockupPreview
-                                            mockupSrc={foldedMockup || productImages[3]}
-                                            maskSrc={foldedMask || foldedMockup || productImages[3]}
-                                            maskSize={foldedMaskSize || "contain"}
-                                            maskPosition={foldedMaskPosition || "center"}
-                                            tshirtColor={tshirtColor}
-                                            printArea={foldedPrintArea}
-                                            designSrc={foldedDesign}
-                                        />
-                                    </div>
-                                    <div style={{ fontSize: '11px', marginTop: '6px', color: '#666', textAlign: 'center', fontWeight: '600' }}>Folded</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     {/* DETAILS SECTION */}
                     <div style={blueCardStyle}>
                         <h3 style={{ color: '#0d375b' }}>Product Portfolio Details</h3>
                         <label style={largeLabelStyle}>Title</label>
                         <input type="text" value={formData.title} onChange={(e) => handleInputChange('title', e.target.value)} style={largeInputStyle} placeholder="Enter a title to your design..." />
-                        
+
                         <label style={{ ...largeLabelStyle, marginTop: '20px' }}>Description</label>
                         <div className="admin-specs-box" dangerouslySetInnerHTML={{ __html: ADMIN_SPECS }} />
                         <div style={{ background: 'white', borderRadius: '0 0 10px 10px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
-                            <ReactQuill 
-                                theme="snow" 
-                                value={formData.designDescription} 
-                                onChange={(val: string) => handleInputChange('designDescription', val)} 
+                            <ReactQuill
+                                theme="snow"
+                                value={formData.designDescription}
+                                onChange={(val: string) => handleInputChange('designDescription', val)}
                                 placeholder="Type here..."
                             />
                         </div>
@@ -364,47 +335,71 @@ const ProductSubmission = () => {
 
                     {/* PRICING SECTION */}
                     <div style={blueCardStyle}>
-                        <h3 style={{ color: '#0d375b' }}>Pricing Setup</h3>
-                        
-                        <div className="price-item">
-                            <span>Base Price <small style={{fontSize:'11px', color:'#666'}}>(Fixed Production Cost)</small></span>
-                            <span>:</span>
-                            <span style={{ fontWeight: '800' }}>LKR {BASE_PRICE}</span>
-                        </div>
+                        <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                            <div style={{ flex: 1, minWidth: '300px' }}>
+                                <h3 style={{ color: '#0d375b', marginBottom: '20px' }}>Pricing Setup</h3>
 
-                        <div className="price-item">
-                            <span>Designer Markup (Your Profit)</span>
-                            <span>:</span>
-                            <div style={{ display: 'flex', alignItems: 'center', border: '2px solid #0d375b', borderRadius: '8px', padding: '8px 12px', width: '160px', background: 'white' }}>
-                                <span style={{ marginRight: '6px', fontWeight: 'bold', fontSize: '13px' }}>LKR</span>
-                                <input type="number" value={formData.markup} onChange={(e) => handleInputChange('markup', e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', fontWeight: '800', fontSize: '14px' }} />
+                                <div className="price-item">
+                                    <span>Base Price <small style={{ fontSize: '11px', color: '#666' }}>(Fixed Production Cost)</small></span>
+                                    <span>:</span>
+                                    <span style={{ fontWeight: '800' }}>{formatPrice(BASE_PRICE)}</span>
+                                </div>
+
+                                <div className="price-item">
+                                    <span>Designer Markup (Your Profit)</span>
+                                    <span>:</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', border: '2px solid #0d375b', borderRadius: '8px', padding: '8px 12px', width: '160px', background: 'white' }}>
+                                        <span style={{ marginRight: '6px', fontWeight: 'bold', fontSize: '13px' }}>LKR</span>
+                                        <input type="number" value={formData.markup} onChange={(e) => handleInputChange('markup', e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', fontWeight: '800', fontSize: '14px' }} />
+                                    </div>
+                                </div>
+
+                                <div className="price-item">
+                                    <span>Service Fee <small style={{ fontSize: '11px', color: '#666' }}>(Platform Hosting)</small></span>
+                                    <span>:</span>
+                                    <span style={{ fontWeight: '800' }}>{formatPrice(SERVICE_FEE)}</span>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '200px 20px 1fr', gap: '10px', marginTop: '20px', borderTop: '1px solid #cbd5e1', paddingTop: '20px' }}>
+                                    <strong style={{ color: '#0d375b', fontSize: '16px' }}>Final Selling Price</strong>
+                                    <strong style={{ fontSize: '16px' }}>:</strong>
+                                    <strong className="final-price-text">{formatPrice(finalPrice)}</strong>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="price-item">
-                            <span>Service Fee <small style={{fontSize:'11px', color:'#666'}}>(Platform Hosting)</small></span>
-                            <span>:</span>
-                            <span style={{ fontWeight: '800' }}>LKR {SERVICE_FEE}</span>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '200px 20px 1fr', gap: '10px', marginTop: '20px', borderTop: '1px solid #cbd5e1', paddingTop: '20px' }}>
-                            <strong style={{ color: '#0d375b', fontSize: '16px' }}>Final Selling Price</strong>
-                            <strong style={{ fontSize: '16px' }}>:</strong>
-                            <strong className="final-price-text">LKR {finalPrice}</strong>
+                            {/* Preview image next to pricing */}
+                            <div style={{ width: '220px', height: '220px', background: 'white', borderRadius: '16px', boxShadow: '0 8px 20px rgba(0,0,0,0.08)', overflow: 'hidden', position: 'relative', flexShrink: 0, border: '1px solid #e2e8f0' }}>
+                                <MockupPreview
+                                    mockupSrc={frontMockup || productImages[0]}
+                                    maskSrc={frontMockup || productImages[0]}
+                                    maskSize="contain"
+                                    maskPosition="center"
+                                    tshirtColor={tshirtColor}
+                                    printArea={frontPrintArea}
+                                    designSrc={frontDesign}
+                                    originalPrintAreaPx={frontPrintAreaPx}
+                                    areaScale={frontAreaScale}
+                                    designScale={frontDesignScale}
+                                    overallScale={pricingMockupScale}
+                                />
+                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.9)', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: '700', color: '#0d375b', borderTop: '1px solid #eee' }}>
+                                    FRONT PREVIEW
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '30px' }}>
-                        <button 
-                            onClick={() => submitProduct('Draft')} 
+                        <button
+                            onClick={() => submitProduct('Draft')}
                             style={{ padding: '10px 28px', borderRadius: '24px', border: '2px solid #ccc', background: 'white', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
                         >
                             Save Draft
                         </button>
 
-                        <button 
-                            onClick={() => submitProduct('Pending')} 
-                            style={{ padding: '10px 40px', borderRadius: '24px', background: '#0d375b', color: 'white', fontWeight: '900', fontSize: '14px', cursor: 'pointer', boxShadow: '0 6px 14px rgba(13,55,91,0.3)' }}
+                        <button
+                            onClick={() => submitProduct('Pending')}
+                            style={(formData.title && formData.designDescription) ? { padding: '10px 40px', borderRadius: '24px', background: '#0d375b', color: 'white', fontWeight: '900', fontSize: '14px', cursor: 'pointer', boxShadow: '0 6px 14px rgba(13,55,91,0.3)' } : { padding: '10px 40px', borderRadius: '24px', background: '#94a3b8', color: 'white', fontWeight: '900', fontSize: '14px', cursor: 'not-allowed', opacity: 0.7 }}
                         >
                             Publish
                         </button>
@@ -412,21 +407,37 @@ const ProductSubmission = () => {
                 </div>
             </div>
 
-            {showModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-                    <div style={{ background: 'white', padding: '60px', borderRadius: '30px', textAlign: 'center' }}>
-                        <h2>Success!</h2>
-                        <button onClick={() => navigate('/designer-dashboard')} style={{ padding: '15px 45px', background: '#0d375b', color: 'white', border: 'none', borderRadius: '30px' }}>Back to Dashboard</button>
+            {showSuccessModal.show && (
+                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(13, 55, 91, 0.8)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+                    <div style={{ background: 'white', padding: '40px', borderRadius: '24px', width: '420px', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+                        <div style={{ width: '60px', height: '60px', background: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                        <h2 style={{ color: '#0d375b', fontSize: '24px', fontWeight: '900', marginBottom: '10px' }}>Success!</h2>
+                        <p style={{ color: '#64748b', fontSize: '16px', marginBottom: '25px', lineHeight: '1.5' }}>
+                            {showSuccessModal.type === 'Draft'
+                                ? "Your design draft is successfully stored in My Shop."
+                                : "Your design is successfully sent for admin review."
+                            }
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <button onClick={() => navigate('/my-shop')} style={{ padding: '12px', background: '#0d375b', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}>
+                                Go to My Shop
+                            </button>
+                            <button onClick={() => navigate('/')} style={{ padding: '12px', background: 'transparent', color: '#64748b', border: 'none', borderRadius: '12px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>
+                                Back to Dashboard
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
-        </div>
+        </div >
     );
 };
 
-const blueCardStyle: React.CSSProperties = { background: '#dfe9f5', padding: '28px', borderRadius: '20px', marginBottom: '24px' };
-const largeLabelStyle: React.CSSProperties = { display: 'block', fontWeight: '800', fontSize: '15px', marginBottom: '8px' };
-const largeInputStyle: React.CSSProperties = { width: '100%', padding: '12px 14px', borderRadius: '10px', border: '2px solid #cbd5e1', fontSize: '14px', fontWeight: '700', outline: 'none', boxSizing: 'border-box' };
+const blueCardStyle: React.CSSProperties = { background: '#dfe9f5', padding: '16px 20px', borderRadius: '12px', marginBottom: '16px' };
+const largeLabelStyle: React.CSSProperties = { display: 'block', fontWeight: '800', fontSize: '13px', marginBottom: '6px' };
+const largeInputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '2px solid #cbd5e1', fontSize: '13px', fontWeight: '700', outline: 'none', boxSizing: 'border-box' };
 
 type PrintArea = { top: string; left: string; width: string; height: string; rotation?: number };
 type MockupPreviewProps = {
@@ -437,6 +448,11 @@ type MockupPreviewProps = {
     tshirtColor: string;
     printArea?: PrintArea;
     designSrc?: string;
+    originalPrintAreaPx?: { width: number; height: number } | null;
+    editorMockupScale?: number;
+    areaScale?: number;
+    designScale?: number;
+    overallScale?: number;
 };
 
 const MockupPreview = ({
@@ -447,69 +463,98 @@ const MockupPreview = ({
     tshirtColor,
     printArea,
     designSrc,
-    // 🟢 New prop to help with math
-    originalPrintAreaPx 
-}: any) => {
-    const containerRef = React.useRef<HTMLDivElement>(null);
-    const [scale, setScale] = useState(1);
+    originalPrintAreaPx,
+    areaScale = 1.0,
+    designScale = 1.0,
+    overallScale = 1.0
+}: MockupPreviewProps) => {
+    const containerRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        if (containerRef.current && originalPrintAreaPx) {
-            // Calculate how much smaller this container is compared to the original
-            // We compare the width of the current container * printArea % to the original PX width
-            const currentContainerWidth = containerRef.current.offsetWidth;
-            const currentPrintAreaWidthPx = currentContainerWidth * (parseFloat(printArea.width) / 100);
-            
-            const factor = currentPrintAreaWidthPx / originalPrintAreaPx.width;
-            setScale(factor);
-        }
-    }, [originalPrintAreaPx, printArea]);
+    // 🚀 LOGIC CHECK: 
+    // If designSrc is a full snapshot from our new capture logic, 
+    // it will ALREADY contain the T-shirt and the design.
+    // We check if printArea is missing – if so, we treat it as a full-image preview.
+    const isFullSnapshot = designSrc && !printArea;
+
+    if (isFullSnapshot) {
+        return (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+                <img
+                    src={designSrc}
+                    alt="Final Product"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+            </div>
+        );
+    }
 
     return (
         <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-            {/* 1. Base Mockup Image */}
-            <img src={mockupSrc} alt="Mockup" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'relative', zIndex: 1 }} />
-            
-            {/* 2. Color Layer with Mask */}
-            <div style={{
-                position: 'absolute', inset: 0,
-                backgroundColor: tshirtColor || '#ffffff',
-                WebkitMaskImage: `url(${maskSrc})`, maskImage: `url(${maskSrc})`,
-                WebkitMaskSize: maskSize || 'contain', maskSize: maskSize || 'contain',
-                WebkitMaskPosition: maskPosition || 'center', maskPosition: maskPosition || 'center',
-                WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-                mixBlendMode: 'multiply', zIndex: 2, pointerEvents: 'none'
-            }} />
+            {/* Wrapper to scale the entire mockup (Shirt + Design) */}
+            <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale})`, transformOrigin: 'center center', position: 'relative' }}>
+                {/* 1. Base Mockup Image */}
+                <img src={mockupSrc} alt="Mockup" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'relative', zIndex: 1 }} />
 
-            {/* 3. Proportional Design Layer */}
-            {printArea && designSrc && (
-                <div style={{
-                    position: 'absolute',
-                    top: printArea.top,
-                    left: printArea.left,
-                    width: printArea.width,
-                    height: printArea.height,
-                    transform: `translate(-50%, -50%) rotate(${printArea.rotation || 0}deg)`,
-                    zIndex: 3,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
-                    <img 
-                        src={designSrc} 
-                        alt="Design" 
-                        style={{ 
-                            // 🟢 This is the secret: The design inside the area 
-                            // is scaled by the difference in container sizes
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'contain'
-                        }} 
-                    />
-                </div>
-            )}
+                {/* 2. Color Overlay */}
+                {tshirtColor && (
+                    <div style={{
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: tshirtColor,
+                        mixBlendMode: 'multiply',
+                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`,
+                        maskImage: `url(${maskSrc || mockupSrc})`,
+                        WebkitMaskSize: maskSize || 'contain',
+                        WebkitMaskPosition: maskPosition || 'center',
+                        WebkitMaskRepeat: 'no-repeat',
+                        pointerEvents: 'none',
+                        zIndex: 2
+                    }}></div>
+                )}
+
+                {/* 3. Proportional Design Layer (Masked to T-shirt silhouette) */}
+                {printArea && designSrc && (
+                    <div style={{
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`,
+                        maskImage: `url(${maskSrc || mockupSrc})`,
+                        WebkitMaskSize: maskSize || 'contain',
+                        WebkitMaskPosition: maskPosition || 'center',
+                        WebkitMaskRepeat: 'no-repeat',
+                        zIndex: 3,
+                        pointerEvents: 'none'
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: printArea.top,
+                            left: printArea.left,
+                            width: `calc(${printArea.width} * ${areaScale})`,
+                            height: `calc(${printArea.height} * ${areaScale})`,
+                            transform: `translate(-50%, -50%) rotate(${printArea.rotation || 0}deg)`,
+                            transformOrigin: 'center center',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden'
+                        }}>
+                            <img
+                                src={designSrc}
+                                alt="Design"
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'contain',
+                                    transform: `scale(${designScale})`,
+                                    transformOrigin: 'center center'
+                                }}
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
 
-export default ProductSubmission;
+export default ProductSubmission

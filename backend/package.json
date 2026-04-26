@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/dulniThimes/Cre8tify---FYP#readme",
   "dependencies": {
+    "@gradio/client": "^2.2.0",
     "@imgly/background-removal-node": "^1.1.5",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",

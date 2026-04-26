@@ -9,12 +9,17 @@ interface DesignItem {
     title: string;
     price: number;
     image: string;
-    status: 'Approved' | 'Submitted' | 'Rejected' | 'Draft';
+    status: 'Approved' | 'Submitted' | 'Rejected' | 'Draft' | 'hardcoded';
     updatedDate: string;
     sales: number;
     scale: number;
     rejectionReason?: string;
     description?: string;
+    tshirtColor?: string;
+    canvasState?: any;
+    frontDesign?: string;
+    frontPrintArea?: any;
+    frontPrintAreaPx?: any;
 }
 
 const MyShop = () => {
@@ -99,7 +104,11 @@ const MyShop = () => {
                     sales: item.salesCount || 0,
                     scale: 1.0, // Default scale for DB items
                     description: item.description ? item.description.replace(/<[^>]*>?/gm, '') : '',
-                    canvasState: item.canvasState
+                    canvasState: item.canvasState,
+                    tshirtColor: item.tshirtColor,
+                    frontDesign: item.frontDesign,
+                    frontPrintArea: item.frontPrintArea,
+                    frontPrintAreaPx: item.frontPrintAreaPx
                 }));
 
                 setDbDesigns(formattedDB);
@@ -145,7 +154,8 @@ const MyShop = () => {
                 isEdit: true,
                 // We pass the canvasState (layers, positions, text) 
                 // so the DesignTool can "rebuild" the design
-                savedLayers: (design as any).canvasState
+                savedLayers: (design as any).canvasState,
+                selectedTshirtColor: design.tshirtColor
             }
         });
     };
@@ -287,8 +297,31 @@ const MyShop = () => {
                                         <span style={{ fontSize: '7px', color: '#64748b', fontWeight: '600', letterSpacing: '0.3px' }}>{design.status.toUpperCase()}</span>
                                     </div>
                                 </div>
-                                <div style={{ height: '175px', background: '#f8fafc', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', overflow: 'hidden', padding: '10px' }}>
-                                    <img src={design.image} alt={design.title} style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 8px 13px rgba(0,0,0,0.12))' }} />
+                                <div style={{ height: '175px', background: '#f8fafc', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', overflow: 'hidden', padding: '10px', position: 'relative' }}>
+                                    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                        {/* 1. The shirt image (Base or Snapshot) */}
+                                        <img src={design.image} alt={design.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+
+                                        {/* 2. LIVE COLOR OVERLAY - Using the base image as its own mask (requires transparent PNG) */}
+                                        {design.status === 'hardcoded' && design.tshirtColor && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: 0, left: 0, right: 0, bottom: 0,
+                                                backgroundColor: design.tshirtColor,
+                                                mixBlendMode: 'multiply',
+                                                WebkitMaskImage: `url(${design.image})`,
+                                                maskImage: `url(${design.image})`,
+                                                WebkitMaskSize: 'contain',
+                                                WebkitMaskRepeat: 'no-repeat',
+                                                WebkitMaskPosition: 'center',
+                                                pointerEvents: 'none',
+                                                zIndex: 2
+                                            }}></div>
+                                        )}
+
+                                        {/* 3. LIVE DESIGN OVERLAY */}
+
+                                    </div>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                     <div style={{ fontWeight: '700', fontSize: '9px', fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', color: '#1e293b' }}>{design.title}</div>

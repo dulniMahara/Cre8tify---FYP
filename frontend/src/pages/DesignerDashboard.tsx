@@ -119,20 +119,20 @@ export default function DesignerDashboard() {
                     className="nav-icon" 
                     style={{ 
                         cursor: 'pointer',
-                        width: '20px',
-                        height: '20px',
+                        width: '26px',
+                        height: '26px',
                         borderRadius: '50%',
                         objectFit: 'cover'
                     }} 
                     onClick={() => navigate('/profile')} 
                     onError={(e) => { (e.target as HTMLImageElement).src = "/img/profile-picture.png"; }}
                 />
-                <img src="/img/notifi.png" alt="Notifications" className="nav-icon" />
+                <img src="/img/notifi.png" alt="Notifications" className="nav-icon" style={{ width: '26px', height: '26px', }} />
                 <img 
                     src="/img/logout.png" 
                     alt="Logout" 
                     className="nav-icon" 
-                    style={{ borderRadius: 0, cursor: 'pointer' }} 
+                    style={{ borderRadius: 0, cursor: 'pointer', width: '26px', height: '26px', }} 
                     onClick={handleLogout} 
                 />
             </div>

@@ -30,24 +30,30 @@ const handleVirtualTryOn = async (req, res) => {
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const base64Image = `data:image/png;base64,${buffer.toString('base64')}`;
-        
+
         res.status(200).json({ result: base64Image });
     } catch (error) {
         console.error("HF Inference Error:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: "AI server is currently busy or token is invalid. Please try again in a moment.",
-            error: error.message 
+            error: error.message
         });
     }
 };
 
 // @desc    Create new product
 const createProduct = async (req, res) => {
-    const { title, description, baseProduct, price, markup, mockupImages, canvasState, allowCustomization, status } = req.body;
+    const {
+        title, description, baseProduct, price, markup, mockupImages, canvasState, tshirtColor, allowCustomization, status,
+        frontDesign, frontPrintArea, frontPrintAreaPx,
+        backDesign, backPrintArea, backPrintAreaPx,
+        neckDesign, neckPrintArea, neckPrintAreaPx,
+        foldedDesign, foldedPrintArea, foldedPrintAreaPx
+    } = req.body;
 
     try {
         const product = new Product({
-            designer: req.user._id, 
+            designer: req.user._id,
             title,
             description,
             baseProduct,
@@ -55,9 +61,16 @@ const createProduct = async (req, res) => {
             markup,
             mockupImages,
             canvasState,
+            tshirtColor,
             allowCustomization,
-            status: status || 'Pending', 
-            isApproved: false 
+            status: status || 'Pending',
+            isApproved: false,
+
+            // 🟢 Design Data
+            frontDesign, frontPrintArea, frontPrintAreaPx,
+            backDesign, backPrintArea, backPrintAreaPx,
+            neckDesign, neckPrintArea, neckPrintAreaPx,
+            foldedDesign, foldedPrintArea, foldedPrintAreaPx
         });
 
         const createdProduct = await product.save();
@@ -81,7 +94,7 @@ const getDesignerProducts = async (req, res) => {
 const getPendingProducts = async (req, res) => {
     try {
         const products = await Product.find({ status: 'Pending' })
-            .populate('designer', 'name email') 
+            .populate('designer', 'name email')
             .sort({ createdAt: -1 });
         res.json(products);
     } catch (error) {
@@ -98,10 +111,10 @@ const updateProductStatus = async (req, res) => {
         if (!product) return res.status(404).json({ message: "Product not found" });
 
         product.status = status;
-        
+
         if (status === 'Approved') {
             product.isApproved = true;
-            product.rejectionReason = ""; 
+            product.rejectionReason = "";
         } else if (status === 'Rejected') {
             product.isApproved = false;
             product.rejectionReason = rejectionReason || "No reason provided.";
@@ -114,10 +127,10 @@ const updateProductStatus = async (req, res) => {
     }
 };
 
-module.exports = { 
-    createProduct, 
-    getDesignerProducts, 
-    getPendingProducts, 
+module.exports = {
+    createProduct,
+    getDesignerProducts,
+    getPendingProducts,
     updateProductStatus,
-    handleVirtualTryOn 
+    handleVirtualTryOn
 };

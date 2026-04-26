@@ -36,4 +36,77 @@ const getMyOrders = async (req, res) => {
     }
 };
 
-module.exports = { addOrderItems, getMyOrders };
+// @desc    Get all orders for the admin
+// @route   GET /api/orders/all
+const getOrders = async (req, res) => {
+    try {
+        const orders = await Order.find({})
+            .populate('user', 'name email _id')
+            .populate('orderItems.product')
+            .sort({ createdAt: -1 });
+        console.log(`Admin fetched ${orders.length} orders`);
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch all orders" });
+    }
+};
+
+// @desc    Update order status
+// @route   PUT /api/orders/:id/status
+const updateOrderStatus = async (req, res) => {
+    const { status } = req.body;
+    try {
+        const order = await Order.findById(req.params.id);
+        if (order) {
+            order.status = status;
+            await order.save();
+            res.json(order);
+        } else {
+            res.status(404).json({ message: "Order not found" });
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Failed to update order status" });
+    }
+};
+
+// @desc    Get all payouts for designers based on approved orders
+// @route   GET /api/orders/payouts
+const getPayouts = async (req, res) => {
+    try {
+        const orders = await Order.find({ status: { $ne: 'Cancelled' } }).populate({
+            path: 'orderItems.product',
+            populate: { path: 'designer', select: 'name email _id' }
+        });
+
+        // Group by designer
+        const payoutsMap = {};
+
+        orders.forEach(order => {
+            order.orderItems.forEach(item => {
+                if (item.product && item.product.designer) {
+                    const designerId = item.product.designer._id.toString();
+                    if (!payoutsMap[designerId]) {
+                        payoutsMap[designerId] = {
+                            designer: item.product.designer,
+                            totalEarned: 0,
+                            salesCount: 0
+                        };
+                    }
+                    // Gross calculation (Markup earned = SalesPrice - BaseCost(850) - 5% PlatformFee)
+                    const baseCost = 850;
+                    const commission = (item.price - baseCost) * 0.95; 
+                    if (commission > 0) {
+                        payoutsMap[designerId].totalEarned += (commission * item.qty);
+                    }
+                    payoutsMap[designerId].salesCount += item.qty;
+                }
+            });
+        });
+
+        res.json(Object.values(payoutsMap));
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch payouts" });
+    }
+};
+
+module.exports = { addOrderItems, getMyOrders, getOrders, getPayouts, updateOrderStatus };

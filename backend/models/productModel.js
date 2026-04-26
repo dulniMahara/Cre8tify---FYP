@@ -8,9 +8,28 @@ const productSchema = mongoose.Schema({
     category: { type: String, default: 'Unisex' },
     price: { type: Number, required: true },
     markup: { type: Number, required: true },
-    
     // 🟢 The "Snapshot" images for the shop display
     mockupImages: [{ type: String }], 
+    tshirtColor: { type: String, default: '#ffffff' },
+
+    // 🟢 Individual Design Layers for each side
+    frontDesign: { type: String },
+    frontPrintArea: { type: Object },
+    frontPrintAreaPx: { type: Object },
+    
+    backDesign: { type: String },
+    backPrintArea: { type: Object },
+    backPrintAreaPx: { type: Object },
+
+    neckDesign: { type: String },
+    neckPrintArea: { type: Object },
+    neckPrintAreaPx: { type: Object },
+
+    foldedDesign: { type: String },
+    foldedPrintArea: { type: Object },
+    foldedPrintAreaPx: { type: Object },
+
+
 
     // 🟢 The "Source Code" of the design (Canvas Layers)
     canvasState: {

@@ -8,9 +8,33 @@ const {
   updateUserRole,
   approveDesigner
 } = require('../controllers/adminController');
+const { getOrders, updateOrderStatus } = require('../controllers/orderController');
+const { getFinancialSummary, getDesignerPayouts, processPayout, refundOrder } = require('../controllers/financialController');
 
 // All routes below are protected and restricted to the 'admin' role
 router.use(protect, authorizeRole('admin')); 
+
+// === ORDER MANAGEMENT ROUTES (Requires Admin Role) ===
+
+// GET /api/admin/orders
+router.get('/orders', getOrders);
+
+// PATCH /api/admin/orders/:id/status
+router.patch('/orders/:id/status', updateOrderStatus);
+
+// POST /api/admin/orders/:id/refund
+router.post('/orders/:id/refund', refundOrder);
+
+// === FINANCIAL ROUTES (Requires Admin Role) ===
+
+// GET /api/admin/financial/summary
+router.get('/financial/summary', getFinancialSummary);
+
+// GET /api/admin/financial/designers
+router.get('/financial/designers', getDesignerPayouts);
+
+// POST /api/admin/financial/payout
+router.post('/financial/payout', processPayout);
 
 // === DESIGN MANAGEMENT ROUTES (Requires Admin Role) ===
 

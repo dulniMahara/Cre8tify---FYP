@@ -33,6 +33,7 @@ import AccountLayout from './pages/Account/AccountLayout';
 import CustomerProfile from './pages/CustomerProfile';
 import MyOrders from './pages/MyOrders';
 import Favorites from './pages/Favorites';
+import AdminLogin from './pages/AdminLogin';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
           {/* 🟢 PUBLIC ROUTES (Linked from Landing Page) */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/designer-signup" element={<DesignerSignup />} />
           <Route path="/customer-signup" element={<CustomerSignup />} />
           <Route path="/profile" element={<Profile />} />

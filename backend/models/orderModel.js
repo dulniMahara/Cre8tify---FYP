@@ -5,12 +5,22 @@ const orderSchema = new mongoose.Schema({
     orderItems: [{
         name: { type: String, required: true },
         qty: { type: Number, required: true },
-        image: { type: String, required: true }, // This stores the URL/Base64 of the CUSTOM design
+        image: { type: String, required: true },
         price: { type: Number, required: true },
-        product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' }
+        basePrice: { type: Number, default: 1200 },
+        markup: { type: Number, default: 0 },
+        serviceFee: { type: Number, default: 100 },
+        size: { type: String },
+        color: { type: String },
+        product: { type: String, ref: 'Product' }
     }],
     totalPrice: { type: Number, required: true },
-    status: { type: String, default: 'Processing' }, // 'Processing', 'Delivered'
+    isPaid: { type: Boolean, default: false },
+    paidAt: { type: Date },
+    paymentMethod: { type: String, default: 'card' },
+    isRefunded: { type: Boolean, default: false },
+    refundedAt: { type: Date },
+    status: { type: String, default: 'Processing' }, // 'Processing', 'Delivered', 'Cancelled', 'Refunded'
     orderDate: { type: Date, default: Date.now },
     deliveryDate: { type: Date }
 }, { timestamps: true });

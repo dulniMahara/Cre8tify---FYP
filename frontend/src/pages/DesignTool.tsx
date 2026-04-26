@@ -241,19 +241,25 @@ export default function DesignTool() {
             img: productData?.mockup ? productData.mockup : "/img/womenfront-mockup.png",
             label: 'Front',
             showDesign: true,
-            printArea: { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 }
+            printArea: { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 },
+            areaScale: 1.0,
+            designScale: 1.0
         },
         back: {
             img: "/img/womenback-mockup.png",
             label: 'Back',
             showDesign: false,
-            printArea: { top: '35%', left: '50%', width: '45%', height: '22%', rotation: 0 }
+            printArea: { top: '35%', left: '50%', width: '45%', height: '22%', rotation: 0 },
+            areaScale: 1.0,
+            designScale: 1.0
         },
         neck: {
             img: "/img/mockups/collar.png",
             label: 'Neck',
             showDesign: true,
-            printArea: { top: '70%', left: '60%', width: '35%', height: '25%', rotation: 0 }
+            printArea: { top: '90%', left: '60%', width: '75%', height: '50%', rotation: -23 },
+            areaScale: 1.0,
+            designScale: 2.0
         },
         folded: {
             img: "/img/mockups/folded.png",
@@ -262,57 +268,42 @@ export default function DesignTool() {
             maskSize: 'contain',
             maskPosition: 'center',
             showDesign: true,
-            // Folded view settings
-            printArea: { top: '56%', left: '46%', width: '30%', height: '42%', rotation: 5 }
+            printArea: { top: '66%', left: '46%', width: '60%', height: '84%', rotation: 5 },
+            areaScale: 1.0,
+            designScale: 4.0
         }
     };
-
     useEffect(() => {
-        // 1. PRIORITY: Check if we are coming from the "Edit" or "Fix Design" button in the shop
-        if (location.state?.isEdit && location.state?.savedLayers) {
-            const { imageLayers, textLayers } = location.state.savedLayers;
-            if (imageLayers) setImageLayers(imageLayers);
-            if (textLayers) setTextLayers(textLayers);
+        console.log("Checking for RECOVERY_DESIGN...");
+        const raw = localStorage.getItem('RECOVERY_DESIGN');
 
-            // Clear the navigation state so a refresh doesn't keep forcing old data
-            window.history.replaceState({}, document.title);
-
-        }
-
-        else {
-            setImageLayers([]);
-            setTextLayers([]);
-            setSelectedTshirtColor('#ffffff'); // Force white
-            localStorage.removeItem('temp_design_state'); // Kill the "ash/text" memory
-        }
-        // 2. FALLBACK: If not editing from DB, check the local storage for drafts
-        const savedDesign = localStorage.getItem('temp_design_state');
-        if (savedDesign) {
+        if (raw) {
             try {
-                const parsed = JSON.parse(savedDesign);
+                const parsed = JSON.parse(raw);
+                console.log("RECOVERY DATA FOUND:", parsed);
 
-                if (parsed.imageLayers) {
-                    // normalization logic for local images
-                    const normalized = (parsed.imageLayers as ImageLayer[]).map((layer) => {
-                        if (typeof layer.src === 'string' && layer.src.includes('/upload') && !layer.src.includes('/uploads/')) {
-                            const filename = layer.src.split('/upload').pop()?.replace(/^\/+/, '');
-                            if (filename) {
-                                return { ...layer, src: `${API_URL}/uploads/library/${filename}` };
-                            }
-                        }
-                        return layer;
-                    });
-                    setImageLayers(normalized as any);
-                }
-                if (parsed.textLayers) setTextLayers(parsed.textLayers as any);
+                // Directly slam the data into state
+                if (parsed.imageLayers) setImageLayers(parsed.imageLayers);
+                if (parsed.textLayers) setTextLayers(parsed.textLayers);
                 if (parsed.selectedTshirtColor) setSelectedTshirtColor(parsed.selectedTshirtColor);
-            } catch (err) {
-                console.error("Failed to load saved design", err);
+            } catch (e) {
+                console.error("Recovery failed", e);
             }
         }
-    }, [location.state]); // dd location.state triggers on navigation
 
-    // DYNAMIC SCALING LOGIC TO FIT 100% ZOOM
+        // Keep the Edit mode logic separate
+        if (location.state?.isEdit && location.state?.savedLayers) {
+            const { imageLayers: sImgs, textLayers: sTxts } = location.state.savedLayers;
+            setImageLayers(sImgs || []);
+            setTextLayers(sTxts || []);
+            if (location.state.selectedTshirtColor) {
+                console.log("Restoring color from edit state:", location.state.selectedTshirtColor);
+                setSelectedTshirtColor(location.state.selectedTshirtColor);
+            }
+            window.history.replaceState({}, document.title);
+        }
+    }, []); // Empty array
+
     useEffect(() => {
         const calculateScale = () => {
             // Changed from 180 to 120, giving the shirt more vertical screen space
@@ -393,6 +384,10 @@ export default function DesignTool() {
                     setImageLayers(updatedImages);
                     setSelectedId(newImage.id);
                     addToHistory(updatedImages, textLayers);
+
+                    // 4. Add to persistent Library & Open Panel
+                    addToLibrary(file);
+                    setActivePanel('library');
                 };
                 reader.readAsDataURL(file);
             } catch (error) {
@@ -782,254 +777,185 @@ export default function DesignTool() {
         }
     };
 
-    const handleSaveProduct = async () => {
-        setIsSaving(true);
-        const prevSide = currentSide;
-        const prevMode = viewMode;
+    const waitForPaint = () => new Promise<void>(resolve => {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => resolve());
+        });
+    });
 
-        const waitForPaint = () => new Promise<void>(resolve => {
-            // Double requestAnimationFrame ensures the browser has finished a full paint cycle
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => resolve());
-            });
+    const trimTransparent = (source: HTMLCanvasElement) => {
+        const ctx = source.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return source;
+        const { width, height } = source;
+        const data = ctx.getImageData(0, 0, width, height).data;
+        let minX = width, minY = height, maxX = -1, maxY = -1;
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = (y * width + x) * 4 + 3;
+                if (data[idx] > 10) {
+                    if (x < minX) minX = x;
+                    if (y < minY) minY = y;
+                    if (x > maxX) maxX = x;
+                    if (y > maxY) maxY = y;
+                }
+            }
+        }
+        if (maxX < minX || maxY < minY) return source;
+        const out = document.createElement('canvas');
+        out.width = maxX - minX + 1;
+        out.height = maxY - minY + 1;
+        const octx = out.getContext('2d');
+        if (!octx) return source;
+        octx.drawImage(source, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
+        return out;
+    };
+
+    const blobToDataURL = (blob: Blob) =>
+        new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
         });
 
-        const trimTransparent = (source: HTMLCanvasElement) => {
-            const ctx = source.getContext('2d', { willReadFrequently: true });
-            if (!ctx) return source;
-            const { width, height } = source;
-            const data = ctx.getImageData(0, 0, width, height).data;
-            let minX = width, minY = height, maxX = -1, maxY = -1;
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    const idx = (y * width + x) * 4 + 3;
-                    if (data[idx] > 10) {
-                        if (x < minX) minX = x;
-                        if (y < minY) minY = y;
-                        if (x > maxX) maxX = x;
-                        if (y > maxY) maxY = y;
-                    }
+    const normalizeImageLayers = async (layers: ImageLayer[]) => {
+        const normalized = await Promise.all(layers.map(async (layer) => {
+            if (layer.src.startsWith('blob:')) {
+                try {
+                    const res = await fetch(layer.src);
+                    const blob = await res.blob();
+                    const dataUrl = await blobToDataURL(blob);
+                    return { ...layer, src: dataUrl };
+                } catch {
+                    return layer;
                 }
             }
-            if (maxX < minX || maxY < minY) return source;
-            const out = document.createElement('canvas');
-            out.width = maxX - minX + 1;
-            out.height = maxY - minY + 1;
-            const octx = out.getContext('2d');
-            if (!octx) return source;
-            octx.drawImage(source, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
-            return out;
-        };
+            return layer;
+        }));
+        return normalized;
+    };
 
-        const blobToDataURL = (blob: Blob) =>
-            new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
+
+
+    // --- 1. CAPTURE UTILITY ---
+    const getCanvasSnapshot = async (side: 'front' | 'folded' | 'neck' | 'back') => {
+        const prevSide = currentSide;
+        setCurrentSide(side);
+
+        // 1. Wait for the side to switch and render
+        await new Promise(resolve => setTimeout(resolve, 800));
+        await waitForPaint();
+
+        const workspaceElement = printAreaRef.current; // Target only the design contents
+
+        if (!workspaceElement) {
+            setCurrentSide(prevSide);
+            return { designSrc: "", printAreaPx: null };
+        }
+
+        // 2. TEMPORARY FIX: 
+        // We ensure we are in a 'capturing' state so borders are hidden
+        const originalIsSaving = isSaving;
+        setIsSaving(true);
+
+        try {
+            const canvas = await html2canvas(workspaceElement, {
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null, // Keeps background transparent
+                scale: 2, // High quality for the design itself
+                logging: false,
+                width: workspaceElement.offsetWidth,
+                height: workspaceElement.offsetHeight,
             });
 
-        const normalizeImageLayers = async (layers: ImageLayer[]) => {
-            const normalized = await Promise.all(layers.map(async (layer) => {
-                if (layer.src.startsWith('blob:')) {
-                    try {
-                        const res = await fetch(layer.src);
-                        const blob = await res.blob();
-                        const dataUrl = await blobToDataURL(blob);
-                        return { ...layer, src: dataUrl };
-                    } catch {
-                        return layer;
-                    }
-                }
-                return layer;
-            }));
-            return normalized;
-        };
+            // 3. RESTORE
+            setIsSaving(originalIsSaving);
+            setCurrentSide(prevSide);
 
-        const printAreaPxMap: Record<string, { width: number; height: number } | null> = {
-            front: null,
-            folded: null,
-            neck: null,
-            back: null
-        };
-
-        const captureDesignOnly = async (side: 'front' | 'folded' | 'neck' | 'back') => {
-            setCurrentSide(side);
-            await new Promise(resolve => setTimeout(resolve, 400));
-            await waitForPaint();
-
-            const workspaceElement = document.getElementById('tshirt-capture-area');
-            const printArea = workspaceElement?.querySelector('.print-area') as HTMLElement | null;
-
-            if (!printArea) return null;
-
-            // 🟢 THE FIX: Temporarily disable cropping for the capture
-            const originalOverflow = printArea.style.overflow;
-            printArea.style.overflow = 'visible';
-
-            try {
-                const canvas = await html2canvas(printArea, {
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: null,
-                    scale: 2,
-                    logging: true,
-
-                });
-
-                // Restore original style
-                printArea.style.overflow = originalOverflow;
-                const trimmed = trimTransparent(canvas);
-                return trimmed.toDataURL("image/png");
-            } catch (err) {
-                printArea.style.overflow = originalOverflow;
-                console.error("Snapshot failed:", err);
-                return null;
-            }
-        };
-
-        const handleOpenCrop = (imageLayer: ImageLayer) => {
-            // 1. Set the source of the image to show in the crop modal
-            setCropImageSrc(imageLayer.src);
-
-            // 2. IMPORTANT: Set the ID so the "Apply" button knows which layer to update
-            setSelectedId(imageLayer.id);
-
-            // 3. Open the modal
-            setShowCropModal(true);
-        };
-
-        const captureMockup = async (side: 'front' | 'folded' | 'neck' | 'back') => {
-            setCurrentSide(side);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await waitForPaint();
-
-            const workspaceElement = document.getElementById('tshirt-capture-area');
-            if (!workspaceElement) return null;
-
-            try {
-                const canvas = await html2canvas(workspaceElement, {
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: null,
-                    scale: 2,
-                });
-                return canvas.toDataURL("image/png");
-            } catch (err) {
-                console.error("Mockup snapshot failed:", err);
-                return null;
-            }
-        };
-
-        // 🟢 CRITICAL: Sequential capturing
-        const frontDesign = await captureDesignOnly('front');
-        const foldedDesign = await captureDesignOnly('folded');
-        const neckDesign = await captureDesignOnly('neck');
-
-        const frontSnapshot = await captureMockup('front');
-        const foldedSnapshot = await captureMockup('folded');
-        const neckSnapshot = await captureMockup('neck');
-        const backSnapshot = await captureMockup('back');
-
-        // Restore UI state
-        setCurrentSide(prevSide);
-        setViewMode(prevMode);
-
-        const normalizedImageLayers = await normalizeImageLayers(imageLayers);
-
-        const submissionData = {
-            productImages: [
-                frontSnapshot,
-                backSnapshot,
-                neckSnapshot,
-                foldedSnapshot
-            ],
-            productType: productData?.name || 'Women Fit Boxy T-shirt',
-            // 🟢 CRITICAL: Send normalizedImageLayers (Base64) so it saves permanently
-            canvasState: { imageLayers: normalizedImageLayers, textLayers },
-            tshirtColor: selectedTshirtColor || "#ffffff",
-
-            // Link the snapshots to the specific mockup fields
-            frontMockup: frontSnapshot,
-            frontPrintArea: MOCKUP_CONFIG.front.printArea,
-            foldedMockup: foldedSnapshot,
-            foldedMask: (MOCKUP_CONFIG.folded as any).mask,
-            foldedPrintArea: MOCKUP_CONFIG.folded.printArea,
-            foldedMaskSize: (MOCKUP_CONFIG.folded as any).maskSize,
-            foldedMaskPosition: (MOCKUP_CONFIG.folded as any).maskPosition,
-
-            neckMockup: neckSnapshot,
-            neckPrintAreaPx: printAreaPxMap.neck,
-
-            backMockup: backSnapshot,
-
-            // Design-only captures (the "PNG" versions)
-            frontDesign,
-            foldedDesign,
-            neckDesign,
-
-            frontPrintAreaPx: printAreaPxMap.front,
-            foldedPrintAreaPx: printAreaPxMap.folded,
-        };
-
-        // Save local backup without full Base64 image payload to respect quota limits
-        const textOnlyImages = imageLayers.map(img => ({ ...img, src: '' }));
-        localStorage.setItem('temp_design_state', JSON.stringify({
-            imageLayers: textOnlyImages,
-            textLayers,
-            selectedTshirtColor
-        }));
-
-        console.log("Snapshot Preview:", frontSnapshot);
-    };
-    // --- 1. CAPTURE UTILITY ---
-    const getCanvasSnapshot = async (side: string) => {
-        if (printAreaRef.current) {
-            // As a temporary fix so the code runs:
-            return "";
+            return {
+                // This is now the FULL T-shirt image
+                designSrc: canvas.toDataURL("image/png"),
+                printAreaPx: null
+            };
+        } catch (err) {
+            setIsSaving(originalIsSaving);
+            setCurrentSide(prevSide);
+            console.error("Snapshot failed:", err);
+            return { designSrc: "", printAreaPx: null };
         }
-        return "";
     };
 
     // --- 2. NAVIGATION HANDLER ---
     const handleNavigateToSubmit = async () => {
+        setIsSaving(true); // Start loading
         try {
-            console.log("Navigating to submission...");
+            console.log("Saving recovery state and capturing snapshots...");
 
-            const frontDesignSnapshot = await getCanvasSnapshot('front');
-            const backDesignSnapshot = await getCanvasSnapshot('back');
-            const neckDesignSnapshot = await getCanvasSnapshot('neck');
-            const foldedDesignSnapshot = await getCanvasSnapshot('folded');
+            // 1. Save current state to localStorage for recovery
+            const recoveryData = {
+                imageLayers,
+                textLayers,
+                selectedTshirtColor,
+                lastUpdated: new Date().toISOString()
+            };
+            localStorage.setItem('RECOVERY_DESIGN', JSON.stringify(recoveryData));
+
+            // 2. Capture snapshots for each view
+            const frontSnap = await getCanvasSnapshot('front');
+            const neckSnap = await getCanvasSnapshot('neck');
+            const foldedSnap = await getCanvasSnapshot('folded');
+            // Back view is kept blank
+            const backSnap = { designSrc: "", printAreaPx: null };
 
             const submissionData = {
                 productImages: [
-                    MOCKUP_CONFIG.front.img,
+                    // 🚀 CHANGE THIS: Use the designSrc (snapshot) instead of the empty base image
+                    frontSnap.designSrc || MOCKUP_CONFIG.front.img,
                     MOCKUP_CONFIG.back.img,
-                    MOCKUP_CONFIG.neck.img,
-                    MOCKUP_CONFIG.folded.img
+                    neckSnap.designSrc || MOCKUP_CONFIG.neck.img,
+                    foldedSnap.designSrc || MOCKUP_CONFIG.folded.img
                 ],
-                frontDesign: frontDesignSnapshot,
-                backDesign: backDesignSnapshot,
-                neckDesign: neckDesignSnapshot,
-                foldedDesign: foldedDesignSnapshot,
+                frontDesign: frontSnap.designSrc,
+                frontPrintAreaPx: frontSnap.printAreaPx,
+                frontPrintArea: MOCKUP_CONFIG.front.printArea,
+                frontAreaScale: MOCKUP_CONFIG.front.areaScale,
+                frontDesignScale: MOCKUP_CONFIG.front.designScale,
+
+                neckDesign: neckSnap.designSrc,
+                neckPrintAreaPx: neckSnap.printAreaPx,
+                neckPrintArea: MOCKUP_CONFIG.neck.printArea,
+                neckAreaScale: MOCKUP_CONFIG.neck.areaScale,
+                neckDesignScale: MOCKUP_CONFIG.neck.designScale,
+
+                foldedDesign: foldedSnap.designSrc,
+                foldedPrintAreaPx: foldedSnap.printAreaPx,
+                foldedPrintArea: MOCKUP_CONFIG.folded.printArea,
+                foldedAreaScale: MOCKUP_CONFIG.folded.areaScale,
+                foldedDesignScale: MOCKUP_CONFIG.folded.designScale,
+
+                backDesign: backSnap.designSrc,
+                backPrintAreaPx: backSnap.printAreaPx, // Actually null
+                backPrintArea: MOCKUP_CONFIG.back.printArea,
+                backAreaScale: MOCKUP_CONFIG.back.areaScale,
+                backDesignScale: MOCKUP_CONFIG.back.designScale,
+
                 productType: location.state?.product?.name || 'Oversized T-shirt',
                 tshirtColor: selectedTshirtColor,
-                frontPrintArea: MOCKUP_CONFIG.front.printArea,
-                backPrintArea: MOCKUP_CONFIG.back.printArea,
-                neckPrintArea: MOCKUP_CONFIG.neck.printArea,
-                foldedPrintArea: MOCKUP_CONFIG.folded.printArea,
                 canvasState: {
                     imageLayers: imageLayers,
                     textLayers: textLayers
-                },
-                frontPrintAreaPx: printAreaRef.current?.getBoundingClientRect() || null,
+                }
             };
 
+            setIsSaving(false);
             navigate('/submit-product', { state: submissionData });
         } catch (error) {
+            setIsSaving(false);
             console.error("Navigation failed", error);
+            alert("Failed to prepare submission. Please try again.");
         }
-    }; // 🟢 Only one closing brace here!
+    };
 
 
     const moveLayer = (id: number, direction: 'up' | 'down') => {
@@ -1192,124 +1118,151 @@ export default function DesignTool() {
                     pointerEvents: 'none',
                 }}></div>
 
-                {/* 3. Design Print Area */}
-                <div
-                    ref={printAreaRef}
-                    className={`print-area ${currentSide === 'back' ? 'back-view' : ''}`}
-                    style={{
+                {/* 3. Design Print Area (Masked to T-shirt silhouette) */}
+                <div style={{
+                    position: 'absolute',
+                    top: '-100px',
+                    right: '-71px',
+                    width: '125%',
+                    height: '125%',
+                    WebkitMaskImage: isPreview ? `url(${maskSrc})` : 'none',
+                    maskImage: isPreview ? `url(${maskSrc})` : 'none',
+                    WebkitMaskSize: 'contain',
+                    maskSize: 'contain',
+                    WebkitMaskPosition: 'center',
+                    maskPosition: 'center',
+                    WebkitMaskRepeat: 'no-repeat',
+                    maskRepeat: 'no-repeat',
+                    zIndex: 20,
+                    pointerEvents: 'none'
+                }}>
+                    <div style={{
                         position: 'absolute',
-                        zIndex: 20,
-                        top: config.printArea.top,
-                        left: config.printArea.left,
-                        width: config.printArea.width,
-                        height: config.printArea.height,
-                        transform: `translate(-50%, -50%) rotate(${(config.printArea as any).rotation ?? 0}deg)`,
-                        border: viewMode === 'edit' && !isSaving ? '2px dashed rgba(0,0,0,0.4)' : 'none',
-                        overflow: 'hidden',
-                        boxSizing: 'border-box',
-                        pointerEvents: isPreview ? 'none' : 'auto',
-                        isolation: 'isolate'
-                    }}
-                >
-                    {/* Image Layers */}
-                    {shouldShowDesign && imageLayers.map((layer) => (
-                        <img
-                            key={layer.id}
-                            src={layer.src}
-                            style={{
-                                position: 'absolute',
-                                zIndex: layer.zIndex,
-                                transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
-                                mixBlendMode: (isPreview && selectedTshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
-                                opacity: isPreview ? 0.92 : 1,
-                                cursor: 'move',
-                                border: (selectedId === layer.id && viewMode === 'edit' && !isSaving) ? '1px dashed #0d375b' : 'none'
-                            }}
-                            onMouseDown={(e) => handleDragStart(e, layer.id, 'image', layer.x, layer.y)}
-                        />
-                    ))}
-
-
-                    {/* Text Layers */}
-                    {shouldShowDesign && textLayers.map((t) => (
+                        top: '100px',
+                        right: '71px',
+                        width: isWideView ? '850px' : '550px',
+                        height: '800px',
+                        pointerEvents: 'none'
+                    }}>
                         <div
-                            key={t.id}
+                            ref={printAreaRef}
+                            className={`print-area ${currentSide === 'back' ? 'back-view' : ''}`}
                             style={{
                                 position: 'absolute',
-                                zIndex: t.zIndex,
-                                transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale}) rotate(${t.rotation}deg)`,
-                                cursor: 'move',
-                                border: (selectedId === t.id && viewMode === 'edit' && !isSaving) ? '1px solid #0d375b' : 'none',
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
+                                zIndex: 20,
+                                top: config.printArea.top,
+                                left: config.printArea.left,
+                                width: config.printArea.width,
+                                height: config.printArea.height,
+                                transform: `translate(-50%, -50%) rotate(${(config.printArea as any).rotation ?? 0}deg)`,
+                                border: viewMode === 'edit' && !isSaving ? '2px dashed rgba(0,0,0,0.4)' : 'none',
+                                overflow: 'hidden',
+                                boxSizing: 'border-box',
+                                pointerEvents: isPreview ? 'none' : 'auto',
+                                isolation: 'isolate'
                             }}
-                            onMouseDown={(e) => handleDragStart(e, t.id, 'text', t.x, t.y)}
                         >
-                            {t.styleId === 'default' && (
-                                <>
-                                    {/* 🚀 If curve exists and isn't 0, render as CurvedText, else render as normal Div */}
-                                    {(t.curve !== 0 && t.curve !== undefined) ? (
-                                        <CurvedText
-                                            id={t.id}
-                                            text={t.text}
-                                            fontFamily={t.font}
-                                            color={t.color}
-                                            curve={t.curve ?? 0}
-                                            letterSpacing={t.letterSpacing || 0}
-                                        />
-                                    ) : (
+                            {/* Image Layers */}
+                            {shouldShowDesign && imageLayers.map((layer) => (
+                                <img
+                                    key={layer.id}
+                                    src={layer.src}
+                                    style={{
+                                        position: 'absolute',
+                                        zIndex: layer.zIndex,
+                                        transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
+                                        mixBlendMode: (isPreview && selectedTshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
+                                        opacity: isPreview ? 0.92 : 1,
+                                        cursor: 'move',
+                                        border: (selectedId === layer.id && viewMode === 'edit' && !isSaving) ? '1px dashed #0d375b' : 'none'
+                                    }}
+                                    onMouseDown={(e) => handleDragStart(e, layer.id, 'image', layer.x, layer.y)}
+                                />
+                            ))}
+
+
+                            {/* Text Layers */}
+                            {shouldShowDesign && textLayers.map((t) => (
+                                <div
+                                    key={t.id}
+                                    style={{
+                                        position: 'absolute',
+                                        zIndex: t.zIndex,
+                                        transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale * (config.designScale || 1)}) rotate(${t.rotation}deg)`,
+                                        cursor: 'move',
+                                        border: (selectedId === t.id && viewMode === 'edit' && !isSaving) ? '1px solid #0d375b' : 'none',
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
+                                    }}
+                                    onMouseDown={(e) => handleDragStart(e, t.id, 'text', t.x, t.y)}
+                                >
+                                    {t.styleId === 'default' && (
+                                        <>
+                                            {/* 🚀 If curve exists and isn't 0, render as CurvedText, else render as normal Div */}
+                                            {(t.curve !== 0 && t.curve !== undefined) ? (
+                                                <CurvedText
+                                                    id={t.id}
+                                                    text={t.text}
+                                                    fontFamily={t.font}
+                                                    color={t.color}
+                                                    curve={t.curve ?? 0}
+                                                    letterSpacing={t.letterSpacing || 0}
+                                                />
+                                            ) : (
+                                                <div style={{
+                                                    fontFamily: t.font,
+                                                    color: t.color,
+                                                    fontSize: '24px',
+                                                    fontWeight: 'bold',
+                                                    whiteSpace: 'nowrap',
+                                                    letterSpacing: `${t.letterSpacing || 0}px`,
+                                                    textShadow: isPreview ? '0px 1px 3px rgba(0,0,0,0.3)' : 'none'
+                                                }}>
+                                                    {t.text}
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {/* --- WAVE STYLE --- */}
+                                    {t.styleId === 'style-wave' && (
                                         <div style={{
-                                            fontFamily: t.font,
-                                            color: t.color,
-                                            fontSize: '24px',
-                                            fontWeight: 'bold',
-                                            whiteSpace: 'nowrap',
-                                            letterSpacing: `${t.letterSpacing || 0}px`,
-                                            textShadow: isPreview ? '0px 1px 3px rgba(0,0,0,0.3)' : 'none'
+                                            fontFamily: t.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900',
+                                            textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b',
+                                            transform: 'skewX(-10deg)', fontStyle: 'italic',
+                                            letterSpacing: `${t.letterSpacing || 0}px`
                                         }}>
                                             {t.text}
                                         </div>
                                     )}
-                                </>
-                            )}
 
-                            {/* --- WAVE STYLE --- */}
-                            {t.styleId === 'style-wave' && (
-                                <div style={{
-                                    fontFamily: t.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900',
-                                    textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b',
-                                    transform: 'skewX(-10deg)', fontStyle: 'italic',
-                                    letterSpacing: `${t.letterSpacing || 0}px`
-                                }}>
-                                    {t.text}
+                                    {/* --- STACK STYLE --- */}
+                                    {t.styleId === 'style-stack' && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${t.letterSpacing || 0}px` }}>
+                                            {[1, 2, 3].map((i) => (
+                                                <span key={i} style={{ fontFamily: t.font, color: i === 2 ? t.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${t.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{t.text}</span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* --- FISH STYLE --- */}
+                                    {t.styleId === 'style-fish' && (
+                                        <div style={{ fontFamily: t.font, color: t.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(t.letterSpacing || 0) - 1}px` }}>
+                                            {t.text}
+                                        </div>
+                                    )}
+
+                                    {/* --- CIRCLE & CUSTOM CURVED --- */}
+                                    {!['default', 'style-wave', 'style-stack', 'style-fish'].includes(t.styleId || '') && (
+                                        <CurvedText
+                                            id={t.id} text={t.text} styleId={t.styleId} fontFamily={t.font} color={t.color}
+                                            curve={t.styleId === 'style-circle' ? (t.curve ?? 120) : (t.curve ?? 0)}
+                                            letterSpacing={t.letterSpacing || 0}
+                                        />
+                                    )}
                                 </div>
-                            )}
-
-                            {/* --- STACK STYLE --- */}
-                            {t.styleId === 'style-stack' && (
-                                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${t.letterSpacing || 0}px` }}>
-                                    {[1, 2, 3].map((i) => (
-                                        <span key={i} style={{ fontFamily: t.font, color: i === 2 ? t.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${t.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{t.text}</span>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* --- FISH STYLE --- */}
-                            {t.styleId === 'style-fish' && (
-                                <div style={{ fontFamily: t.font, color: t.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(t.letterSpacing || 0) - 1}px` }}>
-                                    {t.text}
-                                </div>
-                            )}
-
-                            {/* --- CIRCLE & CUSTOM CURVED --- */}
-                            {!['default', 'style-wave', 'style-stack', 'style-fish'].includes(t.styleId || '') && (
-                                <CurvedText
-                                    id={t.id} text={t.text} styleId={t.styleId} fontFamily={t.font} color={t.color}
-                                    curve={t.styleId === 'style-circle' ? (t.curve ?? 120) : (t.curve ?? 0)}
-                                    letterSpacing={t.letterSpacing || 0}
-                                />
-                            )}
+                            ))}
                         </div>
-                    ))}
+                    </div>
                 </div>
 
                 {/* 4. Realistic Wrinkles/Shadows */}
@@ -1328,8 +1281,23 @@ export default function DesignTool() {
         const config = MOCKUP_CONFIG[side];
         const maskSrc = (config as any).mask || config.img;
 
+        // 🟢 Change this value to adjust the specific size of the folded T-shirt!
+        const mockupHeight = side === 'folded' ? '500px' : '800px';
+
         return (
-            <div style={{ position: 'relative', width: 'fit-content', height: '800px' }}>
+            <div style={{
+                position: 'relative',
+                width: 'fit-content',
+                height: mockupHeight,
+                WebkitMaskImage: `url(${maskSrc})`,
+                maskImage: `url(${maskSrc})`,
+                WebkitMaskSize: (config as any).maskSize || 'contain',
+                maskSize: (config as any).maskSize || 'contain',
+                WebkitMaskPosition: 'center',
+                maskPosition: 'center',
+                WebkitMaskRepeat: 'no-repeat',
+                overflow: 'hidden'
+            }}>
                 {/* 1. Mockup */}
                 <img src={config.img} alt="Mockup" style={{ height: '100%', display: 'block' }} crossOrigin="anonymous" />
 
@@ -1363,7 +1331,7 @@ export default function DesignTool() {
                             <img key={layer.id} src={layer.src} style={{
                                 position: 'absolute',
                                 zIndex: layer.zIndex,
-                                transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
+                                transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
                                 mixBlendMode: selectedTshirtColor.toLowerCase() === '#ffffff' ? 'normal' : 'multiply',
                                 opacity: 0.95
                             }} />
@@ -1373,7 +1341,7 @@ export default function DesignTool() {
                             <div key={t.id} style={{
                                 position: 'absolute',
                                 zIndex: t.zIndex,
-                                transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale}) rotate(${t.rotation}deg)`,
+                                transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale * (config.designScale || 1)}) rotate(${t.rotation}deg)`,
                             }}>
                                 {t.styleId === 'default' ? (
                                     <div style={{ fontFamily: t.font, color: t.color, fontSize: '24px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{t.text}</div>
@@ -1437,7 +1405,7 @@ export default function DesignTool() {
                             style={{
                                 position: 'absolute',
                                 zIndex: layer.zIndex,
-                                transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
+                                transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
                                 transformOrigin: 'center center',
                                 maxWidth: 'none',
                                 width: '100%',
@@ -1453,7 +1421,7 @@ export default function DesignTool() {
                             style={{
                                 position: 'absolute',
                                 zIndex: t.zIndex,
-                                transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale}) rotate(${t.rotation}deg)`,
+                                transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale * (config.designScale || 1)}) rotate(${t.rotation}deg)`,
                                 transformOrigin: 'center center',
                                 cursor: 'pointer',
                                 padding: '10px'
@@ -1742,7 +1710,7 @@ export default function DesignTool() {
                                     width: '100%', padding: '10px', border: 'none',
                                     backgroundColor: '#0d375b', color: 'white',
                                     borderRadius: '8px', fontSize: '12px', fontWeight: '800', cursor: 'pointer'
-                                }}>Apply</button>
+                                }}>{activeVariantTab === 'size' ? 'Available Sizes' : 'Apply'}</button>
                             </div>
                         </div>
                     </div>
@@ -2400,7 +2368,7 @@ export default function DesignTool() {
                                     </div>
 
                                     {/* SUBMIT BUTTON */}
-                                    <div style={{ marginTop: '30px', marginBottom: '40px', zIndex: 100 }}>
+                                    <div style={{ marginTop: '5px', marginBottom: '40px', zIndex: 100 }}>
                                         <button
                                             className="finish-btn"
                                             onClick={handleNavigateToSubmit}
@@ -2583,7 +2551,7 @@ export default function DesignTool() {
                             </ReactCrop>
                             <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
                                 <button onClick={() => setShowCropModal(false)} style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>Cancel</button>
-                                <button onClick={handleSaveCrop} style={{ padding: '10px 20px', borderRadius: '8px', backgroundColor: '#0d375b', color: 'white', border: 'none', cursor: 'pointer' }}>Apply Crop</button>
+                                <button onClick={handleApplyCrop} style={{ padding: '10px 20px', borderRadius: '8px', backgroundColor: '#0d375b', color: 'white', border: 'none', cursor: 'pointer' }}>Apply Crop</button>
                             </div>
                         </div>
                     </div>

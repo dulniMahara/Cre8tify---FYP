@@ -74,7 +74,7 @@ const MyOrders = () => {
             {/* 2. MAIN SCROLLABLE AREA */}
             <div style={{ 
                 flex: 1, 
-                marginLeft: '280px', 
+                marginLeft: '200px', 
                 display: 'flex', 
                 flexDirection: 'column',
                 height: '100vh',
@@ -88,7 +88,7 @@ const MyOrders = () => {
                 </div>
 
                 {/* 📦 TABLE SECTION - Lowered for spacing */}
-                <main style={{ padding: '240px 40px 100px 40px', flex: 1 }}>
+                <main style={{ padding: '100px 40px 60px 40px', flex: 1 }}>
                     
                     <div style={styles.tableCard}>
                         <table style={styles.orderTable}>
@@ -141,7 +141,7 @@ const MyOrders = () => {
             {/* CSS to nudge ONLY the Back option and keep UI clean */}
             <style>{`
                 .header-nudge-wrapper header > div:first-child {
-                    margin-left: 55px !important;
+                    margin-left: 20px !important;
                 }
                 /* Smooth scrolling */
                 div {
@@ -156,30 +156,30 @@ const MyOrders = () => {
 const styles = {
     tableCard: { 
         backgroundColor: '#fff', 
-        borderRadius: '25px', 
-        boxShadow: '0 15px 45px rgba(0,0,0,0.1)', 
+        borderRadius: '20px', 
+        boxShadow: '0 10px 30px rgba(0,0,0,0.08)', 
         overflow: 'hidden',
         margin: '0 auto', 
-        maxWidth: '1500px' 
+        maxWidth: '1000px' 
     },
     orderTable: { width: '100%', borderCollapse: 'collapse' },
     thead: { backgroundColor: '#0d375b', color: '#fff' },
-    th: { padding: '30px', textAlign: 'center', fontSize: '22px', fontWeight: '900' },
+    th: { padding: '15px', textAlign: 'center', fontSize: '16px', fontWeight: '900' },
     tr: { borderBottom: '2px solid #f0f0f0' },
-    td: { padding: '35px 30px', verticalAlign: 'middle', fontSize: '20px', textAlign: 'left' },
-    tdCenter: { padding: '35px 30px', verticalAlign: 'middle', fontSize: '20px', textAlign: 'center' },
-    shirtImg: { width: '120px', height: '120px', borderRadius: '15px', objectFit: 'cover' },
-    itemName: { fontWeight: '900', fontSize: '24px', color: '#0d375b', marginBottom: '8px' },
-    itemPrice: { color: '#666', fontSize: '18px', fontWeight: '700' },
+    td: { padding: '20px 15px', verticalAlign: 'middle', fontSize: '14px', textAlign: 'left' },
+    tdCenter: { padding: '20px 15px', verticalAlign: 'middle', fontSize: '14px', textAlign: 'center' },
+    shirtImg: { width: '80px', height: '80px', borderRadius: '10px', objectFit: 'cover' },
+    itemName: { fontWeight: '900', fontSize: '16px', color: '#0d375b', marginBottom: '4px' },
+    itemPrice: { color: '#666', fontSize: '14px', fontWeight: '700' },
     trackBtn: { 
         backgroundColor: '#0d375b', 
         color: '#fff', 
         border: 'none', 
-        padding: '18px 40px', 
-        borderRadius: '45px', 
+        padding: '10px 24px', 
+        borderRadius: '30px', 
         cursor: 'pointer', 
         fontWeight: '900', 
-        fontSize: '18px' 
+        fontSize: '14px' 
     },
     statusDelivered: { color: '#27ae60', fontWeight: '900' },
     statusProcessing: { color: '#f39c12', fontWeight: '900' }

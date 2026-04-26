@@ -5,7 +5,8 @@
     padding: 0;
 }
 
-body, html {
+body,
+html {
     width: 100%;
     min-height: 100%;
     margin: 0;
@@ -18,20 +19,22 @@ body, html {
     display: flex;
     width: 100%;
     min-height: 100vh;
-    height: auto !important; /* 🟢 Let it grow! */
-    overflow: visible !important; /* 🟢 Allow scrolling */
+    height: auto !important;
+    /* 🟢 Let it grow! */
+    overflow: visible !important;
+    /* 🟢 Allow scrolling */
 }
 
 /* --- SIDEBAR --- */
 .sidebar {
-    width: 200px; 
+    width: 200px;
     min-width: 200px;
     background-color: #0d375b;
     color: white;
     display: flex;
     flex-direction: column;
     padding: 25px 15px;
-    position: fixed; 
+    position: fixed;
     height: 100vh;
     top: 0;
     left: 0;
@@ -58,15 +61,15 @@ body, html {
     display: flex;
     align-items: center;
     gap: 10px;
-    background-color: white; 
+    background-color: white;
     color: #0d375b;
     padding: 10px 18px;
     border-radius: 12px;
     text-decoration: none;
     font-weight: 700;
-    font-size: 13px; 
+    font-size: 13px;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* 🟢 Narrower & Slightly Taller Buttons for Customer Sidebar */
@@ -78,30 +81,32 @@ body, html {
 }
 
 .sidebar-icon {
-    width: 15px; 
+    width: 15px;
     height: 15px;
     object-fit: contain;
 }
 
 .sidebar-btn:hover {
-    background-color: #e2e8f0; /* Slight greyish blue on hover */
+    background-color: #e2e8f0;
+    /* Slight greyish blue on hover */
     transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .sidebar-btn.active {
     background-color: #ffffff;
-    border: 2px solid #0c5fe3; /* Subtle border for active state */
+    border: 2px solid #0c5fe3;
+    /* Subtle border for active state */
 }
 
 .sidebar-btn.active {
     background-color: #fff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* --- MAIN CONTENT --- */
 .main-content {
-    margin-left: 200px; 
+    margin-left: 200px;
     flex: 1;
     width: calc(100% - 200px);
     display: flex;
@@ -120,11 +125,11 @@ body, html {
     color: white;
     position: fixed;
     top: 0;
-    left: 200px; 
-    right: 0;    
-    width: auto; 
+    left: 200px;
+    right: 0;
+    width: auto;
     z-index: 900;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .header-left {
@@ -140,7 +145,7 @@ body, html {
 .nav-icon-small {
     width: 12px;
     height: 12px;
-    filter: brightness(0) invert(1); 
+    filter: brightness(0) invert(1);
 }
 
 /* --- SEARCH BAR --- */
@@ -148,8 +153,8 @@ body, html {
     position: relative;
     display: flex;
     align-items: center;
-    width: 45%;       
-    max-width: 250px; 
+    width: 45%;
+    max-width: 250px;
 }
 
 .search-icon-img {
@@ -198,8 +203,8 @@ body, html {
     padding: 0 30px 30px 30px;
     background-color: white;
     flex: 1;
-    margin-top: 70px !important; 
-    min-height: 100vh; 
+    margin-top: 70px !important;
+    min-height: 100vh;
 }
 
 /* 🟢 Flush Layout for Customer Pages Only */
@@ -248,7 +253,7 @@ body, html {
     font-size: 8px;
     cursor: pointer;
     transition: transform 0.2s;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .hero-btn:hover {
@@ -258,18 +263,20 @@ body, html {
 /* --- GRID LAYOUT --- */
 .products-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 25px; 
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
     margin-bottom: 30px;
-    max-width: 700px; 
+    max-width: 700px;
     margin-left: auto;
     margin-right: auto;
 }
+
 .status-tag {
     position: absolute;
     top: 8px;
     right: 8px;
-    z-index: 99; /* Ensure it stays above the image and overlay */
+    z-index: 99;
+    /* Ensure it stays above the image and overlay */
     background-color: #0d375b;
     color: white;
     padding: 3px 6px;
@@ -277,7 +284,8 @@ body, html {
     font-size: 6px;
     font-weight: 700;
     text-transform: uppercase;
-    pointer-events: none; /* Allows clicks to pass through to the card */
+    pointer-events: none;
+    /* Allows clicks to pass through to the card */
 }
 
 
@@ -287,14 +295,16 @@ body, html {
     flex-direction: column;
     background-color: white;
     width: 100%;
-    max-width: 190px; 
+    max-width: 190px;
     margin: 0 auto;
     border-radius: 8px;
     border: 1px solid #eee;
-    overflow: hidden; /* For zoom effect */
+    overflow: hidden;
+    /* For zoom effect */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
 }
+
 .image-wrapper {
     position: relative;
     width: 100%;
@@ -310,16 +320,20 @@ body, html {
     object-position: top center;
     transition: transform 0.5s ease;
 }
+
 .product-card:hover {
-    transform: translateY(-6px); /* 🟢 Card lifts up */
+    transform: translateY(-6px);
+    /* 🟢 Card lifts up */
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
 }
+
 /* Zoom on hover */
 .product-card:hover .product-image {
     transform: scale(1.1);
 }
+
 .product-card:hover .card-info img {
-    transform: scale(1.2); 
+    transform: scale(1.2);
     transition: transform 0.3s ease;
 }
 
@@ -334,6 +348,7 @@ body, html {
     margin-bottom: 3px;
     color: #000;
 }
+
 .view-details-link {
     font-size: 7px;
     color: #888;
@@ -346,6 +361,7 @@ body, html {
     color: #0d375b;
     text-decoration: underline;
 }
+
 .product-price {
     color: #ff4d4d;
     font-weight: 700;

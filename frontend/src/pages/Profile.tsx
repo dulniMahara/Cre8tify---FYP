@@ -25,7 +25,9 @@ export default function Profile() {
 
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
-        setUserRole(storedUser.role || 'buyer');
+        // 🟢 Force 'admin' to be treated as 'designer' for this page's layout
+        const role = storedUser.role === 'admin' ? 'designer' : (storedUser.role || 'buyer');
+        setUserRole(role);
         
         setFormData({
             name: storedUser.name || '',
@@ -310,7 +312,9 @@ export default function Profile() {
                                     </button>
                                 </div>
                                 <h3 style={{ margin: '0 0 5px 0', color: '#0d375b', fontSize: '18px' }}>{formData.name}</h3>
-                                <p style={{ color: '#64748b', fontSize: '12px', fontWeight: '600', letterSpacing: '1px', marginBottom: '8px' }}>{userRole.toUpperCase()}</p>
+                                <p style={{ color: '#64748b', fontSize: '12px', fontWeight: '600', letterSpacing: '1px', marginBottom: '8px' }}>
+                                    {userRole === 'designer' ? 'DESIGNER' : 'BUYER'}
+                                </p>
                                 
                                 {/* 🟢 REMOVE PHOTO BUTTON */}
                                 {formData.profileImage && (
@@ -332,13 +336,13 @@ export default function Profile() {
                                 <h4 style={{ margin: '0 0 20px 0', fontSize: '18px', opacity: 0.9, fontWeight: '700', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '10px' }}>
                                     {userRole === 'designer' ? 'Sales Performance' : 'Activity Overview'}
                                 </h4>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '14px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '16px' }}>
                                     <span>{userRole === 'designer' ? 'Published Designs' : 'Wishlist Items'}</span>
-                                    <strong style={{ fontSize: '18px' }}>{userRole === 'designer' ? '08' : '12'}</strong>
+                                    <strong style={{ fontSize: '16px' }}>{userRole === 'designer' ? '08' : '12'}</strong>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px' }}>
                                     <span>{userRole === 'designer' ? 'Total Sales' : 'Total Orders'}</span>
-                                    <strong style={{ fontSize: '18px' }}>{userRole === 'designer' ? '24' : '04'}</strong>
+                                    <strong style={{ fontSize: '16px' }}>{userRole === 'designer' ? '24' : '04'}</strong>
                                 </div>
                             </div>
                         </div>

@@ -85,9 +85,9 @@ const CustomerDashboard = () => {
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '45px', marginBottom: '35px' }}>
-                        <CategoryCircle title="MEN" img="/img/men.png" onClick={() => navigate('/men-collection')} />
-                        <CategoryCircle title="WOMEN" img="/img/women.png" scale="1.15" position="top 20%" onClick={() => navigate('/women-collection')} />
-                        <CategoryCircle title="KIDS" img="/img/kids.png" onClick={() => navigate('/kids-collection')} />
+                        <CategoryCircle title="MEN" img="/img/men.png" scale="1.0" position="top 20%" onClick={() => navigate('/men-collection')} />
+                        <CategoryCircle title="WOMEN" img="/img/women.png" scale="1.50" position="top 20%" onClick={() => navigate('/women-collection')} />
+                        <CategoryCircle title="KIDS" img="/img/kids.png" scale="1.0" position="top 20%"  onClick={() => navigate('/kids-collection')} />
                     </div>
 
                     <div style={newArrivalsStripe}>

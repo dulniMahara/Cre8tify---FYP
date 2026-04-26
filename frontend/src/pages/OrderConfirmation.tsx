@@ -155,18 +155,30 @@ const OrderConfirmation = () => {
         }
 
         const orderData = {
-            orderItems: items.map((item: any) => ({
-                name: item.title || item.name || "Custom Design",
-                qty: item.quantity,
-                image: item.image, 
-                price: item.price,
-                product: item._id 
-            })),
+            orderItems: items.map((item: any) => {
+                const itemPrice = parseFloat(item.price.toString().replace(/[^\d.]/g, ''));
+                const markup = item.markup || item.designerCharge || 0;
+                const serviceFee = item.serviceFee || item.serviceCharge || 100;
+                const basePrice = item.basePrice || (itemPrice - markup - serviceFee);
+
+                return {
+                    name: item.title || item.name || "Custom Design",
+                    qty: item.quantity,
+                    image: item.image, 
+                    price: itemPrice,
+                    basePrice: basePrice,
+                    markup: markup,
+                    serviceFee: serviceFee,
+                    size: item.size,
+                    color: item.color,
+                    product: item._id || item.id 
+                };
+            }),
             totalPrice: total,
             shippingAddress: customer.address,
             paymentMethod: paymentMethod,
-            // 📝 Optional: If it's a bank deposit, you might want to send a flag
-            isPaid: paymentMethod === 'card' ? true : false, 
+            isPaid: paymentMethod === 'card',
+            paidAt: paymentMethod === 'card' ? new Date() : null,
             status: paymentMethod === 'bank' ? 'Awaiting Verification' : 'Processing'
         };
 

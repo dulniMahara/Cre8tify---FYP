@@ -69,6 +69,22 @@ const Home = () => {
                             Designer Login
                         </button>
 
+                        {/* SUBTLE ADMIN LINK */}
+                        <div style={{ marginTop: '15px', color: '#64748b', fontSize: '10.5px', textAlign: 'center' }}>
+                            Staff member? <span 
+                                onClick={() => navigate('/admin/login')}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = '#0d375b';
+                                    e.currentTarget.style.textDecoration = 'underline';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = '#64748b';
+                                    e.currentTarget.style.textDecoration = 'none';
+                                }}
+                                style={{ cursor: 'pointer', fontWeight: 'bold', transition: 'color 0.2s' }}
+                            >Log in as Admin</span>
+                        </div>
+
                         <div className="sign-up-link">
                             New to Cre8tify? <span onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}>Scroll down to Sign Up</span>
                         </div>

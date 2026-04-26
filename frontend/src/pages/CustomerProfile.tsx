@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+
+const API_URL = "http://localhost:5000";
 
 const CustomerProfile = () => {
     const navigate = useNavigate();
@@ -22,6 +24,39 @@ const CustomerProfile = () => {
             points: parsed?.points || 0
         };
     });
+
+    // 🟢 NEW: Fetch real stats from Backend & LocalStorage
+    useEffect(() => {
+        const fetchStats = async () => {
+            const savedData = localStorage.getItem('userInfo');
+            const parsed = savedData ? JSON.parse(savedData) : null;
+            const token = parsed?.token || localStorage.getItem('token');
+
+            // 1. Fetch Orders count from Backend
+            if (token) {
+                try {
+                    const response = await fetch(`${API_URL}/api/orders/myorders`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.ok) {
+                        const orders = await response.json();
+                        setProfile(prev => ({ ...prev, orders: orders.length }));
+                    }
+                } catch (err) {
+                    console.error("Error fetching order count:", err);
+                }
+            }
+
+            // 2. Fetch Liked Designs count from LocalStorage
+            const savedWishlist = localStorage.getItem('wishlist');
+            if (savedWishlist) {
+                const wishlistArray = JSON.parse(savedWishlist);
+                setProfile(prev => ({ ...prev, likes: wishlistArray.length }));
+            }
+        };
+
+        fetchStats();
+    }, []);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -146,35 +181,35 @@ const CustomerProfile = () => {
 
 // --- STYLES (Updated Font Sizes) ---
 const rootContainer: React.CSSProperties = { display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', background: '#f8fafc' };
-const sidebarWrapper: React.CSSProperties = { width: '320px', flexShrink: 0, height: '100vh' };
+const sidebarWrapper: React.CSSProperties = { width: '200px', flexShrink: 0, height: '100vh' };
 const mainContentArea: React.CSSProperties = { flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' };
-const topBar: React.CSSProperties = { background: '#0d375b', height: '160px', padding: '0 40px', display: 'flex', alignItems: 'center', flexShrink: 0, zIndex: 10 };
-const backBtn: React.CSSProperties = { color: 'white', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '26px', fontWeight: 600 };
-const backIcon: React.CSSProperties = { width: '28px', filter: 'invert(1)' };
-const scrollBody: React.CSSProperties = { padding: '60px 80px', overflowY: 'auto', flex: 1 };
-const titleSection: React.CSSProperties = { marginBottom: '50px' };
-const mainHeading: React.CSSProperties = { fontFamily: '"Instrument Serif", serif', fontSize: '64px', color: '#0d375b', margin: 0, fontWeight: 600 };
-const subHeading: React.CSSProperties = { color: '#64748b', fontSize: '22px', marginTop: '10px' };
-const mainGrid: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '50px' };
-const sideStack: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '30px' };
-const formCard: React.CSSProperties = { background: 'white', padding: '50px', borderRadius: '35px', boxShadow: '0 20px 50px rgba(13, 55, 91, 0.05)', border: '1px solid #f1f5f9' };
-const cardTitle: React.CSSProperties = { fontSize: '36px', fontWeight: 700, color: '#0d375b', margin: 0 };
-const titleUnderline: React.CSSProperties = { height: '2px', background: '#e2e8f0', margin: '20px 0 40px 0' };
-const formStack: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '30px' };
-const inputGroup: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '12px' };
-const fieldLabel: React.CSSProperties = { fontWeight: 800, fontSize: '18px', color: '#1e293b' };
-const textInput: React.CSSProperties = { padding: '22px', borderRadius: '15px', border: '2px solid #e2e8f0', background: '#fcfdfe', fontSize: '20px', outline: 'none', color: '#0d375b' };
-const saveBtn: React.CSSProperties = { background: '#0d375b', color: 'white', padding: '24px', borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '22px', cursor: 'pointer', marginTop: '20px', boxShadow: '0 10px 25px rgba(13, 55, 91, 0.2)' };
-const profileVisualCard: React.CSSProperties = { background: 'white', padding: '50px', borderRadius: '35px', textAlign: 'center', boxShadow: '0 20px 50px rgba(13, 55, 91, 0.05)', border: '1px solid #f1f5f9' };
-const imageContainer: React.CSSProperties = { position: 'relative', width: '180px', height: '180px', margin: '0 auto 25px' };
-const bigAvatar: React.CSSProperties = { width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '6px solid #f8fafc' };
-const cameraBadge: React.CSSProperties = { position: 'absolute', bottom: '10px', right: '10px', background: 'white', width: '50px', height: '50px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.15)', cursor: 'pointer' };
-const displayName: React.CSSProperties = { fontSize: '38px', fontWeight: 900, color: '#0d375b', margin: 0 };
-const roleText: React.CSSProperties = { color: '#64748b', fontWeight: 800, fontSize: '18px', marginTop: '10px' };
-const removePhotoBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#ef4444', fontWeight: 800, marginTop: '25px', cursor: 'pointer', fontSize: '16px' };
-const pulseCard: React.CSSProperties = { background: '#0d375b', color: 'white', padding: '50px', borderRadius: '35px', boxShadow: '0 20px 50px rgba(13, 55, 91, 0.1)' };
-const pulseTitle: React.CSSProperties = { fontSize: '28px', fontWeight: 800, margin: 0 };
-const pulseLine: React.CSSProperties = { height: '1px', background: 'rgba(255,255,255,0.1)', margin: '20px 0' };
-const pulseRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '20px', opacity: 0.9 };
+const topBar: React.CSSProperties = { background: '#0d375b', height: '70px', padding: '0 40px', display: 'flex', alignItems: 'center', flexShrink: 0, zIndex: 10 };
+const backBtn: React.CSSProperties = { color: 'white', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 };
+const backIcon: React.CSSProperties = { width: '18px', filter: 'invert(1)' };
+const scrollBody: React.CSSProperties = { padding: '30px 40px', overflowY: 'auto', flex: 1 };
+const titleSection: React.CSSProperties = { marginBottom: '30px' };
+const mainHeading: React.CSSProperties = { fontFamily: '"Instrument Serif", serif', fontSize: '32px', color: '#0d375b', margin: 0, fontWeight: 600 };
+const subHeading: React.CSSProperties = { color: '#64748b', fontSize: '14px', marginTop: '5px' };
+const mainGrid: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px' };
+const sideStack: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '24px' };
+const formCard: React.CSSProperties = { background: 'white', padding: '24px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(13, 55, 91, 0.05)', border: '1px solid #f1f5f9' };
+const cardTitle: React.CSSProperties = { fontSize: '22px', fontWeight: 700, color: '#0d375b', margin: 0 };
+const titleUnderline: React.CSSProperties = { height: '2px', background: '#e2e8f0', margin: '10px 0 24px 0' };
+const formStack: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '18px' };
+const inputGroup: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '8px' };
+const fieldLabel: React.CSSProperties = { fontWeight: 800, fontSize: '13px', color: '#1e293b' };
+const textInput: React.CSSProperties = { padding: '10px 15px', borderRadius: '8px', border: '2px solid #e2e8f0', background: '#fcfdfe', fontSize: '14px', outline: 'none', color: '#0d375b' };
+const saveBtn: React.CSSProperties = { background: '#0d375b', color: 'white', padding: '12px', borderRadius: '10px', border: 'none', fontWeight: 900, fontSize: '15px', cursor: 'pointer', marginTop: '10px', boxShadow: '0 6px 15px rgba(13, 55, 91, 0.2)' };
+const profileVisualCard: React.CSSProperties = { background: 'white', padding: '24px', borderRadius: '16px', textAlign: 'center', boxShadow: '0 10px 30px rgba(13, 55, 91, 0.05)', border: '1px solid #f1f5f9' };
+const imageContainer: React.CSSProperties = { position: 'relative', width: '120px', height: '120px', margin: '0 auto 15px' };
+const bigAvatar: React.CSSProperties = { width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '4px solid #f8fafc' };
+const cameraBadge: React.CSSProperties = { position: 'absolute', bottom: '5px', right: '5px', background: 'white', width: '35px', height: '35px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.15)', cursor: 'pointer' };
+const displayName: React.CSSProperties = { fontSize: '20px', fontWeight: 900, color: '#0d375b', margin: 0 };
+const roleText: React.CSSProperties = { color: '#64748b', fontWeight: 800, fontSize: '12px', marginTop: '5px' };
+const removePhotoBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#ef4444', fontWeight: 800, marginTop: '15px', cursor: 'pointer', fontSize: '13px' };
+const pulseCard: React.CSSProperties = { background: '#0d375b', color: 'white', padding: '24px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(13, 55, 91, 0.1)' };
+const pulseTitle: React.CSSProperties = { fontSize: '18px', fontWeight: 800, margin: 0 };
+const pulseLine: React.CSSProperties = { height: '1px', background: 'rgba(255,255,255,0.1)', margin: '15px 0' };
+const pulseRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '14px', opacity: 0.9 };
 
 export default CustomerProfile;

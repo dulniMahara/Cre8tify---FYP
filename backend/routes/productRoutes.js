@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
-const { 
-    createProduct, 
-    getDesignerProducts, 
-    getPendingProducts, 
+const {
+    createProduct,
+    getDesignerProducts,
+    getPendingProducts,
     updateProductStatus,
     handleVirtualTryOn // 👈 ADD THIS HERE
 } = require('../controllers/productController');
