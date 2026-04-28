@@ -14,13 +14,20 @@ const MyOrders = () => {
 
     // 🟢 DYNAMIC NAVIGATION LOGIC
     const handleTrackButtonClick = (order) => {
-        if (order.status === 'Processing') {
-            // Goes to the ongoing tracking page (image_a51e6b.png style)
-            navigate(`/track-order/${order._id}`);
-        } else {
-            // 🚀 GOES TO THE NEW COMPLETED HISTORY PAGE
-            navigate(`/order-history-detail/${order._id}`);
-        }
+        // 🚀 Always go to /track-order but pass state to differentiate the view
+        const userInfoRaw = localStorage.getItem('userInfo');
+        const userInfo = userInfoRaw ? JSON.parse(userInfoRaw) : null;
+        
+        navigate('/track-order', { 
+            state: { 
+                orderId: order._id, 
+                address: order.shippingAddress || "No.520/1, Pitipana North, Homagama.", 
+                customerName: userInfo?.name || "Customer",
+                createdAt: order.createdAt,
+                status: order.status, // 🟢 Pass the actual status
+                fromMyOrders: true 
+            } 
+        });
     };
 
     useEffect(() => {
@@ -38,19 +45,16 @@ const MyOrders = () => {
                 if (data && data.length > 0) {
                     orderList = data;
                 } else {
-                    // 🔵 FALLBACK DATA: Teen Spirit Girl at the top
+                    // 🔵 FALLBACK DATA: Two Daisy Dream orders
                     orderList = [
-                        { _id: 'CR8-1003', createdAt: '2026-03-22', status: 'Processing', totalPrice: 2800, orderItems: [{ name: 'Teen Spirit Girl', image: '/img/girlteen2.png' }] },
-                        { _id: 'CR8-1001', createdAt: '2026-03-10', status: 'Delivered', totalPrice: 2500, orderItems: [{ name: 'Kid Classic Tee', image: '/img/boykid6.png' }] },
-                        { _id: 'CR8-1002', createdAt: '2026-03-15', status: 'Delivered', totalPrice: 3200, orderItems: [{ name: 'Urban Boy Tee', image: '/img/boykid3.png' }] },
+                        { _id: 'CR8-4300D', createdAt: '2026-04-24T10:30:00Z', status: 'Processing', totalPrice: 4300, orderItems: [{ name: 'Daisy Dream', image: '/img/girlteen1.png' }] },
+                        { _id: 'CR8-7000D', createdAt: '2026-04-02T14:15:00Z', status: 'Delivered', totalPrice: 7000, orderItems: [{ name: 'Daisy Dream', image: '/img/girlteen1.png' }] },
                     ];
                 }
 
-                // 🟢 PRIORITY LOGIC: Processing (Index 0) always at the top, Delivered below
+                // 🟢 NEWEST FIRST: Sort by createdAt descending
                 const sortedOrders = orderList.sort((a, b) => {
-                    if (a.status === 'Processing') return -1;
-                    if (b.status === 'Processing') return 1;
-                    return 0;
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
                 });
 
                 setOrders(sortedOrders);
@@ -113,8 +117,17 @@ const MyOrders = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td style={styles.tdCenter}>{new Date(order.createdAt).toLocaleDateString()}</td>
-                                        <td style={styles.tdCenter}>Dec 17, 2025</td>
+                                        <td style={styles.tdCenter}>{new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                        <td style={styles.tdCenter}>
+                                            {(() => {
+                                                const start = new Date(order.createdAt);
+                                                const end = new Date(order.createdAt);
+                                                start.setDate(start.getDate() + 5);
+                                                end.setDate(end.getDate() + 7);
+                                                const opt = { day: '2-digit', month: 'short' };
+                                                return `${start.toLocaleDateString('en-GB', opt)} - ${end.toLocaleDateString('en-GB', opt)}`;
+                                            })()}
+                                        </td>
                                         <td style={styles.tdCenter}>
                                             <span style={order.status === 'Processing' ? styles.statusProcessing : styles.statusDelivered}>
                                                 ● {order.status}

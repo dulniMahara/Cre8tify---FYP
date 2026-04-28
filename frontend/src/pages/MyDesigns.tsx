@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
+import Header from '../components/Header';
 import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000";
@@ -15,16 +16,16 @@ interface DesignItem {
     likes: number;
     status: string;
     description?: string;
+    frontDesign?: string;
+    frontPrintArea?: any;
+    tshirtColor?: string;
 }
 
 const MyDesigns = () => {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [allDesigns, setAllDesigns] = useState<DesignItem[]>([]);
-
-    // 🟢 DYNAMIC USER STATES
     const [userName, setUserName] = useState("Artisa LK");
-    const [navProfileImg, setNavProfileImg] = useState("/img/profile-picture.png");
 
     const fallbackDesigns: DesignItem[] = [
         { id: 1, title: 'Taste & See Minimal', price: 1200, image: '/img/shop1.png', sales: 6, likes: 56, status: 'Approved' },
@@ -40,13 +41,6 @@ const MyDesigns = () => {
             if (storedUser) {
                 const userObj = JSON.parse(storedUser);
                 setUserName(userObj.name || "Artisa LK");
-
-                if (userObj.profileImage) {
-                    const fullUrl = userObj.profileImage.startsWith('http')
-                        ? userObj.profileImage
-                        : `${API_URL}${userObj.profileImage.startsWith('/') ? '' : '/'}${userObj.profileImage}`;
-                    setNavProfileImg(fullUrl);
-                }
 
                 // API LOGIC
                 try {
@@ -64,6 +58,15 @@ const MyDesigns = () => {
                         sales: item.salesCount || 0,
                         likes: item.likes || 0,
                         description: item.description ? item.description.replace(/<[^>]*>?/gm, '') : '',
+                        frontDesign: item.frontDesign,
+                        frontPrintArea: item.frontPrintArea,
+                        backDesign: item.backDesign,
+                        backPrintArea: item.backPrintArea,
+                        tshirtColor: item.tshirtColor,
+                        allowCustomization: item.allowCustomization,
+                        allowEditRequests: item.allowEditRequests,
+                        baseProduct: item.baseProduct,
+                        designer: item.designer
                     }));
 
                     // 🟢 Only Approved and Submitted designs are shown
@@ -80,16 +83,9 @@ const MyDesigns = () => {
         };
 
         fetchMyDesigns();
+        window.scrollTo(0, 0);
     }, []);
 
-    // 🟢 SECURE LOGOUT
-    const handleLogout = () => {
-        if (window.confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem('userInfo');
-            sessionStorage.clear();
-            navigate('/');
-        }
-    };
 
     const filteredDesigns = allDesigns.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -128,147 +124,87 @@ const MyDesigns = () => {
 
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%)' }}>
 
-                {/* HEADER */}
-                <div className="top-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', height: '45px' }}>
-                    <div style={{ fontFamily: '"Instrument Serif", serif', fontSize: '24px', color: 'white', letterSpacing: '1px', fontStyle: 'italic', flex: 1 }}>
-                        My Designs
-                    </div>
-
-                    <div className="search-bar" style={{
-                        flex: 2, maxWidth: '250px', display: 'flex', alignItems: 'center',
-                        background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(3px)',
-                        padding: '5px 10px', borderRadius: '15px', margin: '0 10px', border: '1px solid rgba(255,255,255,0.2)'
-                    }}>
-                        <img src="/img/search.png" alt="Search" style={{ width: '10px', opacity: 0.8 }} />
-                        <input
-                            className="search-input"
-                            type="text" placeholder="Search here" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', marginLeft: '5px', width: '100%', fontSize: '8px' }}
-                        />
-                    </div>
-
-                    <div className="header-icons" style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '15px', alignItems: 'center' }}>
-                        {/* 🟢 PROFILE ICON */}
-                        <img
-                            src={navProfileImg}
-                            alt="Profile"
-                            className="nav-icon"
-                            style={{
-                                cursor: 'pointer', width: '23px', height: '23px',
-                                borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.3)'
-                            }}
-                            onClick={() => navigate('/profile')}
-                            onError={(e) => { (e.target as HTMLImageElement).src = "/img/profile-picture.png"; }}
-                        />
-                        <img src="/img/notifi.png" className="nav-icon" alt="Notif" style={{ width: '13px', height: '13px' }} />
-                        <img
-                            src="/img/logout.png"
-                            className="nav-icon"
-                            alt="Logout"
-                            onClick={handleLogout}
-                            style={{ width: '13px', height: '13px', cursor: 'pointer' }}
-                        />
-                    </div>
-                </div>
+                <Header showCart={false} onSearch={setSearchQuery} />
 
                 {/* CONTENT */}
                 <div className="content-wrapper animate-load" style={{ padding: '20px', flex: 1, maxWidth: '700px', margin: '0 auto', width: '100%' }}>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                        <div style={{ fontSize: '8px', color: '#64748b', fontWeight: '500' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '500' }}>
                             Showing <span style={{ fontWeight: '700', color: '#0f172a' }}>{filteredDesigns.length}</span> Results
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <span style={{ fontSize: '7px', color: '#64748b' }}>Sort by:</span>
-                            <select style={{ padding: '4px 8px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#0f172a', fontWeight: '600', cursor: 'pointer', outline: 'none' }}>
-                                <option>Newest First</option>
-                                <option>Price: Low to High</option>
-                                <option>Price: High to Low</option>
+                            <span style={{ fontSize: '10px', color: '#64748b' }}>Sort by:</span>
+                            <select style={{ padding: '4px 12px', borderRadius: '15px', border: '1px solid #cbd5e1', background: 'white', color: '#0f172a', fontWeight: '700', cursor: 'pointer', outline: 'none', fontSize: '11px', fontFamily: '"Outfit", sans-serif' }}>
+                                <option style={{ fontSize: '12px' }}>Newest First</option>
+                                <option style={{ fontSize: '12px' }}>Price: Low to High</option>
+                                <option style={{ fontSize: '12px' }}>Price: High to Low</option>
                             </select>
                         </div>
                     </div>
 
-                    {/* PRODUCT GRID - UPDATED TO MATCH CUSTOMER COLLECTION */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
+                    {/* PRODUCT GRID - UPDATED TO 3 COLUMNS FOR LARGER MOCKUPS */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                         {filteredDesigns.map((item) => (
-                            <div key={item.id} className="product-card design-card" style={{ background: 'white', padding: '8px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', position: 'relative' }}>
+                            <div key={item.id} className="product-card design-card" style={{ background: 'white', padding: '12px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', position: 'relative' }}>
 
-                                {/* CLICKABLE IMAGE WRAPPER */}
                                 <div
                                     onClick={() => handleNavigate(item)}
-                                    style={{
-                                        background: '#f8fafc',
-                                        borderRadius: '9px',
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        marginBottom: '8px',
-                                        height: '170px',
-                                        alignItems: 'center',
-                                        overflow: 'hidden',
-                                        cursor: 'pointer',
-                                        padding: '8px'
-                                    }}
+                                    style={{ height: '230px', background: '#f8fafc', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', overflow: 'hidden', padding: '10px', position: 'relative', cursor: 'pointer' }}
                                 >
-                                    <img
-                                        src={item.image}
-                                        alt={item.title}
-                                        style={{
-                                            maxWidth: '85%',
-                                            maxHeight: '85%',
-                                            objectFit: 'contain',
-                                            filter: 'drop-shadow(0 8px 13px rgba(0,0,0,0.08))'
-                                        }}
-                                    />
+                                    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                        {!item.frontDesign ? (
+                                            <img
+                                                src={item.image}
+                                                alt={item.title}
+                                                style={{
+                                                    maxWidth: '85%',
+                                                    maxHeight: '85%',
+                                                    objectFit: 'contain',
+                                                    filter: 'drop-shadow(0 8px 13px rgba(0,0,0,0.08))'
+                                                }}
+                                            />
+                                        ) : (
+                                            <MockupPreview
+                                                mockupSrc="/img/womenfront-mockup.png"
+                                                maskSrc="/img/womenfront-mockup.png"
+                                                maskSize="contain"
+                                                maskPosition="center"
+                                                tshirtColor={item.tshirtColor || '#ffffff'}
+                                                printArea={item.frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 }}
+                                                designSrc={item.frontDesign}
+                                                overallScale={1.5}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div style={{ padding: '0 5px' }}>
-                                    {/* Header: Brand & View Details */}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '3px' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: '6px', fontStyle: 'italic', color: '#94a3b8', marginBottom: '1px' }}>{userName}</div>
-                                            <h3
-                                                onClick={() => handleNavigate(item)}
-                                                style={{ fontSize: '13px', fontWeight: '800', margin: '0', color: '#1e293b', lineHeight: '1.2', cursor: 'pointer' }}
-                                            >
-                                                {item.title}
-                                            </h3>
-                                        </div>
-                                        <span
-                                            onClick={() => handleNavigate(item)}
-                                            style={{ fontSize: '6px', color: '#64748b', fontStyle: 'italic', textDecoration: 'underline', cursor: 'pointer', marginLeft: '5px' }}
-                                        >
-                                            View Details
-                                        </span>
+                                    {/* TOP ROW: Brand and View Details */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                        <div style={{ fontSize: '10px', fontStyle: 'italic', color: '#94a3b8' }}>{userName}</div>
+                                        <span onClick={() => handleNavigate(item)} style={{ fontSize: '10px', color: '#64748b', fontStyle: 'italic', textDecoration: 'underline', cursor: 'pointer' }}>View Details</span>
                                     </div>
 
-                                    {/* FOOTER: Price Left, Icons Right */}
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        borderTop: '1px solid #f1f5f9',
-                                        paddingTop: '8px',
-                                        marginTop: '6px'
-                                    }}>
-                                        {/* Formatted Price */}
-                                        <div style={{ fontSize: '9px', fontWeight: '900', color: '#ef4444' }}>
-                                            {typeof item.price === 'string' && item.price.includes('LKR') ? item.price : `LKR ${Number(item.price).toLocaleString()}.00`}
-                                        </div>
+                                    {/* MIDDLE ROW: Title */}
+                                    <h3 onClick={() => handleNavigate(item)} style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 6px 0', color: '#0f172a', lineHeight: '1.2', cursor: 'pointer', fontFamily: '"Outfit", sans-serif' }}>
+                                        {item.title}
+                                    </h3>
 
-                                        {/* Icons */}
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                                <img src="/img/heart.png" alt="Likes" style={{ width: '9px', opacity: 0.6 }} />
-                                                <span style={{ fontSize: '6px', color: '#64748b', fontWeight: '700' }}>
-                                                    {item.likes}
-                                                </span>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                                <img src="/img/cart.png" alt="Sales" style={{ width: '9px', opacity: 0.7 }} />
-                                                <span style={{ fontSize: '6px', color: '#64748b', fontWeight: '700' }}>
-                                                    {item.sales}
-                                                </span>
-                                            </div>
+                                    {/* PRICE ROW */}
+                                    <div style={{ fontSize: '12px', fontWeight: '800', color: '#ef4444', marginBottom: '10px' }}>
+                                        {typeof item.price === 'string' && item.price.includes('LKR') ? item.price : `LKR ${Number(item.price).toLocaleString()}.00`}
+                                    </div>
+
+                                    {/* FOOTER: Icons on right of border */}
+                                    <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '10px', marginTop: '4px', display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            <img src="/img/heart.png" alt="Likes" style={{ width: '12px', opacity: 0.6 }} />
+                                            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '700' }}>{item.likes}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            <img src="/img/cart.png" alt="Sales" style={{ width: '12px', opacity: 0.7 }} />
+                                            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '700' }}>{item.sales}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -283,3 +219,82 @@ const MyDesigns = () => {
 };
 
 export default MyDesigns;
+
+// --- 🟢 SHARED MOCKUP PREVIEW COMPONENT (Synced from MyShop) ---
+type PrintArea = { top: string; left: string; width: string; height: string; rotation?: number };
+type MockupPreviewProps = {
+    mockupSrc: string;
+    maskSrc: string;
+    maskSize: string;
+    maskPosition: string;
+    tshirtColor: string;
+    printArea?: PrintArea;
+    designSrc?: string;
+    areaScale?: number;
+    designScale?: number;
+    overallScale?: number;
+};
+
+const MockupPreview = ({
+    mockupSrc,
+    maskSrc,
+    maskSize,
+    maskPosition,
+    tshirtColor,
+    printArea,
+    designSrc,
+    areaScale = 1.0,
+    designScale = 0.7,
+    overallScale = 1.0
+}: MockupPreviewProps) => {
+    return (
+        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+            <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale})`, transformOrigin: 'center center', position: 'relative' }}>
+                {/* 1. Color Layer (Bottom) */}
+                {tshirtColor && (
+                    <div style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: tshirtColor,
+                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
+                        WebkitMaskSize: maskSize || 'contain', WebkitMaskPosition: maskPosition || 'center',
+                        WebkitMaskRepeat: 'no-repeat', pointerEvents: 'none', zIndex: 0
+                    }}></div>
+                )}
+
+                {/* 2. Mockup Image with Shadows (Top) */}
+                <img 
+                    src={mockupSrc} 
+                    alt="Mockup" 
+                    style={{ 
+                        width: '100%', height: '100%', objectFit: 'contain', 
+                        position: 'relative', zIndex: 1,
+                        mixBlendMode: 'multiply',
+                        filter: 'contrast(1.0) brightness(0.95) saturate(0)'
+                    }} 
+                />
+                {printArea && designSrc && (
+                    <div style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
+                        WebkitMaskSize: maskSize || 'contain', WebkitMaskPosition: maskPosition || 'center',
+                        WebkitMaskRepeat: 'no-repeat', zIndex: 3, pointerEvents: 'none'
+                    }}>
+                        <div style={{
+                            position: 'absolute', top: printArea.top, left: printArea.left,
+                            width: `calc(${printArea.width} * ${areaScale})`,
+                            height: `calc(${printArea.height} * ${areaScale})`,
+                            transform: `translate(-50%, -50%) rotate(${printArea.rotation || 0}deg)`,
+                            transformOrigin: 'center center', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', overflow: 'hidden'
+                        }}>
+                            <img src={designSrc} alt="Design" style={{
+                                width: '100%', height: '100%', objectFit: 'contain',
+                                transform: `scale(${designScale})`, transformOrigin: 'center center'
+                            }} />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};

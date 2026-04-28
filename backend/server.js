@@ -40,6 +40,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/cutout', cutoutRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/tryon', require('./routes/tryonRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 
 

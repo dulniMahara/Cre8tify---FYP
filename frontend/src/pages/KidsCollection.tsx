@@ -7,6 +7,85 @@ import Header from '../components/Header';
 import CollectionHero from '../components/CollectionHero';
 import '../styles/dashboard.css';
 
+// --- 🟢 SHARED MOCKUP PREVIEW COMPONENT ---
+type PrintArea = { top: string; left: string; width: string; height: string; rotation?: number };
+type MockupPreviewProps = {
+    mockupSrc: string;
+    maskSrc: string;
+    maskSize: string;
+    maskPosition: string;
+    tshirtColor: string;
+    printArea?: PrintArea;
+    designSrc?: string;
+    areaScale?: number;
+    designScale?: number;
+    overallScale?: number;
+};
+
+const MockupPreview = ({
+    mockupSrc,
+    maskSrc,
+    maskSize,
+    maskPosition,
+    tshirtColor,
+    printArea,
+    designSrc,
+    areaScale = 1.0,
+    designScale = 0.7,
+    overallScale = 1.0
+}: MockupPreviewProps) => {
+    return (
+        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+            <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale})`, transformOrigin: 'center center', position: 'relative' }}>
+                {/* 1. Color Layer (Bottom) */}
+                {tshirtColor && (
+                    <div style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: tshirtColor,
+                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
+                        WebkitMaskSize: maskSize || 'contain', WebkitMaskPosition: maskPosition || 'center',
+                        WebkitMaskRepeat: 'no-repeat', pointerEvents: 'none', zIndex: 0
+                    }}></div>
+                )}
+
+                {/* 2. Mockup Image with Shadows (Top) */}
+                <img 
+                    src={mockupSrc} 
+                    alt="Mockup" 
+                    style={{ 
+                        width: '100%', height: '100%', objectFit: 'contain', 
+                        position: 'relative', zIndex: 1,
+                        mixBlendMode: 'multiply',
+                        filter: 'contrast(1.0) brightness(0.95) saturate(0)'
+                    }} 
+                />
+                {printArea && designSrc && (
+                    <div style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
+                        WebkitMaskSize: maskSize || 'contain', WebkitMaskPosition: maskPosition || 'center',
+                        WebkitMaskRepeat: 'no-repeat', zIndex: 3, pointerEvents: 'none'
+                    }}>
+                        <div style={{
+                            position: 'absolute', top: printArea.top, left: printArea.left,
+                            width: `calc(${printArea.width} * ${areaScale})`,
+                            height: `calc(${printArea.height} * ${areaScale})`,
+                            transform: `translate(-50%, -50%) rotate(${printArea.rotation || 0}deg)`,
+                            transformOrigin: 'center center', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', overflow: 'hidden'
+                        }}>
+                            <img src={designSrc} alt="Design" style={{
+                                width: '100%', height: '100%', objectFit: 'contain',
+                                transform: `scale(${designScale})`, transformOrigin: 'center center'
+                            }} />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // Collection data
 export const originalProducts = [
         { id: 201, gender: 'girl', title: 'Petal Soft Tee', price: 900, age: 'Kids (5-10y)', material: 'Soft Cotton', img: '/img/girlkid1.png', scale: 1.2, likes: 22, sales: 5},
@@ -68,6 +147,40 @@ const KidsCollection = () => {
 
     const [heroImageIndex, setHeroImageIndex] = useState(0);
     const heroImages = ['/img/kidscollect1.png', '/img/kidscollect2.png', '/img/kidscollect3.png'];
+    const [backendProducts, setBackendProducts] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // 🟢 FETCH APPROVED PRODUCTS FROM BACKEND
+    useEffect(() => {
+        const fetchDesignerProducts = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/products?category=kids');
+                const data = await response.json();
+                
+                // Map backend products to match the UI format
+                const mapped = data.map((p: any) => ({
+                    ...p, // 🟢 Keep all design data
+                    id: p._id,
+                    title: p.title,
+                    price: p.price,
+                    likes: Math.floor(Math.random() * 50),
+                    sales: p.salesCount || 0,
+                    img: p.mockupImages[0] || '/img/kids1.png',
+                    scale: 1.0,
+                    fit: 'Kids Designer',
+                    isDesignerProduct: true,
+                    designer: p.designer
+                }));
+                
+                setBackendProducts(mapped);
+            } catch (error) {
+                console.error("Error fetching designer products:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchDesignerProducts();
+    }, []);
     
     useEffect(() => {
         const interval = setInterval(() => {
@@ -107,7 +220,7 @@ const KidsCollection = () => {
         <div className="dashboard-container">
             <Sidebar variant="customer" />
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
-                <Header mode="search" />
+                <Header mode="search" userRole="customer" />
 
                 <div className="content-wrapper collection-content" style={{ padding: '0', background: '#f8fafc', marginTop: '0px' }}>
                     <CollectionHero 
@@ -135,6 +248,29 @@ const KidsCollection = () => {
                             </div>
                         </div>
 
+                        {/* DESIGNER PICKS SECTION */}
+                        {backendProducts.length > 0 && (
+                            <div style={{ marginBottom: '40px' }}>
+                                <div style={sectionHeaderStyle('#0d375b')}>
+                                    <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#0d375b', margin: 0 }}>DESIGNER PICKS: Latest Creations</h2>
+                                    <div style={{ height: '1px', flex: 1, background: 'linear-gradient(to right, #0d375b, transparent)' }}></div>
+                                </div>
+                                <div style={productGridStyle}>
+                                    {backendProducts.map((item: any) => (
+                                        <ProductCard 
+                                            key={item.id} 
+                                            item={item} 
+                                            likedProducts={likedProducts} 
+                                            toggleLike={toggleLike} 
+                                            color="#0d375b" 
+                                            onAddToCart={handleAddToCart} 
+                                            cartItems={cartItems}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* GIRLS SECTION */}
                         <div style={{ marginBottom: '40px' }}>
                             <div style={sectionHeaderStyle('#db2777')}>
@@ -150,7 +286,7 @@ const KidsCollection = () => {
                                         toggleLike={toggleLike} 
                                         color="#db2777" 
                                         onAddToCart={handleAddToCart} 
-                                        cartItems={cartItems} // 👈 Pass cartItems for sync
+                                        cartItems={cartItems} 
                                     />
                                 ))}
                             </div>
@@ -174,7 +310,7 @@ const KidsCollection = () => {
                                         toggleLike={toggleLike} 
                                         color="#0284c7" 
                                         onAddToCart={handleAddToCart}
-                                        cartItems={cartItems} // 👈 Pass cartItems for sync
+                                        cartItems={cartItems} 
                                     />
                                 ))}
                             </div>
@@ -204,7 +340,7 @@ const ProductCard = ({ item, likedProducts, toggleLike, color, onAddToCart, cart
                 product: {
                     ...item,
                     isKids: true,
-                    sizes: item.age.includes('5-10y') ? ['5-6y', '7-8y', '9-10y'] : ['11-12y', '13-14y', '15y+'],
+                    sizes: item.age && item.age.includes('5-10y') ? ['5-6y', '7-8y', '9-10y'] : ['11-12y', '13-14y', '15y+'],
                     basePrice: 500, designerCharge: 250, serviceCharge: 150
                 },
                 selectedColor: '#FFFFFF' 
@@ -214,19 +350,32 @@ const ProductCard = ({ item, likedProducts, toggleLike, color, onAddToCart, cart
 
     return (
         <div className="product-card" style={{ ...productCardMain, cursor: 'pointer' }} onClick={handleProductClick}>
-            <div style={productImgBox}>
-                <img src={item.img} alt="" style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain', transform: `scale(${item.scale || 1})`, filter: 'drop-shadow(0 5px 8px rgba(0,0,0,0.05))' }} />
+            <div style={{ ...productImgBox, position: 'relative', padding: item.isDesignerProduct ? '0' : '8px', height: '210px' }}>
+                {item.isDesignerProduct ? (
+                    <MockupPreview 
+                        mockupSrc="/img/womenfront-mockup.png"
+                        maskSrc="/img/womenfront-mockup.png"
+                        maskSize="contain"
+                        maskPosition="center"
+                        tshirtColor={item.tshirtColor || '#ffffff'}
+                        printArea={item.frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 }}
+                        designSrc={item.frontDesign}
+                        overallScale={1.5}
+                    />
+                ) : (
+                    <img src={item.img} alt="" style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain', transform: `scale(${item.scale || 1})`, filter: 'drop-shadow(0 5px 8px rgba(0,0,0,0.05))' }} />
+                )}
             </div>
-            <div style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '5px', background: `${color}15`, color: color, fontSize: '6px', fontWeight: '800', marginBottom: '5px', textTransform: 'uppercase' }}>{item.material}</div>
+            <div style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '5px', background: `${color}15`, color: color, fontSize: '6px', fontWeight: '800', marginBottom: '5px', textTransform: 'uppercase' }}>{item.material || 'Kids Designer'}</div>
             <h3 style={{ fontSize: '12px', fontWeight: '800', margin: '0 0 3px 0', color: '#1e293b' }}>{item.title}</h3>
-            <div style={{ fontSize: '6px', color: '#94a3b8', marginBottom: '6px' }}>{item.age}</div>
+            <div style={{ fontSize: '6px', color: '#94a3b8', marginBottom: '6px' }}>{item.age || 'All Ages'}</div>
             
             <div style={cardFooterStyle} onClick={(e) => e.stopPropagation()}>
                 <div style={{ fontSize: '9px', fontWeight: '900', color: '#ef4444' }}>LKR {item.price.toLocaleString()}.00</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <div onClick={() => toggleLike(item.id)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}>
                         <img src="/img/heart.png" alt="" style={{ width: '9px', filter: likedProducts.includes(item.id) ? 'invert(15%) sepia(95%) saturate(6932%) hue-rotate(358deg)' : 'none', opacity: likedProducts.includes(item.id) ? 1 : 0.6 }} />
-                        <span style={{ fontSize: '6px', color: '#64748b', fontWeight: '700' }}>{likedProducts.includes(item.id) ? item.likes + 1 : item.likes}</span>
+                        <span style={{ fontSize: '6px', color: '#64748b', fontWeight: '700' }}>{likedProducts.includes(item.id) ? (item.likes || 0) + 1 : (item.likes || 0)}</span>
                     </div>
 
                     {/* 🟢 DYNAMIC CART SECTION */}

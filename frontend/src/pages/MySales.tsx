@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // Added useNavigate
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
+import Header from '../components/Header';
 import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000";
@@ -22,31 +23,6 @@ const MySales = () => {
     const [chartFilter, setChartFilter] = useState('Last 7 Days');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // 🟢 DYNAMIC USER STATE
-    const [navProfileImg, setNavProfileImg] = useState("/img/profile-picture.png");
-
-    // 🟢 LOAD USER DATA ON MOUNT
-    useEffect(() => {
-        const storedUser = localStorage.getItem('userInfo');
-        if (storedUser) {
-            const userObj = JSON.parse(storedUser);
-            if (userObj.profileImage) {
-                const fullUrl = userObj.profileImage.startsWith('http')
-                    ? userObj.profileImage
-                    : `${API_URL}${userObj.profileImage.startsWith('/') ? '' : '/'}${userObj.profileImage}`;
-                setNavProfileImg(fullUrl);
-            }
-        }
-    }, []);
-
-    // 🟢 SECURE LOGOUT
-    const handleLogout = () => {
-        if (window.confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem('userInfo');
-            sessionStorage.clear();
-            navigate('/');
-        }
-    };
 
     const orders: Order[] = [
         { id: '#12245', item: 'Neon Waves T-shirt', date: '2 Oct 2025', earned: 'LKR 1300', status: 'Completed', img: '/img/shop4.png' },
@@ -123,43 +99,7 @@ const MySales = () => {
 
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc' }}>
 
-                {/* HEADER */}
-                <div className="top-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', height: '45px', background: '#0d375b' }}>
-                    <div style={{ fontFamily: '"Instrument Serif", serif', fontSize: '24px', color: 'white', letterSpacing: '1px', fontStyle: 'italic', flex: 1 }}>
-                        My Sales
-                    </div>
-                    <div className="search-bar" style={{
-                        flex: 2, maxWidth: '250px', display: 'flex', alignItems: 'center',
-                        background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(3px)',
-                        padding: '5px 10px', borderRadius: '15px', margin: '0 10px', border: '1px solid rgba(255,255,255,0.2)'
-                    }}>
-                        <img src="/img/search.png" alt="Search" style={{ width: '10px', opacity: 0.8, filter: 'brightness(0) invert(1)' }} />
-                        <input
-                            className="search-input"
-                            type="text" placeholder="Search here" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', marginLeft: '5px', width: '100%', fontSize: '8px' }}
-                        />
-                    </div>
-                    <div className="header-icons" style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '13px', alignItems: 'center' }}>
-                        {/* 🟢 UPDATED PROFILE ICON */}
-                        <img
-                            src={navProfileImg}
-                            className="nav-icon"
-                            alt="Profile"
-                            style={{ width: '23px', height: '23px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.2)' }}
-                            onClick={() => navigate('/profile')}
-                            onError={(e) => { (e.target as HTMLImageElement).src = "/img/profile-picture.png"; }}
-                        />
-                        <img src="/img/notifi.png" className="nav-icon" alt="Notif" style={{ width: '20px', height: '20px' }} />
-                        <img
-                            src="/img/logout.png"
-                            className="nav-icon"
-                            alt="Logout"
-                            style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                            onClick={handleLogout}
-                        />
-                    </div>
-                </div>
+                <Header showCart={false} onSearch={setSearchQuery} />
 
                 <div className="content-wrapper animate-fade" style={{ padding: '20px', flex: 1, maxWidth: '700px', margin: '0 auto', width: '100%' }}>
 
@@ -204,7 +144,12 @@ const MySales = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {orders.map((order, i) => (
+                                    {orders
+                                        .filter(order => 
+                                            order.item.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                            order.id.toLowerCase().includes(searchQuery.toLowerCase())
+                                        )
+                                        .map((order, i) => (
                                         <tr key={i}>
                                             <td style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                                 <span style={{ fontWeight: '700', fontSize: '9px', color: '#0f172a' }}>{order.item}</span>

@@ -14,8 +14,11 @@ const userSchema = mongoose.Schema(
     interest: {type: String,},
 
     // --- 🟢 NEW FIELDS FOR DESIGNERS ---
+    shopName: { type: String, },
     brandName: { type: String, },
     bio: { type: String, },
+    profileImage: { type: String, },
+    portfolio: { type: String, },
 
     isApproved: {
         type: Boolean,

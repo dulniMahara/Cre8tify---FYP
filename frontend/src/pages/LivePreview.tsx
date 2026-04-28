@@ -8,6 +8,71 @@ import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000";
 
+// 🚀 HELPER: Composite the shirt with color and design before sending to AI
+const composeGarmentImage = async (imageUrl: string, hexColor: string, designUrl?: string, printArea?: any): Promise<Blob> => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+            // 🚀 OPTIMIZATION: Use a square canvas to prevent AI from stretching the garment
+            const size = Math.max(img.width, img.height);
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            // Center the shirt in the square canvas
+            const offsetX = (size - img.width) / 2;
+            const offsetY = (size - img.height) / 2;
+
+            // 1. Draw White Background (AI models often segment better on white)
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, size, size);
+
+            // 2. Create a temporary canvas for the colored shirt to keep shadows
+            const shirtCanvas = document.createElement('canvas');
+            shirtCanvas.width = img.width;
+            shirtCanvas.height = img.height;
+            const sCtx = shirtCanvas.getContext('2d');
+            if (sCtx) {
+                // Color fill
+                sCtx.fillStyle = hexColor;
+                sCtx.fillRect(0, 0, img.width, img.height);
+                // Multiply with texture
+                sCtx.globalCompositeOperation = 'multiply';
+                sCtx.drawImage(img, 0, 0);
+                // Mask to shirt shape
+                sCtx.globalCompositeOperation = 'destination-in';
+                sCtx.drawImage(img, 0, 0);
+            }
+
+            // 3. Draw the colored shirt onto the main square canvas
+            ctx.drawImage(shirtCanvas, offsetX, offsetY);
+
+            // 4. Draw Design Overlay
+            if (designUrl) {
+                const designImg = new Image();
+                designImg.crossOrigin = "Anonymous";
+                designImg.onload = () => {
+                    const area = printArea || { top: '45%', left: '50%', width: '35%', height: '45%' };
+                    const centerX = offsetX + (img.width * (parseFloat(area.left) / 100));
+                    const centerY = offsetY + (img.height * (parseFloat(area.top) / 100));
+                    const drawW = img.width * (parseFloat(area.width) / 100);
+                    const drawH = img.height * (parseFloat(area.height) / 100);
+                    
+                    ctx.drawImage(designImg, centerX - drawW / 2, centerY - drawH / 2, drawW, drawH);
+                    canvas.toBlob((blob) => resolve(blob as Blob), 'image/png');
+                };
+                designImg.src = designUrl;
+            } else {
+                canvas.toBlob((blob) => resolve(blob as Blob), 'image/png');
+            }
+        };
+        img.src = imageUrl;
+    });
+};
+
 const LivePreview = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -54,6 +119,11 @@ const LivePreview = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
     const [resultImage, setResultImage] = useState<string | null>(null);
+
+    // 🚀 Scroll to top when page loads
+    React.useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     // 🟢 FIT CONTROLS: To align the shirt onto the uploaded body
     const [shirtPos, setShirtPos] = useState({ x: 0, y: 150, scale: 0.55 });
@@ -104,9 +174,14 @@ const LivePreview = () => {
         setIsGeneratingPreview(true);
 
         try {
-            const garmentRes = await fetch(product.baseImages[0]);
-            const garmBlob = await garmentRes.blob();
-            const garmFile = new File([garmBlob], 'garment.png', { type: garmBlob.type });
+            // 🚀 THE FIX: Use our composition engine to bake the color and design into the file
+            const garmBlob = await composeGarmentImage(
+                product.baseImages[0], 
+                selectedColor, 
+                product.frontDesign, 
+                product.frontPrintArea
+            );
+            const garmFile = new File([garmBlob], 'garment.png', { type: 'image/png' });
 
             const formData = new FormData();
             formData.append('humanImage', userImageFile);
@@ -164,7 +239,7 @@ const LivePreview = () => {
                     <p style={{ color: '#94A3B8', fontSize: '16px', marginTop: '10px' }}>Please wait while our AI works its magic ✨</p>
                 </div>
             )}
-            
+
             <Sidebar variant="customer" />
             <canvas ref={canvasRef} style={{ display: 'none' }} />
             <div className="main-content">
@@ -197,9 +272,30 @@ const LivePreview = () => {
                                     WebkitMaskSize: 'contain', maskSize: 'contain',
                                     WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
                                     WebkitMaskPosition: 'center', maskPosition: 'center',
-                                    opacity: 0.9,
+                                    zIndex: 0
                                 }}>
-                                    <img src={product.baseImages[0]} style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: 'multiply', filter: 'brightness(1.4) contrast(1.1)' }} alt="Shirt Texture" />
+                                    <img 
+                                        src={product.baseImages[0]} 
+                                        style={{ 
+                                            width: '100%', height: '100%', objectFit: 'contain', 
+                                            mixBlendMode: 'multiply', 
+                                            filter: 'contrast(1.0) brightness(0.95) saturate(0)' 
+                                        }} 
+                                        alt="Shirt Texture" 
+                                    />
+                                    
+                                    {/* 🚀 ADDED: Design Overlay for Designer Products */}
+                                    {product.frontDesign && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            ...(product.frontPrintArea || { top: '45%', left: '50%', width: '35%', height: '45%' }),
+                                            transform: 'translate(-50%, -50%)',
+                                            zIndex: 2,
+                                            pointerEvents: 'none'
+                                        }}>
+                                            <img src={product.frontDesign} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Design" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

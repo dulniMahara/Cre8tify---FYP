@@ -34,6 +34,8 @@ import CustomerProfile from './pages/CustomerProfile';
 import MyOrders from './pages/MyOrders';
 import Favorites from './pages/Favorites';
 import AdminLogin from './pages/AdminLogin';
+import SandboxPayment from './pages/SandboxPayment';
+import CustomerRequests from './pages/CustomerRequests';
 
 function App() {
   return (
@@ -46,7 +48,7 @@ function App() {
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/designer-signup" element={<DesignerSignup />} />
           <Route path="/customer-signup" element={<CustomerSignup />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/designer-profile" element={<Profile />} />
           <Route path="/account" element={<AccountLayout />} />
 
           {/* 🟢 DESIGNER DASHBOARD ROUTES */}
@@ -70,11 +72,13 @@ function App() {
           <Route path="/request-edit/:id" element={<RequestEdit />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<OrderConfirmation />} />
+          <Route path="/sandbox-payment" element={<SandboxPayment />} />
           <Route path="/my-orders" element={<MyOrders />} />
           <Route path="/order-success" element={<OrderSuccess />} />
           <Route path="/track-order" element={<TrackOrder />} />
           <Route path="/customer-profile" element={<CustomerProfile />} />
           <Route path="/favorites" element={<Favorites />} />
+          <Route path="/customer-requests" element={<CustomerRequests />} />
 
           {/* 🟢 ADMIN DASHBOARD ROUTES (Only accessible to admins) */}
           <Route path="/admin-dashboard/*" element={<AdminDashboard />} />

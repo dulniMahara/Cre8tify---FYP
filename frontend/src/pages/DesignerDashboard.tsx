@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
+import Header from '../components/Header';
 import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000"; // 🟢 Added API_URL for profile images
@@ -23,7 +24,6 @@ export default function DesignerDashboard() {
 
   // 1. Dynamic States
   const [userName, setUserName] = useState("Designer");
-  const [navProfileImg, setNavProfileImg] = useState("/img/profile-picture.png"); // 🟢 Added state
 
   // 2. Effect to fetch name and image from localStorage
   useEffect(() => {
@@ -33,14 +33,6 @@ export default function DesignerDashboard() {
       try {
         const userObj = JSON.parse(storedUser);
         const name = userObj.name || "Designer";
-
-        // Handle Profile Image Logic 🟢
-        if (userObj.profileImage) {
-            const fullUrl = userObj.profileImage.startsWith('http') 
-                ? userObj.profileImage 
-                : `${API_URL}${userObj.profileImage.startsWith('/') ? '' : '/'}${userObj.profileImage}`;
-            setNavProfileImg(fullUrl);
-        }
 
         // Handle Greeting 
         setUserName(`Welcome, ${name}!`);
@@ -102,41 +94,7 @@ export default function DesignerDashboard() {
       <Sidebar />
       <div className="main-content">
         
-        <header className="top-header" >
-            <div className="header-left" onClick={() => navigate(-1)} style={{ cursor: 'pointer' }}>
-                <img src="/img/back.png" alt="Back" className="nav-icon-small" />
-                <span>Back</span>
-            </div>
-            <div className="search-container">
-                <img src="/img/search.png" alt="Search" className="search-icon-img" />
-                <input type="text" className="search-bar" placeholder="Search designs..." />
-            </div>
-            <div className="header-icons">
-                {/* 🟢 DYNAMIC PROFILE IMAGE APPLIED HERE */}
-                <img 
-                    src={navProfileImg} 
-                    alt="Profile" 
-                    className="nav-icon" 
-                    style={{ 
-                        cursor: 'pointer',
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '50%',
-                        objectFit: 'cover'
-                    }} 
-                    onClick={() => navigate('/profile')} 
-                    onError={(e) => { (e.target as HTMLImageElement).src = "/img/profile-picture.png"; }}
-                />
-                <img src="/img/notifi.png" alt="Notifications" className="nav-icon" style={{ width: '26px', height: '26px', }} />
-                <img 
-                    src="/img/logout.png" 
-                    alt="Logout" 
-                    className="nav-icon" 
-                    style={{ borderRadius: 0, cursor: 'pointer', width: '26px', height: '26px', }} 
-                    onClick={handleLogout} 
-                />
-            </div>
-        </header>
+        <Header showCart={false} />
 
         <div className="content-wrapper">
             

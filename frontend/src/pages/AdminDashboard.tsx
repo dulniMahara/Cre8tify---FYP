@@ -74,11 +74,11 @@ const MarketplaceOperations = () => {
     const [allOrders, setAllOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     
-    // Create a ref to track current tab to prevent race conditions
     const activeTabRef = React.useRef(activeTab);
-    useEffect(() => {
-        activeTabRef.current = activeTab;
-    }, [activeTab]);
+    const handleTabChange = (tab: string) => {
+        setActiveTab(tab);
+        activeTabRef.current = tab;
+    };
 
     useEffect(() => {
         fetchData(activeTab);
@@ -125,6 +125,9 @@ const MarketplaceOperations = () => {
             });
 
             if (!res.ok) {
+                // Critical check: only update if we are still on the same tab
+                if (activeTabRef.current !== tab) return;
+
                 if (res.status === 401 || res.status === 403) {
                     alert("Not authorized. Please log in as an Admin.");
                 }
@@ -288,28 +291,21 @@ const MarketplaceOperations = () => {
     );
 
     const renderCategories = () => {
-        const groups = ['Women', 'Men', 'Kids', 'Unisex'];
+        const groups = ['Women', 'Men', 'Kids'];
         
         return (
             <div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-                    <button onClick={() => {
-                        setEditingCategory(null);
-                        setCategoryForm({ name: '', category: 'Women', material: '100% Cotton', basePrice: 1200, image: '', colorsStr: 'White, Black', sizesStr: 'S, M, L, XL', fit: 'Standard', gsm: '200 GSM' });
-                        setShowCategoryModal(true);
-                    }} style={{ ...approveBtnStyle, padding: '10px 20px', background: '#0284c7' }}>+ Add Base T-Shirt</button>
-                </div>
 
                 {groups.map(group => {
                     const groupData = data.filter((item: any) => (item.category || 'Unisex') === group);
                     if (groupData.length === 0) return null;
                     return (
-                        <div key={group} style={{ marginBottom: '35px' }}>
-                            <h2 style={{ fontSize: '18px', color: '#0d375b', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', marginBottom: '15px' }}>{group}'s Collection</h2>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '20px' }}>
+                        <div key={group} style={{ marginBottom: '50px', textAlign: 'center' }}>
+                            <h2 style={{ fontSize: '18px', color: '#0d375b', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', marginBottom: '30px', display: 'inline-block', minWidth: '350px' }}>{group}'s Collection</h2>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', maxWidth: '1000px', margin: '0 auto' }}>
                                 {groupData.map((item: any) => (
-                                    <div key={item._id} style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.06)' }}>
-                                        <div style={{ height: '240px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
+                                    <div key={item._id} style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', width: '210px', margin: '0 auto' }}>
+                                        <div style={{ height: '180px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
                                             <img src={item.image || '/img/womenfront-mockup.png'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="" />
                                         </div>
                                         <div style={{ padding: '15px' }}>
@@ -343,7 +339,7 @@ const MarketplaceOperations = () => {
     };
 
     const renderOrders = () => {
-        const statuses = ['All', 'Pending', 'Printing', 'Shipped', 'Delivered', 'Cancelled'];
+        const statuses = ['All', 'Processing', 'Printing', 'Shipped', 'Delivered', 'Cancelled'];
         
         const getStatusColor = (status: string) => {
             switch (status) {
@@ -359,7 +355,8 @@ const MarketplaceOperations = () => {
         const filteredOrders = data.filter((order: any) => {
             const matchesStatus = filterStatus === 'All' || order.status === filterStatus;
             const matchesSearch = (order._id?.toLowerCase() || '').includes(searchQuery.toLowerCase()) || 
-                                 (order.user?.name?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+                                 (order.user?.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                                 (order.user?.email?.toLowerCase() || '').includes(searchQuery.toLowerCase());
             return matchesStatus && matchesSearch;
         });
 
@@ -486,6 +483,13 @@ const MarketplaceOperations = () => {
                             })}
                         </tbody>
                     </table>
+                    {filteredOrders.length === 0 && (
+                        <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                            <img src="/img/no-orders.png" style={{ width: '50px', opacity: 0.3, marginBottom: '15px' }} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                            <p style={{ fontSize: '14px', fontWeight: '600' }}>No orders found matching your criteria.</p>
+                            <p style={{ fontSize: '12px', marginTop: '5px' }}>Try adjusting your status filter or search query.</p>
+                        </div>
+                    )}
                 </div>
             </div>
         );
@@ -613,16 +617,30 @@ const MarketplaceOperations = () => {
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc' }}>
             <BackHeader title="Marketplace Operations" />
             <div style={{ padding: '25px', maxWidth: '1200px', margin: '0 auto', flex: 1, width: '100%', textAlign: 'center' }}>
-                <div style={{ display: 'flex', gap: '15px', marginBottom: '40px', justifyContent: 'center' }}>
-                    {['Approvals', 'Categories', 'Orders', 'Payouts'].map(tab => (
+                <div style={{ display: 'flex', gap: '15px', marginBottom: '40px', justifyContent: 'center', position: 'relative' }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        {['Approvals', 'Categories', 'Orders', 'Payouts'].map(tab => (
+                            <button 
+                                key={tab} 
+                                onClick={() => handleTabChange(tab)}
+                                style={{ ...tabBtnStyle, background: activeTab === tab ? '#0d375b' : 'white', color: activeTab === tab ? 'white' : '#64748b' }}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
+                    {activeTab === 'Categories' && (
                         <button 
-                            key={tab} 
-                            onClick={() => setActiveTab(tab)}
-                            style={{ ...tabBtnStyle, background: activeTab === tab ? '#0d375b' : 'white', color: activeTab === tab ? 'white' : '#64748b' }}
+                            onClick={() => {
+                                setEditingCategory(null);
+                                setCategoryForm({ name: '', category: 'Women', material: '100% Cotton', basePrice: 1200, image: '', colorsStr: 'White, Black', sizesStr: 'S, M, L, XL', fit: 'Standard', gsm: '200 GSM' });
+                                setShowCategoryModal(true);
+                            }}
+                            style={{ position: 'absolute', right: 0, padding: '8px 18px', background: '#0284c7', color: 'white', border: 'none', borderRadius: '30px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 10px rgba(2, 132, 199, 0.2)', height: '40px' }}
                         >
-                            {tab}
+                            + Add Base T-Shirt
                         </button>
-                    ))}
+                    )}
                 </div>
 
                 {loading && <p style={{ color: '#0d375b', fontWeight: 'bold' }}>Loading platform data...</p>}
@@ -669,7 +687,7 @@ const MarketplaceOperations = () => {
                             <div>
                                 <label style={labelStyle}>Category</label>
                                 <select value={categoryForm.category} onChange={e => setCategoryForm({...categoryForm, category: e.target.value})} style={inputStyle}>
-                                    <option>Women</option><option>Men</option><option>Kids</option><option>Unisex</option>
+                                    <option>Women</option><option>Men</option><option>Kids</option>
                                 </select>
                             </div>
                             <div>

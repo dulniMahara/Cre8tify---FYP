@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'; // Added useEffect
 import { useNavigate } from 'react-router-dom'; // Added useNavigate
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
+import Header from '../components/Header';
 import '../styles/dashboard.css'; 
 
 const API_URL = "http://localhost:5000";
@@ -24,83 +25,55 @@ const Requests = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
 
-    // 🟢 DYNAMIC USER STATE
-    const [navProfileImg, setNavProfileImg] = useState("/img/profile-picture.png");
-
     // 🟢 STATES FOR LOGIC FLOW
     const [isAccepted, setIsAccepted] = useState(false); 
     const [rejectPopup, setRejectPopup] = useState(false); 
     const [rejectionReason, setRejectionReason] = useState('');
     const [showOfferForm, setShowOfferForm] = useState(false);
 
-    // 🟢 LOAD USER PROFILE DATA
+    // 🟢 LOAD USER PROFILE DATA & PERSISTED REQUESTS
+    const [allRequests, setAllRequests] = useState<RequestItem[]>([]);
+
     useEffect(() => {
-        const storedUser = localStorage.getItem('userInfo');
-        if (storedUser) {
-            const userObj = JSON.parse(storedUser);
-            if (userObj.profileImage) {
-                const fullUrl = userObj.profileImage.startsWith('http') 
-                    ? userObj.profileImage 
-                    : `${API_URL}${userObj.profileImage.startsWith('/') ? '' : '/'}${userObj.profileImage}`;
-                setNavProfileImg(fullUrl);
+        const mockRequests: RequestItem[] = [
+            { 
+                id: '#123900', 
+                customer: 'Pavani Subasinghe', 
+                status: 'Pending', 
+                submittedOn: '20 Oct 2025', 
+                productName: 'Evangelion Retro', 
+                productImage: '/img/shop3.png',
+                message: "I want to change the original design, will provide the preferred design below.",
+                preferredTime: "2 Days",
+                referenceImage: "/img/shop1.png" 
+            },
+            { 
+                id: '#111780', 
+                customer: 'Ashan Amarasingha', 
+                status: 'Pending', 
+                submittedOn: '18 Oct 2025', 
+                productName: 'Neon Waves', 
+                productImage: '/img/shop4.png',
+                message: "Can we change the background color to a darker navy blue instead of black?",
+                preferredTime: "1 Day" 
+            },
+            { 
+                id: '#109221', 
+                customer: 'Sarah J.', 
+                status: 'Accepted', 
+                submittedOn: '15 Oct 2025', 
+                productName: 'Spider Lily Abstract', 
+                productImage: '/img/shop1.png',
+                message: "Is it possible to make the spider lily red instead of white?",
+                preferredTime: "3 Days" 
             }
-        }
+        ];
+
+        const savedRequests = JSON.parse(localStorage.getItem('designer_requests') || '[]');
+        setAllRequests([...savedRequests, ...mockRequests]);
     }, []);
 
-    // 🟢 SECURE LOGOUT
-    const handleLogout = () => {
-        if (window.confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem('userInfo');
-            sessionStorage.clear();
-            navigate('/');
-        }
-    };
-
-    const requests: RequestItem[] = [
-        { 
-            id: '#123900', 
-            customer: 'Pavani Subasinghe', 
-            status: 'Pending', 
-            submittedOn: '20 Oct 2025', 
-            productName: 'Evangelion Retro', 
-            productImage: '/img/shop3.png',
-            message: "I want to change the original design, will provide the preferred design below.",
-            preferredTime: "2 Days",
-            referenceImage: "/img/shop1.png" 
-        },
-        { 
-            id: '#111780', 
-            customer: 'Ashan Amarasingha', 
-            status: 'Pending', 
-            submittedOn: '18 Oct 2025', 
-            productName: 'Neon Waves', 
-            productImage: '/img/shop4.png',
-            message: "Can we change the background color to a darker navy blue instead of black?",
-            preferredTime: "1 Day" 
-        },
-        { 
-            id: '#109221', 
-            customer: 'Sarah J.', 
-            status: 'Accepted', 
-            submittedOn: '15 Oct 2025', 
-            productName: 'Spider Lily Abstract', 
-            productImage: '/img/shop1.png',
-            message: "Is it possible to make the spider lily red instead of white?",
-            preferredTime: "3 Days" 
-        },
-        { 
-            id: '#108882', 
-            customer: 'Mike Ross', 
-            status: 'Completed', 
-            submittedOn: '10 Oct 2025', 
-            productName: 'Dark Moon Phase', 
-            productImage: '/img/shop2.png',
-            message: "Please add '2025' text in small font at the bottom right.",
-            preferredTime: "1 Day" 
-        },
-    ];
-
-    const filteredRequests = requests.filter(req => {
+    const filteredRequests = allRequests.filter(req => {
         const matchesTab = activeTab === 'All' || req.status === activeTab;
         const matchesSearch = req.id.toLowerCase().includes(searchQuery.toLowerCase()) || req.customer.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesTab && matchesSearch;
@@ -170,29 +143,7 @@ const Requests = () => {
 
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc' }}>
                 
-                {/* HEADER */}
-                <div className="top-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', height: '45px', background: '#0d375b' }}>
-                    <div style={{ fontFamily: '"Instrument Serif", serif', fontSize: '24px', color: 'white', letterSpacing: '1px', fontStyle: 'italic', flex: 1 }}>
-                        Requests
-                    </div>
-                    <div className="search-bar" style={{ flex: 2, maxWidth: '250px', display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(3px)', padding: '5px 10px', borderRadius: '15px', margin: '0 10px', border: '1px solid rgba(255,255,255,0.2)' }}>
-                        <img src="/img/search.png" alt="Search" style={{ width: '10px', opacity: 0.8, filter: 'brightness(0) invert(1)' }} />
-                        <input className="search-input" type="text" placeholder="Search ID or Customer" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', marginLeft: '5px', width: '100%', fontSize: '8px' }} />
-                    </div>
-                    <div className="header-icons" style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '13px', alignItems: 'center' }}>
-                        {/* 🟢 DYNAMIC PROFILE IMAGE */}
-                        <img 
-                            src={navProfileImg} 
-                            className="nav-icon" 
-                            alt="Profile" 
-                            style={{ width: '23px', height: '23px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.2)' }}
-                            onClick={() => navigate('/profile')}
-                            onError={(e) => { (e.target as HTMLImageElement).src = "/img/profile-picture.png"; }}
-                        />
-                        <img src="/img/notifi.png" className="nav-icon" alt="Notif" />
-                        <img src="/img/logout.png" className="nav-icon" alt="Logout" style={{ width: '25px', height: '25px', cursor: 'pointer' }} onClick={handleLogout} />
-                    </div>
-                </div>
+                <Header showCart={false} onSearch={setSearchQuery} />
 
                 <div className="content-wrapper animate-fade" style={{ padding: '20px', flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%' }}>
                     
@@ -225,8 +176,35 @@ const Requests = () => {
                                         </div>
                                         <button onClick={() => setSelectedRequest(req)} style={{ background: '#0d375b', color: 'white', border: 'none', padding: '5px 14px', borderRadius: '15px', fontSize: '7px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 6px rgba(13, 55, 91, 0.25)' }}>View Request Details</button>
                                     </div>
-                                    <div style={{ width: '60px', height: '60px', background: '#f8fafc', borderRadius: '8px', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #f1f5f9' }}>
-                                        <img src={req.productImage} alt="Product" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                                    <div style={{ 
+                                        width: '60px', height: '60px', background: '#f8fafc', borderRadius: '8px', 
+                                        padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                        border: '1px solid #f1f5f9', position: 'relative', overflow: 'hidden' 
+                                    }}>
+                                        {/* Dynamic T-shirt Preview for List Item */}
+                                        <div style={{
+                                            width: '100%', height: '100%',
+                                            backgroundColor: (req as any).color || '#ffffff',
+                                            WebkitMaskImage: `url(${req.productImage})`,
+                                            maskImage: `url(${req.productImage})`,
+                                            WebkitMaskSize: 'contain', maskSize: 'contain', 
+                                            WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', 
+                                            WebkitMaskPosition: 'center', maskPosition: 'center',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <img src={req.productImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+                                            
+                                            {(req as any).frontDesign && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    ...((req as any).frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%' }),
+                                                    transform: 'translate(-50%, -50%)',
+                                                    zIndex: 999, pointerEvents: 'none'
+                                                }}>
+                                                    <img src={(req as any).frontDesign} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Design Overlay" />
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -251,6 +229,7 @@ const Requests = () => {
                                 </div>
                                 <div style={{ background: 'rgba(255, 255, 255, 0.6)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.9)', padding: '20px', borderRadius: '15px', display: 'flex', flexDirection: 'column', flex: 1, boxShadow: '0 5px 15px rgba(0,0,0,0.05)' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '20px' }}>
+                                        <div style={{ display: 'flex' }}><div className="detail-label">Product</div><div className="detail-value">{selectedRequest.productName}</div></div>
                                         <div style={{ display: 'flex' }}><div className="detail-label">Preferred Changes</div><div className="detail-value">{selectedRequest.message}</div></div>
                                         <div style={{ display: 'flex' }}><div className="detail-label">Preferred Time</div><div className="detail-value">{selectedRequest.preferredTime}</div></div>
                                         {selectedRequest.referenceImage && (
@@ -266,10 +245,34 @@ const Requests = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', height: '100%' }}>
                                 <div style={{ height: '35px', marginBottom: '15px' }}></div>
-                                <div style={{ background: 'white', borderRadius: '15px', padding: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <img src={selectedRequest.productImage} alt="Product" style={{ width: '100%', maxWidth: '225px', objectFit: 'contain' }} />
+                                <div style={{ background: 'white', borderRadius: '15px', padding: '5px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                                    {/* High-Fidelity Modal Preview */}
+                                    <div style={{
+                                        width: '100%', height: '100%',
+                                        backgroundColor: (selectedRequest as any).color || '#ffffff',
+                                        WebkitMaskImage: `url(${selectedRequest.productImage})`,
+                                        maskImage: `url(${selectedRequest.productImage})`,
+                                        WebkitMaskSize: 'contain', maskSize: 'contain', 
+                                        WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', 
+                                        WebkitMaskPosition: 'center', maskPosition: 'center',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        transform: (selectedRequest as any).frontDesign ? 'scale(1.7)' : 'scale(1)'
+                                    }}>
+                                        <img src={selectedRequest.productImage} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+                                        
+                                        {(selectedRequest as any).frontDesign && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                ...((selectedRequest as any).frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%' }),
+                                                transform: 'translate(-50%, -50%) scale(0.85)',
+                                                zIndex: 999, pointerEvents: 'none'
+                                            }}>
+                                                <img src={(selectedRequest as any).frontDesign} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Design" />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

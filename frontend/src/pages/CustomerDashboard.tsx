@@ -9,13 +9,13 @@ import '../styles/dashboard.css';
 // 1. Static Product Data
 const productsData = [
     { id: 1, title: 'Women Boxy T-shirt', price: 1350, sales: '02', likes: 12, img: '/img/shop1.png', tag: 'New' },
-    { id: 2, title: 'Moon Child Tee', price: 1450, sales: '15', likes: 45, img: '/img/shop2.png', tag: 'Hot' },
-    { id: 3, title: 'Retro Vibe Print', price: 1250, sales: '08', likes: 22, img: '/img/shop3.png' },
+    { id: 2, title: 'Moon Child Tee', price: 1450, sales: '15', likes: 18, img: '/img/shop2.png', tag: 'Hot', scale: 1.0 },
+    { id: 3, title: 'Retro Vibe Print', price: 1250, sales: '08', likes: 22, img: '/img/shop3.png', scale: 1.0 },
     { id: 4, title: 'Abstract Art Tee', price: 1600, sales: '05', likes: 18, img: '/img/shop4.png' },
     { id: 5, title: 'Minimalist Line', price: 1350, sales: '12', likes: 30, img: '/img/shop1.png' },
-    { id: 6, title: 'Dark Soul Edition', price: 1550, sales: '09', likes: 27, img: '/img/shop2.png' },
-    { id: 7, title: 'Urban Streetwear', price: 1400, sales: '20', likes: 56, img: '/img/shop3.png', tag: 'Sale' },
-    { id: 8, title: 'Classic White', price: 1150, sales: '30', likes: 89, img: '/img/shop4.png' },
+    { id: 6, title: 'Dark Soul Edition', price: 1550, sales: '09', likes: 27, img: '/img/shop2.png', scale: 1.0 },
+    { id: 7, title: 'Urban Streetwear', price: 1400, sales: '20', likes: 56, img: '/img/shop3.png', tag: 'Sale', scale: 1.0 },
+    { id: 8, title: 'Classic White', price: 1150, sales: '30', likes: 16, img: '/img/shop4.png' },
 ];
 
 const CustomerDashboard = () => {
@@ -85,9 +85,9 @@ const CustomerDashboard = () => {
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '45px', marginBottom: '35px' }}>
-                        <CategoryCircle title="MEN" img="/img/men.png" scale="1.0" position="top 20%" onClick={() => navigate('/men-collection')} />
-                        <CategoryCircle title="WOMEN" img="/img/women.png" scale="1.50" position="top 20%" onClick={() => navigate('/women-collection')} />
-                        <CategoryCircle title="KIDS" img="/img/kids.png" scale="1.0" position="top 20%"  onClick={() => navigate('/kids-collection')} />
+                        <CategoryCircle title="MEN" img="/img/men.png" scale="1.0" position="top" onClick={() => navigate('/men-collection')} />
+                        <CategoryCircle title="WOMEN" img="/img/women.png" scale="1.3" position="center" onClick={() => navigate('/women-collection')} />
+                        <CategoryCircle title="KIDS" img="/img/kids.png" scale="1.0" position="top"  onClick={() => navigate('/kids-collection')} />
                     </div>
 
                     <div style={newArrivalsStripe}>
@@ -105,7 +105,7 @@ const CustomerDashboard = () => {
                                 <div key={item.id} className="product-card" style={cardStyle}>
                                     {item.tag && <div style={tagStyle}>{item.tag}</div>}
                                     <div style={imgWrapperStyle} onClick={() => navigate(`/product/${item.id}`, { state: { product: item } })}>
-                                        <img src={item.img} alt={item.title} style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', transform: `scale(${getSmartScale(item.img)})`, filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.12))' }} />
+                                        <img src={item.img} alt={item.title} style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', transform: `scale(${(item as any).scale || getSmartScale(item.img)})`, filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.12))' }} />
                                     </div>
                                     <div style={{ padding: '0 3px' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '5px' }}>

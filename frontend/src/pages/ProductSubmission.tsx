@@ -96,11 +96,12 @@ const ProductSubmission = () => {
         editorMockupScale = 1,
         foldedMaskPosition = "center",
         foldedMaskSize = "contain",
+        originalDesign,
+        category = 'Unisex'
     } = (location.state || {});
 
     // 🚀 ADJUST THIS LINE to change the size of the T-shirt in the Pricing Setup box
     const pricingMockupScale = 1.5;
-
 
     const ADMIN_SPECS = `
         <div style="margin-bottom: 25px;">
@@ -121,13 +122,25 @@ const ProductSubmission = () => {
         <hr style="border: 0; border-top: 2px solid #cbd5e1; margin: 30px 0;"/>
     `;
 
+    // Helper to strip ADMIN_SPECS if it exists in the saved description
+    const getCleanDescription = (fullDesc?: string) => {
+        if (!fullDesc) return '';
+        const adminSpecsHtml = ADMIN_SPECS + "<br/>";
+        if (fullDesc.includes(adminSpecsHtml)) {
+            return fullDesc.split(adminSpecsHtml)[1] || '';
+        } else if (fullDesc.includes(ADMIN_SPECS)) {
+            return fullDesc.split(ADMIN_SPECS)[1] || '';
+        }
+        return fullDesc;
+    };
+
     const [formData, setFormData] = useState({
-        title: '',
-        designDescription: '',
-        markup: 0,
-        allowUserCustomization: false,
-        allowEditRequests: false,
-        status: 'Pending'
+        title: originalDesign?.title || '',
+        designDescription: getCleanDescription(originalDesign?.description),
+        markup: originalDesign?.markup || 0,
+        allowUserCustomization: originalDesign?.allowUserCustomization || false,
+        allowEditRequests: originalDesign?.allowEditRequests || false,
+        status: originalDesign?.status || 'Pending'
     });
 
     const BASE_PRICE = 1200;
@@ -166,6 +179,7 @@ const ProductSubmission = () => {
                     title: formData.title,
                     description: ADMIN_SPECS + "<br/>" + formData.designDescription,
                     baseProduct: productType,
+                    category: category,
                     markup: formData.markup,
                     price: finalPrice,
                     mockupImages: [thumbnailImage, ...productImages.slice(1)],
@@ -278,7 +292,7 @@ const ProductSubmission = () => {
             <div className="main-content">
                 <div className="top-header">
                     <div className="header-left" onClick={() => navigate(-1)}>
-                        <img src="/img/back.png" alt="Back" style={{ width: '12px', filter: 'invert(1)' }} />
+                        <img src="/img/back.png" alt="Back" style={{ width: '14px', filter: 'invert(1)' }} />
                         <span style={{ fontWeight: 'bold' }}>Back to Editor</span>
                     </div>
                     <h2>Submit Product</h2>

@@ -1,154 +1,132 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const OrderSuccess = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { orderId, address, customerName, phone, createdAt, method } = location.state || {};
 
-    const orderDetails = {
-        id: "#CR8-20314",
-        status: "Paid",
-        date: "28 October 2025"
-    };
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
+    // Fallback if data is missing (e.g. direct URL access)
+    const displayId = orderId || "CR8-" + Math.floor(10000 + Math.random() * 90000);
+    const displayDate = createdAt ? new Date(createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
 
     return (
         <div style={pageWrapper}>
-            {/* 🟢 BLURRED BACKGROUND IMAGE (Using your image) */}
-            <div style={blurredBg} />
-
-            {/* 🟢 CONTENT WRAPPER (This sits above the blur) */}
-            <div style={fullScreenContent}>
-                {/* 🔵 BLUE HEADER (Re-added here so it sits on top) */}
-                <header style={blueHeader}>
-                    <div style={backArea} onClick={() => navigate(-1)}>
-                        <img src="/img/back.png" alt="Back" style={backIcon} />
-                        <span>Back</span>
-                    </div>
-                    <div style={headerIconGroup}>
-                        <img src="/img/profile-picture.png" style={navIcon} alt="Profile" />
-                        <img src="/img/notifi.png" style={navIcon} alt="Notif" />
-                        <img src="/img/shopping-cart.png" style={navIcon} alt="Cart" />
-                        <img src="/img/logout.png" style={navIcon} alt="Logout" />
-                    </div>
-                </header>
-
-                <div style={mainContent}>
-                    {/* 🟢 FROSTED GLASS SUCCESS BOX */}
-                    <div style={glassSuccessCard}>
-                        <div style={imageWrapper}>
-                            <img src="/img/shopping.png" alt="Success" style={successImg} />
-                        </div>
-
-                        <h1 style={successMessage}>🎉 Order Confirmed Successfully!</h1>
-
-                        <div style={detailsBlock}>
-                            <p style={detailText}>Order ID: <span style={boldText}>{orderDetails.id}</span></p>
-                            <p style={detailText}>Payment Status: <span style={paidText}>✔ {orderDetails.status}</span></p>
-                            <p style={detailText}>Date: <span style={boldText}>{orderDetails.date}</span></p>
-                        </div>
-
-                        <p style={thankYouText}>Thank you for your purchase!</p>
-
-                        <div style={actionWrapper}>
-                            <button 
-                                style={trackBtn} 
-                                onClick={() => navigate('/track-order', { 
-                                    state: { 
-                                        address: location.state?.address, 
-                                        customerName: location.state?.customerName,
-                                        orderId: "#CR8-20314" // You can also pass the dynamic ID here
-                                    } 
-                                })}
-                            >
-                                Track Your Order
-                            </button>
-                        </div>
-
-                        <div style={dashboardLinkArea} onClick={() => navigate('/buyer-dashboard')}>
-                            <span>Back to Dashboard</span>
-                            <span style={{ fontSize: '24px', marginLeft: '10px' }}>&gt;</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 🔵 FOOTER */}
-                <footer style={siteFooter}>
-                    <span>Cre8tify • Wear Your Imaginations</span>
-                    <div style={footerLinksGroup}>
-                        <span>Privacy Policy</span> | <span>Terms & Conditions</span> | <span>FAQ</span>
-                    </div>
-                    <span>© 2025 Cre8tify</span>
-                </footer>
+            <div style={headerNudge}>
+                <Header mode="title" title="SUCCESS" />
             </div>
+
+            <div style={mainContainer}>
+                <div style={successCard}>
+                    {/* Success Icon Animation Wrapper */}
+                    <div style={iconWrapper}>
+                        <div style={circleBg}>
+                            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <div style={confetti}>🎉</div>
+                    </div>
+
+                    <h1 style={mainTitle}>Order Placed Successfully!</h1>
+                    <p style={subTitle}>Thank you for your purchase, <span style={highlight}>{customerName || 'Customer'}</span>!</p>
+
+                    <div style={detailsBox}>
+                        <div style={detailRow}>
+                            <span style={detailLabel}>Order ID</span>
+                            <span style={detailValue}>#{displayId}</span>
+                        </div>
+                        <div style={detailRow}>
+                            <span style={detailLabel}>Payment Status</span>
+                            <span style={{ ...detailValue, color: '#16a34a' }}>● Paid</span>
+                        </div>
+                        <div style={detailRow}>
+                            <span style={detailLabel}>Date</span>
+                            <span style={detailValue}>{displayDate}</span>
+                        </div>
+                        <div style={detailRow}>
+                            <span style={detailLabel}>Payment Method</span>
+                            <span style={detailValue}>{method === 'sandbox' ? 'Sandbox' : method === 'bank' ? 'Bank Deposit' : 'Credit Card'}</span>
+                        </div>
+                    </div>
+
+                    <div style={shippingInfo}>
+                        <p style={shippingTitle}>Shipping To:</p>
+                        <p style={shippingText}>{address || 'Your registered address'}</p>
+                    </div>
+
+                    <div style={actionButtons}>
+                        <button 
+                            style={primaryBtn} 
+                            onClick={() => navigate('/track-order', { state: { address, customerName, orderId: displayId } })}
+                        >
+                            Track Your Order
+                        </button>
+                        <button 
+                            style={secondaryBtn} 
+                            onClick={() => navigate('/customer-dashboard')}
+                        >
+                            Continue Shopping
+                        </button>
+                    </div>
+
+                    <p style={footerNote}>A confirmation email has been sent to your inbox.</p>
+                </div>
+            </div>
+
+            <Footer />
+
+            <style>{`
+                @keyframes bounceIn {
+                    0% { transform: scale(0.3); opacity: 0; }
+                    50% { transform: scale(1.05); opacity: 1; }
+                    70% { transform: scale(0.9); }
+                    100% { transform: scale(1); }
+                }
+                @keyframes float {
+                    0% { transform: translateY(0px); }
+                    50% { transform: translateY(-10px); }
+                    100% { transform: translateY(0px); }
+                }
+            `}</style>
         </div>
     );
 };
 
 // --- STYLES ---
-const pageWrapper: React.CSSProperties = { position: 'relative', minHeight: '100vh', overflow: 'hidden' };
+const pageWrapper: React.CSSProperties = { background: '#f4f7f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: "'Inter', sans-serif" };
+const headerNudge: React.CSSProperties = { background: '#0d375b' };
+const mainContainer: React.CSSProperties = { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' };
 
-// 🟢 The blurred background layer using your image
-const blurredBg: React.CSSProperties = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    backgroundImage: 'url(/img/checkerbg.jpg)', // Path to your image
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    filter: 'blur(15px)', // ⬆️ Apply the blur here
-    transform: 'scale(1.1)', // Prevents blurred edges from showing white
-    zIndex: 1
-};
+const successCard: React.CSSProperties = { background: '#fff', padding: '50px', borderRadius: '30px', boxShadow: '0 20px 50px rgba(0,0,0,0.05)', textAlign: 'center', maxWidth: '550px', width: '100%', border: '1px solid #eef2f6', animation: 'bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55)' };
 
-// 🟢 The content layer that sits above the blur
-const fullScreenContent: React.CSSProperties = {
-    position: 'relative',
-    zIndex: 2,
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    fontFamily: 'Inter, sans-serif'
-};
+const iconWrapper: React.CSSProperties = { position: 'relative', display: 'inline-block', marginBottom: '30px' };
+const circleBg: React.CSSProperties = { width: '100px', height: '100px', background: '#22c55e', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(34, 197, 94, 0.3)' };
+const confetti: React.CSSProperties = { position: 'absolute', top: '-10px', right: '-10px', fontSize: '32px', animation: 'float 3s ease-in-out infinite' };
 
-const blueHeader: React.CSSProperties = { background: '#0d375b', color: '#fff', padding: '50px 8%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
-const backArea: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', fontWeight: 700, fontSize: '22px' };
-const backIcon: React.CSSProperties = { width: '25px', filter: 'brightness(0) invert(1)' };
-const headerIconGroup: React.CSSProperties = { display: 'flex', gap: '30px' };
-const navIcon: React.CSSProperties = { width: '40px', height: '40px', filter: 'invert(0)', objectFit: 'contain' };
+const mainTitle: React.CSSProperties = { fontSize: '28px', fontWeight: '900', color: '#0d375b', marginBottom: '10px' };
+const subTitle: React.CSSProperties = { fontSize: '16px', color: '#64748b', marginBottom: '35px' };
+const highlight: React.CSSProperties = { color: '#0d375b', fontWeight: '800' };
 
-const mainContent: React.CSSProperties = { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' };
+const detailsBox: React.CSSProperties = { background: '#f8fafc', padding: '25px', borderRadius: '20px', marginBottom: '25px', border: '1px solid #e2e8f0' };
+const detailRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '14px' };
+const detailLabel: React.CSSProperties = { color: '#64748b', fontWeight: '600' };
+const detailValue: React.CSSProperties = { color: '#1e293b', fontWeight: '800' };
 
-// 🟢 Glassmorphism Card for the success details
-const glassSuccessCard: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.85)', // Semi-transparent white
-    backdropFilter: 'blur(5px)', // Adds a slight "frosted" effect to the card itself
-    padding: '80px 100px',
-    borderRadius: '20px',
-    textAlign: 'center',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.15)', // Soft, premium shadow
-    border: '1px solid rgba(255, 255, 255, 0.3)' // Subtle glass edge
-};
+const shippingInfo: React.CSSProperties = { marginBottom: '40px', textAlign: 'left', paddingLeft: '10px', borderLeft: '4px solid #e2e8f0' };
+const shippingTitle: React.CSSProperties = { fontSize: '13px', fontWeight: '800', color: '#64748b', margin: '0 0 5px 0', textTransform: 'uppercase' };
+const shippingText: React.CSSProperties = { fontSize: '14px', color: '#334155', margin: 0, fontWeight: '500', lineHeight: '1.5' };
 
-const imageWrapper: React.CSSProperties = { marginBottom: '40px' };
-const successImg: React.CSSProperties = { width: '180px', height: 'auto' };
+const actionButtons: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '12px' };
+const primaryBtn: React.CSSProperties = { background: '#0d375b', color: '#fff', padding: '18px', borderRadius: '15px', border: 'none', fontSize: '16px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 10px 20px rgba(13, 55, 91, 0.2)', transition: '0.3s' };
+const secondaryBtn: React.CSSProperties = { background: '#fff', color: '#0d375b', padding: '16px', borderRadius: '15px', border: '2px solid #0d375b', fontSize: '16px', fontWeight: '800', cursor: 'pointer', transition: '0.3s' };
 
-const successMessage: React.CSSProperties = { fontSize: '38px', fontWeight: 900, color: '#1e1e1e', marginBottom: '35px' };
-
-const detailsBlock: React.CSSProperties = { textAlign: 'center', marginBottom: '40px' };
-const detailText: React.CSSProperties = { fontSize: '20px', color: '#444', margin: '8px 0', fontWeight: 500 };
-const boldText: React.CSSProperties = { fontWeight: 800, color: '#000' };
-const paidText: React.CSSProperties = { fontWeight: 800, color: '#27ae60' };
-
-const thankYouText: React.CSSProperties = { fontSize: '22px', color: '#555', marginBottom: '60px', fontStyle: 'italic' };
-
-const actionWrapper: React.CSSProperties = { width: '100%', display: 'flex', justifyContent: 'center' };
-const trackBtn: React.CSSProperties = { background: '#111', color: '#fff', padding: '20px 50px', borderRadius: '5px', border: 'none', fontSize: '20px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 20px rgba(0,0,0,0.15)' };
-
-const dashboardLinkArea: React.CSSProperties = { marginTop: '70px', cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '18px', fontWeight: 700, color: '#333' };
-
-const siteFooter: React.CSSProperties = { background: '#0d375b', padding: '60px 8%', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '25px' };
-const footerLinksGroup: React.CSSProperties = { display: 'flex', gap: '35px', fontWeight: 500 };
+const footerNote: React.CSSProperties = { marginTop: '30px', fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' };
 
 export default OrderSuccess;

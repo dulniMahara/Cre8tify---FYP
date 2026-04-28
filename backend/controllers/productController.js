@@ -44,7 +44,7 @@ const handleVirtualTryOn = async (req, res) => {
 // @desc    Create new product
 const createProduct = async (req, res) => {
     const {
-        title, description, baseProduct, price, markup, mockupImages, canvasState, tshirtColor, allowCustomization, status,
+        title, description, baseProduct, category, price, markup, mockupImages, canvasState, tshirtColor, allowUserCustomization, allowEditRequests, status,
         frontDesign, frontPrintArea, frontPrintAreaPx,
         backDesign, backPrintArea, backPrintAreaPx,
         neckDesign, neckPrintArea, neckPrintAreaPx,
@@ -57,12 +57,14 @@ const createProduct = async (req, res) => {
             title,
             description,
             baseProduct,
+            category: category || 'Unisex',
             price,
             markup,
             mockupImages,
             canvasState,
             tshirtColor,
-            allowCustomization,
+            allowCustomization: allowUserCustomization,
+            allowEditRequests,
             status: status || 'Pending',
             isApproved: false,
 
@@ -80,10 +82,33 @@ const createProduct = async (req, res) => {
     }
 };
 
+// @desc    Get all approved products (with optional category filter)
+// @route   GET /api/products
+const getProducts = async (req, res) => {
+    try {
+        const { category } = req.query;
+        let query = { status: 'Approved' };
+        
+        if (category && category !== 'All') {
+            query.category = { $regex: new RegExp(`^${category}$`, 'i') };
+        }
+
+        const products = await Product.find(query)
+            .populate('designer', 'name shopName bio profileImage')
+            .sort({ createdAt: -1 });
+            
+        res.status(200).json(products);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching products" });
+    }
+};
+
 // @desc    Get all designs for the logged-in designer
 const getDesignerProducts = async (req, res) => {
     try {
-        const products = await Product.find({ designer: req.user._id }).sort({ createdAt: -1 });
+        const products = await Product.find({ designer: req.user._id })
+            .populate('designer', 'name shopName bio profileImage')
+            .sort({ createdAt: -1 });
         res.status(200).json(products);
     } catch (error) {
         res.status(500).json({ message: "Error fetching your designs" });
@@ -101,6 +126,8 @@ const getPendingProducts = async (req, res) => {
         res.status(500).json({ message: "Server Error" });
     }
 };
+
+const Notification = require('../models/notificationModel');
 
 // @desc    Approve or Reject a product (Admin Action)
 const updateProductStatus = async (req, res) => {
@@ -121,6 +148,17 @@ const updateProductStatus = async (req, res) => {
         }
 
         await product.save();
+
+        // 🔔 Create Notification for Designer
+        await Notification.create({
+            user: product.designer,
+            title: `Design ${status}`,
+            message: status === 'Approved' 
+                ? `Great news! Your design "${product.title}" has been approved and is now live in the collection.`
+                : `Your design "${product.title}" was not approved. Reason: ${rejectionReason || "Please check details in My Shop."}`,
+            type: 'status_update'
+        });
+
         res.json({ message: `Product ${status} successfully`, product });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -129,6 +167,7 @@ const updateProductStatus = async (req, res) => {
 
 module.exports = {
     createProduct,
+    getProducts,
     getDesignerProducts,
     getPendingProducts,
     updateProductStatus,

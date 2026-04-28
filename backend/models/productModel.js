@@ -58,6 +58,10 @@ const productSchema = mongoose.Schema({
         type: Boolean, 
         default: true 
     },
+    allowEditRequests: { 
+        type: Boolean, 
+        default: true 
+    },
 
     rejectionReason: { // 🟢 Added this so the Admin can save why they rejected it
         type: String,

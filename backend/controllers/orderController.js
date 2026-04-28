@@ -1,4 +1,6 @@
 const Order = require('../models/orderModel');
+const Notification = require('../models/notificationModel');
+const Product = require('../models/productModel');
 
 // @desc    Create a new order after "Confirm & Pay"
 // @route   POST /api/orders
@@ -18,8 +20,44 @@ const addOrderItems = async (req, res) => {
         });
 
         const createdOrder = await order.save();
+
+        // 🟢 1. Create Notification for Buyer
+        await Notification.create({
+            user: req.user._id,
+            title: "Order Placed Successfully!",
+            message: `Your order #${createdOrder._id.toString().substring(16).toUpperCase()} has been placed. Total: LKR ${totalPrice}`,
+            type: 'order_placed',
+            orderId: createdOrder._id
+        });
+
+        // 🟢 2. Create Notifications for Designers
+        // Get unique designer IDs from the products in orderItems
+        const designerIds = new Set();
+        const mongoose = require('mongoose');
+
+        for (const item of orderItems) {
+            if (item.product && mongoose.Types.ObjectId.isValid(item.product)) {
+                const product = await Product.findById(item.product);
+                if (product && product.designer) {
+                    designerIds.add(product.designer.toString());
+                }
+            }
+        }
+
+        // Send notification to each designer
+        for (const designerId of designerIds) {
+            await Notification.create({
+                user: designerId,
+                title: "New Order Received!",
+                message: `An order has been placed for your design by ${req.user.name || 'a customer'}.`,
+                type: 'order_received',
+                orderId: createdOrder._id
+            });
+        }
+
         res.status(201).json(createdOrder);
     } catch (error) {
+        console.error("Order Creation Error:", error);
         res.status(500).json({ message: error.message });
     }
 };

@@ -76,12 +76,11 @@ const VARIANT_COLORS = [
 ];
 
 const VARIANT_SIZES = [
+    { label: "XS", isAvailable: true },
     { label: "S", isAvailable: true },
-    { label: "M", isAvailable: false },
+    { label: "M", isAvailable: true },
     { label: "L", isAvailable: true },
     { label: "XL", isAvailable: true },
-    { label: "2XL", isAvailable: true },
-    { label: "3XL", isAvailable: true },
 ];
 
 const TEXT_STYLES_CONFIG = [
@@ -211,6 +210,7 @@ export default function DesignTool() {
     // Profile Image State
     const [navProfileImg, setNavProfileImg] = useState("/img/profile-picture.png");
     const printAreaRef = useRef<HTMLDivElement | null>(null);
+    const mockupContainerRef = useRef<HTMLDivElement | null>(null);
     const [showCropModal, setShowCropModal] = useState(false);
     const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
     const [crop, setCrop] = useState<Crop>({ unit: '%', x: 10, y: 10, width: 80, height: 80 });
@@ -274,15 +274,39 @@ export default function DesignTool() {
         }
     };
     useEffect(() => {
-        console.log("Checking for RECOVERY_DESIGN...");
-        const raw = localStorage.getItem('RECOVERY_DESIGN');
+        console.log("Initializing Design Tool state...");
+        
+        // 1. IF IT'S AN EDIT SESSION (From My Shop)
+        if (location.state?.isEdit && location.state?.savedLayers) {
+            console.log("EDIT MODE: Loading saved design layers...");
+            const { imageLayers: sImgs, textLayers: sTxts } = location.state.savedLayers;
+            setImageLayers(sImgs || []);
+            setTextLayers(sTxts || []);
+            if (location.state.selectedTshirtColor) {
+                setSelectedTshirtColor(location.state.selectedTshirtColor);
+            }
+            // Clear location state to avoid re-triggering on local updates
+            window.history.replaceState({}, document.title);
+            return; // EXIT: Don't load recovery data if editing
+        }
 
+        // 2. IF IT'S A NEW DESIGN SESSION (From Dashboard)
+        if (location.state?.selectedProduct) {
+            console.log("NEW DESIGN: Starting with blank canvas...");
+            setImageLayers([]);
+            setTextLayers([]);
+            setSelectedTshirtColor('#ffffff');
+            // Clear recovery so it doesn't pop back on refresh
+            localStorage.removeItem('RECOVERY_DESIGN');
+            return; // EXIT
+        }
+
+        // 3. FALLBACK: RECOVERY LOGIC (On Refresh)
+        const raw = localStorage.getItem('RECOVERY_DESIGN');
         if (raw) {
             try {
                 const parsed = JSON.parse(raw);
                 console.log("RECOVERY DATA FOUND:", parsed);
-
-                // Directly slam the data into state
                 if (parsed.imageLayers) setImageLayers(parsed.imageLayers);
                 if (parsed.textLayers) setTextLayers(parsed.textLayers);
                 if (parsed.selectedTshirtColor) setSelectedTshirtColor(parsed.selectedTshirtColor);
@@ -290,19 +314,7 @@ export default function DesignTool() {
                 console.error("Recovery failed", e);
             }
         }
-
-        // Keep the Edit mode logic separate
-        if (location.state?.isEdit && location.state?.savedLayers) {
-            const { imageLayers: sImgs, textLayers: sTxts } = location.state.savedLayers;
-            setImageLayers(sImgs || []);
-            setTextLayers(sTxts || []);
-            if (location.state.selectedTshirtColor) {
-                console.log("Restoring color from edit state:", location.state.selectedTshirtColor);
-                setSelectedTshirtColor(location.state.selectedTshirtColor);
-            }
-            window.history.replaceState({}, document.title);
-        }
-    }, []); // Empty array
+    }, []);
 
     useEffect(() => {
         const calculateScale = () => {
@@ -838,15 +850,20 @@ export default function DesignTool() {
 
 
     // --- 1. CAPTURE UTILITY ---
-    const getCanvasSnapshot = async (side: 'front' | 'folded' | 'neck' | 'back') => {
+    const getCanvasSnapshot = async (side: 'front' | 'folded' | 'neck' | 'back', target: 'full' | 'design' = 'full') => {
         const prevSide = currentSide;
         setCurrentSide(side);
 
-        // 1. Wait for the side to switch and render
+        // 1. TEMPORARY FIX FOR HTML2CANVAS:
+        // html2canvas calculates wrong positions if the parent has transform: scale()
+        const originalScale = mockupScale;
+        setMockupScale(1);
+
+        // Wait for the side to switch, scale to reset, and UI to render
         await new Promise(resolve => setTimeout(resolve, 800));
         await waitForPaint();
 
-        const workspaceElement = printAreaRef.current; // Target only the design contents
+        const workspaceElement = target === 'full' ? mockupContainerRef.current : printAreaRef.current;
 
         if (!workspaceElement) {
             setCurrentSide(prevSide);
@@ -872,6 +889,7 @@ export default function DesignTool() {
             // 3. RESTORE
             setIsSaving(originalIsSaving);
             setCurrentSide(prevSide);
+            setMockupScale(originalScale);
 
             return {
                 // This is now the FULL T-shirt image
@@ -881,6 +899,7 @@ export default function DesignTool() {
         } catch (err) {
             setIsSaving(originalIsSaving);
             setCurrentSide(prevSide);
+            setMockupScale(originalScale);
             console.error("Snapshot failed:", err);
             return { designSrc: "", printAreaPx: null };
         }
@@ -902,34 +921,39 @@ export default function DesignTool() {
             localStorage.setItem('RECOVERY_DESIGN', JSON.stringify(recoveryData));
 
             // 2. Capture snapshots for each view
-            const frontSnap = await getCanvasSnapshot('front');
-            const neckSnap = await getCanvasSnapshot('neck');
-            const foldedSnap = await getCanvasSnapshot('folded');
-            // Back view is kept blank
+            // 🟢 FULL SHIRT SNAPSHOTS (For shop display)
+            const frontFull = await getCanvasSnapshot('front', 'full');
+            const neckFull = await getCanvasSnapshot('neck', 'full');
+            const foldedFull = await getCanvasSnapshot('folded', 'full');
+
+            // 🟢 DESIGN-ONLY SNAPSHOTS (For production data)
+            const frontDesignSnap = await getCanvasSnapshot('front', 'design');
+            const neckDesignSnap = await getCanvasSnapshot('neck', 'design');
+            const foldedDesignSnap = await getCanvasSnapshot('folded', 'design');
+
             const backSnap = { designSrc: "", printAreaPx: null };
 
             const submissionData = {
                 productImages: [
-                    // 🚀 CHANGE THIS: Use the designSrc (snapshot) instead of the empty base image
-                    frontSnap.designSrc || MOCKUP_CONFIG.front.img,
+                    frontFull.designSrc || MOCKUP_CONFIG.front.img,
                     MOCKUP_CONFIG.back.img,
-                    neckSnap.designSrc || MOCKUP_CONFIG.neck.img,
-                    foldedSnap.designSrc || MOCKUP_CONFIG.folded.img
+                    neckFull.designSrc || MOCKUP_CONFIG.neck.img,
+                    foldedFull.designSrc || MOCKUP_CONFIG.folded.img
                 ],
-                frontDesign: frontSnap.designSrc,
-                frontPrintAreaPx: frontSnap.printAreaPx,
+                frontDesign: frontDesignSnap.designSrc,
+                frontPrintAreaPx: frontDesignSnap.printAreaPx,
                 frontPrintArea: MOCKUP_CONFIG.front.printArea,
                 frontAreaScale: MOCKUP_CONFIG.front.areaScale,
                 frontDesignScale: MOCKUP_CONFIG.front.designScale,
 
-                neckDesign: neckSnap.designSrc,
-                neckPrintAreaPx: neckSnap.printAreaPx,
+                neckDesign: neckDesignSnap.designSrc,
+                neckPrintAreaPx: neckDesignSnap.printAreaPx,
                 neckPrintArea: MOCKUP_CONFIG.neck.printArea,
                 neckAreaScale: MOCKUP_CONFIG.neck.areaScale,
                 neckDesignScale: MOCKUP_CONFIG.neck.designScale,
 
-                foldedDesign: foldedSnap.designSrc,
-                foldedPrintAreaPx: foldedSnap.printAreaPx,
+                foldedDesign: foldedDesignSnap.designSrc,
+                foldedPrintAreaPx: foldedDesignSnap.printAreaPx,
                 foldedPrintArea: MOCKUP_CONFIG.folded.printArea,
                 foldedAreaScale: MOCKUP_CONFIG.folded.areaScale,
                 foldedDesignScale: MOCKUP_CONFIG.folded.designScale,
@@ -942,16 +966,18 @@ export default function DesignTool() {
 
                 productType: location.state?.product?.name || 'Oversized T-shirt',
                 tshirtColor: selectedTshirtColor,
+                category: productData?.category || 'Unisex',
                 canvasState: {
                     imageLayers: imageLayers,
                     textLayers: textLayers
-                }
+                },
+                originalDesign: location.state?.originalDesign
             };
 
-            setIsSaving(false);
+            // 🟢 SUCCESS: Keep isSaving = true so the loader stays while navigating
             navigate('/submit-product', { state: submissionData });
         } catch (error) {
-            setIsSaving(false);
+            setIsSaving(false); // Only stop loading if there's an error
             console.error("Navigation failed", error);
             alert("Failed to prepare submission. Please try again.");
         }
@@ -1064,7 +1090,9 @@ export default function DesignTool() {
         const maskSrc = (config as any).mask || config.img;
 
         return (
-            <div id="tshirt-capture-area" style={{
+            <div 
+                ref={mockupContainerRef} // 🚀 Capture the WHOLE T-shirt (Color + Design)
+                style={{
                 position: 'relative',
                 width: isWideView ? '850px' : '550px',
                 height: '800px',
@@ -1154,7 +1182,9 @@ export default function DesignTool() {
                                 left: config.printArea.left,
                                 width: config.printArea.width,
                                 height: config.printArea.height,
-                                transform: `translate(-50%, -50%) rotate(${(config.printArea as any).rotation ?? 0}deg)`,
+                                marginLeft: `calc(-1 * ${config.printArea.width} / 2)`,
+                                marginTop: `calc(-1 * ${config.printArea.height} / 2)`,
+                                transform: `rotate(${(config.printArea as any).rotation ?? 0}deg)`,
                                 border: viewMode === 'edit' && !isSaving ? '2px dashed rgba(0,0,0,0.4)' : 'none',
                                 overflow: 'hidden',
                                 boxSizing: 'border-box',
@@ -1179,7 +1209,6 @@ export default function DesignTool() {
                                     onMouseDown={(e) => handleDragStart(e, layer.id, 'image', layer.x, layer.y)}
                                 />
                             ))}
-
 
                             {/* Text Layers */}
                             {shouldShowDesign && textLayers.map((t) => (
@@ -1548,6 +1577,7 @@ export default function DesignTool() {
                 <div className="design-sidebar" style={{ width: '220px', flexShrink: 0 }}>
                     <div className="sidebar-logo">Cre8tify</div>
                     <div className="sidebar-menu">
+                        <img src="/img/profile-picture.png" className="nav-icon" alt="Profile" style={{ cursor: 'pointer' }} onClick={() => navigate('/designer-profile')} />
                         <label className="sidebar-btn">
                             <img src="/img/upload.png" alt="Upload" className="sidebar-icon" />
                             Upload
@@ -1607,7 +1637,13 @@ export default function DesignTool() {
                     {/* Left Side: Back Button */}
                     <div
                         style={{ display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer' }}
-                        onClick={() => navigate('/designer-dashboard')}
+                        onClick={() => {
+                            if (location.state?.isEdit) {
+                                navigate('/my-shop');
+                            } else {
+                                navigate('/designer-dashboard');
+                            }
+                        }}
                     >
                         <img src="/img/back.png" alt="Back" style={{ width: '15px', height: '15px', filter: 'invert(1)' }} />
                         <span style={{ color: 'white', fontWeight: 700, fontSize: '13px' }}>Back</span>
@@ -1620,7 +1656,7 @@ export default function DesignTool() {
                             src={navProfileImg}
                             alt="Profile"
                             style={{ width: '25px', height: '25px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
-                            onClick={() => navigate('/profile')}
+                            onClick={() => navigate('/designer-profile')}
                         />
                     </div>
                 </header>
@@ -2431,8 +2467,8 @@ export default function DesignTool() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                     <h3 style={{ fontSize: '14px', fontWeight: '700', margin: 0 }}>Mockup view</h3>
                                     <div className="mode-toggle" style={{ display: 'flex', backgroundColor: '#f0f0f0', borderRadius: '20px', padding: '3px', border: '1px solid #ddd' }}>
-                                        <button onClick={() => setViewMode('edit')} style={{ padding: '5px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '11px', color: '#666', background: 'transparent' }}>Edit</button>
-                                        <button onClick={() => setViewMode('preview')} style={{ padding: '5px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '11px', backgroundColor: '#0d375b', color: 'white' }}>Preview</button>
+                                        <button onClick={() => handleToggleView('edit')} style={{ padding: '5px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '11px', color: '#666', background: 'transparent' }}>Edit</button>
+                                        <button onClick={() => handleToggleView('preview')} style={{ padding: '5px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '11px', backgroundColor: '#0d375b', color: 'white' }}>Preview</button>
                                     </div>
                                 </div>
 
@@ -2557,6 +2593,41 @@ export default function DesignTool() {
                     </div>
                 )}
             </div>
+
+            {/* 🟢 FULL SCREEN SAVING OVERLAY: Hides background glitches during snapshotting */}
+            {isSaving && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    backgroundColor: '#ffffff',
+                    zIndex: 9999,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    animation: 'designToolFadeIn 0.3s ease-out'
+                }}>
+                    <div style={{
+                        width: '50px',
+                        height: '50px',
+                        border: '5px solid #f3f3f3',
+                        borderTop: '5px solid #0d375b',
+                        borderRadius: '50%',
+                        animation: 'designToolSpin 1s linear infinite',
+                        marginBottom: '20px'
+                    }}></div>
+                    <h2 style={{ color: '#0d375b', fontSize: '24px', fontWeight: '800', margin: 0 }}>Preparing Your Design</h2>
+                    <p style={{ color: '#666', marginTop: '10px', fontWeight: 500 }}>Capturing high-quality mockups for your store...</p>
+
+                    <style>{`
+                        @keyframes designToolSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                        @keyframes designToolFadeIn { from { opacity: 0; } to { opacity: 1; } }
+                    `}</style>
+                </div>
+            )}
         </div> // This closes main-content (or dashboard-container depending on your start)
     ); // This closes the return (
 } // This closes the export default function

@@ -3,11 +3,15 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const {
     createProduct,
+    getProducts,
     getDesignerProducts,
     getPendingProducts,
     updateProductStatus,
     handleVirtualTryOn // 👈 ADD THIS HERE
 } = require('../controllers/productController');
+
+// Public Routes
+router.get('/', getProducts);
 
 // Designer Routes
 router.post('/', protect, createProduct);
