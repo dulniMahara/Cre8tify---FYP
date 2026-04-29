@@ -301,6 +301,7 @@ const MyShop = () => {
                     onSearch={(q) => setSearchQuery(q)} 
                     showCart={false} 
                     title="My Shop"
+                    userRole="designer"
                 />
 
                 <div className="content-wrapper" style={{ padding: '20px', flex: 1, maxWidth: '700px', margin: '0 auto', width: '100%' }}>

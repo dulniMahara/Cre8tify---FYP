@@ -143,7 +143,7 @@ const Requests = () => {
 
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc' }}>
                 
-                <Header showCart={false} onSearch={setSearchQuery} />
+                <Header showCart={false} onSearch={setSearchQuery} userRole="designer" />
 
                 <div className="content-wrapper animate-fade" style={{ padding: '20px', flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%' }}>
                     

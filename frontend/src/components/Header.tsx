@@ -19,6 +19,7 @@ const Header: React.FC<HeaderProps> = ({
     userRole: propRole
 }) => {
     const navigate = useNavigate();
+    const API_URL = "http://localhost:5000";
 
     const [navProfileImg, setNavProfileImg] = useState("/img/profile-picture.png");
     const [userRole, setUserRole] = useState('buyer');
@@ -32,11 +33,24 @@ const Header: React.FC<HeaderProps> = ({
             const savedData = localStorage.getItem('userInfo');
             if (savedData) {
                 const userObj = JSON.parse(savedData);
-                if (userObj.image) {
-                    setNavProfileImg(userObj.image);
-                } else if (userObj.profileImage) {
-                    setNavProfileImg(userObj.profileImage);
+                
+                const sessionRole = userObj.role || 'buyer';
+                const effectiveRole = propRole || sessionRole;
+
+                // Helper to handle image URL prefixing
+                const getImageUrl = (img: string | undefined) => {
+                    if (!img || img === "/img/profile-picture.png") return "/img/profile-picture.png";
+                    if (img.startsWith('data:') || img.startsWith('http')) return img;
+                    return `${API_URL}${img.startsWith('/') ? '' : '/'}${img}`;
+                };
+
+                // 🟢 Context-aware profile picture selection
+                if (effectiveRole === 'designer' || effectiveRole === 'admin') {
+                    setNavProfileImg(getImageUrl(userObj.profileImage));
+                } else {
+                    setNavProfileImg(getImageUrl(userObj.image || userObj.profileImage));
                 }
+                
                 if (userObj.role) {
                     setUserRole(userObj.role);
                 }

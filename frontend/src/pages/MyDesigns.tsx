@@ -124,7 +124,7 @@ const MyDesigns = () => {
 
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%)' }}>
 
-                <Header showCart={false} onSearch={setSearchQuery} />
+                <Header showCart={false} onSearch={setSearchQuery} userRole="designer" />
 
                 {/* CONTENT */}
                 <div className="content-wrapper animate-load" style={{ padding: '20px', flex: 1, maxWidth: '700px', margin: '0 auto', width: '100%' }}>

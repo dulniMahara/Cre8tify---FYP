@@ -78,14 +78,20 @@ const getMyOrders = async (req, res) => {
 // @route   GET /api/orders/all
 const getOrders = async (req, res) => {
     try {
+        console.log("[OrderController] Admin fetching all orders...");
         const orders = await Order.find({})
             .populate('user', 'name email _id')
-            .populate('orderItems.product')
+            .populate({
+                path: 'orderItems.product',
+                select: 'title price tshirtColor'
+            })
             .sort({ createdAt: -1 });
-        console.log(`Admin fetched ${orders.length} orders`);
-        res.json(orders);
+        
+        console.log(`[OrderController] Admin fetched ${orders ? orders.length : 0} orders`);
+        res.json(orders || []);
     } catch (error) {
-        res.status(500).json({ message: "Failed to fetch all orders" });
+        console.error("[OrderController] Critical Error in getOrders:", error);
+        res.status(500).json({ message: "Failed to fetch all orders", error: error.message });
     }
 };
 

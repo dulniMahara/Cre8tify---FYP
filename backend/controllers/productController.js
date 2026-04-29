@@ -118,12 +118,26 @@ const getDesignerProducts = async (req, res) => {
 // @desc    Get all pending products for Admin review
 const getPendingProducts = async (req, res) => {
     try {
-        const products = await Product.find({ status: 'Pending' })
-            .populate('designer', 'name email')
-            .sort({ createdAt: -1 });
-        res.json(products);
+        console.log("[ProductController] Admin fetching pending products...");
+        // Use case-insensitive search just in case
+        const products = await Product.find({ 
+            status: { $regex: /^pending$/i } 
+        })
+        .populate({
+            path: 'designer',
+            select: 'name email shopName'
+        })
+        .sort({ createdAt: -1 })
+        .lean(); // Use lean for faster, read-only results
+        
+        console.log(`[ProductController] Found ${products ? products.length : 0} pending products.`);
+        res.status(200).json(products || []);
     } catch (error) {
-        res.status(500).json({ message: "Server Error" });
+        console.error("[ProductController] ERROR fetching pending:", error);
+        res.status(500).json({ 
+            message: "Server Error while fetching pending products", 
+            error: error.message 
+        });
     }
 };
 

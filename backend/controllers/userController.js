@@ -71,6 +71,18 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (user && (await bcrypt.compare(password, user.password))) {
+    // Record security log
+    user.securityLogs.push({
+      event: 'Login',
+      ip: req.ip || 'Unknown',
+      timestamp: new Date()
+    });
+    // Keep only last 10 logs for simplicity
+    if (user.securityLogs.length > 10) {
+      user.securityLogs.shift();
+    }
+    await user.save();
+
     res.status(200).json({
       _id: user._id,
       name: user.name,

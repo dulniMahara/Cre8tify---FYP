@@ -61,6 +61,7 @@ const CustomerDashboard = () => {
     };
 
     useEffect(() => {
+        window.scrollTo(0, 0); // 🟢 Always start at the top
         const storedUser = localStorage.getItem('userInfo');
         if (storedUser) {
             const userObj = JSON.parse(storedUser);
@@ -76,7 +77,7 @@ const CustomerDashboard = () => {
         <div className="dashboard-container">
             <Sidebar variant="customer" />
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
-                <Header mode="search" />
+                <Header mode="search" userRole="customer" />
                 <div className="content-wrapper customer-content" style={{ overflowX: 'hidden', marginTop: '0px', paddingTop: '25px' }}>
                     
                     <div style={bannerStyle}>

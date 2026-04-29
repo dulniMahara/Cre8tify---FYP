@@ -12,7 +12,7 @@ const orderSchema = new mongoose.Schema({
         serviceFee: { type: Number, default: 100 },
         size: { type: String },
         color: { type: String },
-        product: { type: String, ref: 'Product' }
+        product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' }
     }],
     totalPrice: { type: Number, required: true },
     isPaid: { type: Boolean, default: false },

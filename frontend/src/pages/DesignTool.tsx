@@ -81,6 +81,8 @@ const VARIANT_SIZES = [
     { label: "M", isAvailable: true },
     { label: "L", isAvailable: true },
     { label: "XL", isAvailable: true },
+    { label: "2XL", isAvailable: true },
+    { label: "3XL", isAvailable: true },
 ];
 
 const TEXT_STYLES_CONFIG = [
@@ -222,12 +224,47 @@ export default function DesignTool() {
     const [mockupScale, setMockupScale] = useState(1);
 
     const location = useLocation();
-    const productData = location.state?.selectedProduct;
+    const productData = location.state?.product || location.state?.selectedProduct;
+
+    // Admin synchronization state
+    const [adminColors, setAdminColors] = useState<string[]>([]);
+    const [adminSizes, setAdminSizes] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (productData?.baseProduct) {
+            fetch(`${API_URL}/api/base-products/${encodeURIComponent(productData.baseProduct)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.colors) setAdminColors(data.colors);
+                    if (data.sizes) setAdminSizes(data.sizes);
+                })
+                .catch(err => console.error("Error syncing base product config", err));
+        }
+    }, [productData?.baseProduct]);
+
+    // --- Computed Variants (Locking Logic) ---
+    const availableColors = React.useMemo(() => {
+        const activeColors = adminColors.length > 0 ? adminColors : (productData?.colors || []);
+        if (activeColors.length === 0) return VARIANT_COLORS;
+        return VARIANT_COLORS.map(c => ({
+            ...c,
+            isAvailable: activeColors.includes(c.name)
+        }));
+    }, [productData, adminColors]);
+
+    const availableSizes = React.useMemo(() => {
+        const activeSizes = adminSizes.length > 0 ? adminSizes : (productData?.sizes || []);
+        if (activeSizes.length === 0) return VARIANT_SIZES;
+        return VARIANT_SIZES.map(s => ({
+            ...s,
+            isAvailable: activeSizes.some((ps: string) => ps.toLowerCase() === s.label.toLowerCase())
+        }));
+    }, [productData, adminSizes]);
 
     // Dynamic MAPPING: No hardcoded fallbacks to specific shirts
     const designTitle = productData?.name || "Loading Product...";
-    const designPrice = productData?.price || "LKR 0.00";
-    const designImage = productData?.img || "";
+    const designPrice = productData?.basePrice ? `LKR ${Number(productData.basePrice).toLocaleString()}` : "LKR 0.00";
+    const designImage = productData?.image || "";
 
     const activeTextConfig = textLayers.find(t => t.id === selectedId) || null;
     const isImageSelected = imageLayers.some(i => i.id === selectedId);
@@ -275,7 +312,7 @@ export default function DesignTool() {
     };
     useEffect(() => {
         console.log("Initializing Design Tool state...");
-        
+
         // 1. IF IT'S AN EDIT SESSION (From My Shop)
         if (location.state?.isEdit && location.state?.savedLayers) {
             console.log("EDIT MODE: Loading saved design layers...");
@@ -295,7 +332,17 @@ export default function DesignTool() {
             console.log("NEW DESIGN: Starting with blank canvas...");
             setImageLayers([]);
             setTextLayers([]);
-            setSelectedTshirtColor('#ffffff');
+            
+            // Set default color based on availability
+            const pColors = location.state.selectedProduct.colors || [];
+            const isWhiteAvailable = pColors.includes('White');
+            if (!isWhiteAvailable && pColors.length > 0) {
+                const firstAvailable = VARIANT_COLORS.find(c => c.name === pColors[0]);
+                setSelectedTshirtColor(firstAvailable?.hex || '#ffffff');
+            } else {
+                setSelectedTshirtColor('#ffffff');
+            }
+            
             // Clear recovery so it doesn't pop back on refresh
             localStorage.removeItem('RECOVERY_DESIGN');
             return; // EXIT
@@ -1090,23 +1137,23 @@ export default function DesignTool() {
         const maskSrc = (config as any).mask || config.img;
 
         return (
-            <div 
+            <div
                 ref={mockupContainerRef} // 🚀 Capture the WHOLE T-shirt (Color + Design)
                 style={{
-                position: 'relative',
-                width: isWideView ? '850px' : '550px',
-                height: '800px',
-                backgroundColor: 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                isolation: 'isolate',
-                transform: `scale(${mockupScale})`,
-                transformOrigin: 'center center',
-                flexShrink: 0,
-                transition: 'transform 0.3s ease, width 0.3s ease',
-                margin: '-40px auto 0 auto'
-            }}>
+                    position: 'relative',
+                    width: isWideView ? '850px' : '550px',
+                    height: '800px',
+                    backgroundColor: 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    isolation: 'isolate',
+                    transform: `scale(${mockupScale})`,
+                    transformOrigin: 'center center',
+                    flexShrink: 0,
+                    transition: 'transform 0.3s ease, width 0.3s ease',
+                    margin: '-40px auto 0 auto'
+                }}>
                 {/* 1. Base Mockup Image */}
                 <img
                     src={config.img}
@@ -1577,7 +1624,6 @@ export default function DesignTool() {
                 <div className="design-sidebar" style={{ width: '220px', flexShrink: 0 }}>
                     <div className="sidebar-logo">Cre8tify</div>
                     <div className="sidebar-menu">
-                        <img src="/img/profile-picture.png" className="nav-icon" alt="Profile" style={{ cursor: 'pointer' }} onClick={() => navigate('/designer-profile')} />
                         <label className="sidebar-btn">
                             <img src="/img/upload.png" alt="Upload" className="sidebar-icon" />
                             Upload
@@ -1705,13 +1751,14 @@ export default function DesignTool() {
                             <div style={{ padding: '15px', overflowY: 'auto', flex: 1 }}>
                                 {activeVariantTab === 'color' ? (
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                                        {VARIANT_COLORS.map(c => (
+                                        {availableColors.map(c => (
                                             <div key={c.name} onClick={() => c.isAvailable && setSelectedTshirtColor(c.hex)} style={{
                                                 display: 'flex', alignItems: 'center', gap: '8px', padding: '8px',
                                                 cursor: c.isAvailable ? 'pointer' : 'not-allowed', borderRadius: '8px',
                                                 border: selectedTshirtColor === c.hex ? '1.5px solid #0d375b' : '1px solid #f1f5f9',
                                                 background: selectedTshirtColor === c.hex ? '#f0f7ff' : 'transparent',
                                                 opacity: c.isAvailable ? 1 : 0.4,
+                                                filter: c.isAvailable ? 'none' : 'grayscale(1)',
                                                 transition: 'all 0.2s ease' // 🚀 Smooth transition for selection
                                             }}>
                                                 {/* 🚀 THE UPDATED FABRIC SWATCH CIRCLE */}
@@ -1729,12 +1776,16 @@ export default function DesignTool() {
                                     </div>
                                 ) : (
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                                        {VARIANT_SIZES.map(s => (
+                                        {availableSizes.map(s => (
                                             <div key={s.label} style={{
                                                 padding: '12px 0', textAlign: 'center', borderRadius: '8px',
-                                                border: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '800',
+                                                border: s.isAvailable ? '1px solid #e2e8f0' : '1px dashed #cbd5e1', 
+                                                fontSize: '11px', fontWeight: '800',
                                                 backgroundColor: s.isAvailable ? '#fff' : '#f8fafc',
-                                                color: s.isAvailable ? '#0f172a' : '#cbd5e1'
+                                                color: s.isAvailable ? '#0f172a' : '#cbd5e1',
+                                                cursor: s.isAvailable ? 'default' : 'not-allowed',
+                                                opacity: s.isAvailable ? 1 : 0.6,
+                                                textDecoration: s.isAvailable ? 'none' : 'line-through'
                                             }}>{s.label}</div>
                                         ))}
                                     </div>

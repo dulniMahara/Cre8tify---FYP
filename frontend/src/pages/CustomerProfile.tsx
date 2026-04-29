@@ -72,7 +72,14 @@ const CustomerProfile = () => {
 
     const handleUpdate = (e: React.FormEvent) => {
         e.preventDefault();
-        localStorage.setItem('userInfo', JSON.stringify(profile));
+        const savedData = localStorage.getItem('userInfo');
+        const existingInfo = savedData ? JSON.parse(savedData) : {};
+        
+        // 🟢 Merging the new profile data into existing userInfo
+        // This ensures 'token', 'role', 'profileImage', etc. are NOT deleted!
+        const updatedInfo = { ...existingInfo, ...profile };
+        
+        localStorage.setItem('userInfo', JSON.stringify(updatedInfo));
         window.dispatchEvent(new Event('storage'));
         alert("Profile Updated Successfully!");
         navigate('/customer-dashboard'); 

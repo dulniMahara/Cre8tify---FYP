@@ -7,40 +7,42 @@ import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000"; // 🟢 Added API_URL for profile images
 
-// Mock Data
-const products = [
-  { id: 1, category: 'women', name: "Soft Touch Cotton T-shirt", price: "LKR 1200", img: "/img/dashwoman1.png", details: ["5 sizes", "5 colors", "5 buyers"] },
-  { id: 2, category: 'women', name: "Oversized T-shirt", price: "LKR 1500", img: "/img/dashwoman2.png", details: ["4 sizes", "5 colors", "5 buyers"] },
-  { id: 3, category: 'women', name: "Stretch (Cotton-Spandex)", price: "LKR 1350", img: "/img/dashwoman3.png", details: ["4 sizes", "5 colors", "5 buyers"] },
-  { id: 4, category: 'men', name: "Classic Cotton T-shirt", price: "LKR 1350", img: "/img/dashman1.png", details: ["4 sizes", "5 colors", "5 buyers"] },
-  { id: 5, category: 'men', name: "Heavyweight Cotton T-shirt", price: "LKR 1600", img: "/img/dashman2.png", details: ["4 sizes", "5 colors", "5 buyers"] },
-  { id: 6, category: 'men', name: "Dry-Fit Active T-shirt", price: "LKR 1500", img: "/img/dashman3.png", details: ["5 sizes", "5 colors", "5 buyers"] },
-  { id: 7, category: 'kids', name: "Soft Cotton T-shirt", price: "LKR 900", img: "/img/dashkid1.png", details: ["5 sizes","5 colors", "5 buyers"] },
-  { id: 8, category: 'kids', name: "Active Play T-shirt", price: "LKR 950", img: "/img/dashkid2.png", details: ["5 sizes","5 colors", "5 buyers"] },
-];
+// State will be managed dynamically
+
 
 export default function DesignerDashboard() {
   const navigate = useNavigate();
 
-  // 1. Dynamic States
   const [userName, setUserName] = useState("Designer");
+  const [products, setProducts] = useState<any[]>([]);
 
-  // 2. Effect to fetch name and image from localStorage
+  // 2. Effect to fetch name and image from localStorage, and fetch products
   useEffect(() => {
+    window.scrollTo(0, 0); // 🟢 Always start at the top
     const storedUser = localStorage.getItem('userInfo');
 
     if (storedUser) {
       try {
         const userObj = JSON.parse(storedUser);
         const name = userObj.name || "Designer";
-
-        // Handle Greeting 
         setUserName(`Welcome, ${name}!`);
-       
       } catch (error) {
         console.error("Error parsing user info:", error);
       }
     }
+
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/base-products`);
+        if (res.ok) {
+          const data = await res.json();
+          setProducts(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch products", error);
+      }
+    };
+    fetchProducts();
   }, []);
 
   const handleProductClick = (product: any) => {
@@ -60,59 +62,58 @@ export default function DesignerDashboard() {
   // Helper to render a specific category grid
   const renderProductSection = (title: string, categoryItems: any[]) => (
     <div style={{ marginBottom: '25px' }}>
-        <h3 style={{ fontSize: '11px', fontWeight: '700', marginBottom: '10px', color: '#0d375b', borderLeft: '3px solid #0d375b', paddingLeft: '8px' }}>{title}</h3>
-        <div className="products-grid">
-            {categoryItems.map((product) => (
-                <div 
-                    key={product.id} 
-                    className="product-card"
-                    onClick={() => handleProductClick(product)}
-                >
-                    <div className="image-wrapper">
-                        <img src={product.img} alt={product.name} className="product-image" />
-                        <div className="hover-overlay">
-                            <span className="design-btn">Start Designing ➝</span>
-                        </div>
-                    </div>
-                    <div className="card-info">
-                        <div className="product-name">{product.name}</div>
-                        <div className="product-price">{product.price}</div>
-                        <div className="product-details">
-                            {product.details.map((detail: string, index: number) => (
-                                <span key={index}>{detail}{index < product.details.length - 1 ? ' • ' : ''}</span>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            ))}
-        </div>
+      <h3 style={{ fontSize: '11px', fontWeight: '700', marginBottom: '10px', color: '#0d375b', borderLeft: '3px solid #0d375b', paddingLeft: '8px' }}>{title}</h3>
+      <div className="products-grid">
+        {categoryItems.map((product) => (
+          <div
+            key={product._id}
+            className="product-card"
+            onClick={() => handleProductClick(product)}
+          >
+            <div className="image-wrapper">
+              <img src={product.image || '/img/womenfront-mockup.png'} alt={product.name} className="product-image" />
+              <div className="hover-overlay">
+                <span className="design-btn">Start Designing ➝</span>
+              </div>
+            </div>
+            <div className="card-info">
+              <div className="product-name" style={{ fontSize: '13px', marginBottom: '6px' }}>{product.name}</div>
+              <div className="product-price" style={{ fontSize: '12px', marginBottom: '8px' }}>
+                LKR {product.basePrice ? Number(product.basePrice).toLocaleString() : '850'}
+              </div>
+              <div className="product-details" style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>
+                <span>{product.sizes ? product.sizes.length : 4} sizes • {product.colors ? product.colors.length : 5} colors</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
-  
+
   return (
     <div className="dashboard-container">
       <Sidebar />
       <div className="main-content">
-        
-        <Header showCart={false} />
+        <Header showCart={false} userRole="designer" />
 
-        <div className="content-wrapper">
-            
-            {/* HERO BANNER */}
-            <div className="hero-banner">
-                <div className="hero-text">
-                    <h1>{userName} 🎨</h1>
-                    <p>Ready to create your next bestseller? Choose a base product below.</p>
-                </div>
-                <button className="hero-btn" onClick={() => document.querySelector('.products-grid')?.scrollIntoView({ behavior: 'smooth' })}>
-                    Browse Products
-                </button>
+        <div className="content-wrapper" style={{ marginTop: 0 }}>
+
+          {/* HERO BANNER */}
+          <div className="hero-banner" style={{ marginTop: 0 }}>
+            <div className="hero-text">
+              <h1>{userName} 🎨</h1>
+              <p>Ready to create your next bestseller? Choose a base product below.</p>
             </div>
+            <button className="hero-btn" onClick={() => document.querySelector('.products-grid')?.scrollIntoView({ behavior: 'smooth' })}>
+              Browse Products
+            </button>
+          </div>
 
-            {/* Product Sections */}
-            {renderProductSection("Women's Collection", products.slice(0, 3))}
-            {renderProductSection("Men's Collection", products.slice(3, 6))}
-            {renderProductSection("Kids' Collection", products.slice(6, 8))}
+          {/* Product Sections */}
+          {renderProductSection("Women's Collection", products.filter((p: any) => p.category === 'Women' || p.category === 'Unisex'))}
+          {renderProductSection("Men's Collection", products.filter((p: any) => p.category === 'Men'))}
+          {renderProductSection("Kids' Collection", products.filter((p: any) => p.category === 'Kids'))}
         </div>
         <Footer />
       </div>

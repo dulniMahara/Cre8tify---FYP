@@ -24,6 +24,7 @@ export default function Profile() {
     });
 
     useEffect(() => {
+        window.scrollTo(0, 0); // 🟢 Always start at the top
         const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
         // 🟢 Force 'admin' to be treated as 'designer' for this page's layout
         const role = storedUser.role === 'admin' ? 'designer' : (storedUser.role || 'buyer');
@@ -81,6 +82,7 @@ export default function Profile() {
             if (response.ok) {
                 const updatedUser = { ...storedUser, profileImage: data.profileImage };
                 localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+                window.dispatchEvent(new Event('storage')); // 🟢 Trigger Header sync
                 setFormData(prev => ({ ...prev, profileImage: data.profileImage }));
                 alert("Image uploaded successfully! 📸");
             } else {
@@ -113,13 +115,14 @@ export default function Profile() {
             if (response.ok) {
                 const updatedUser = { ...storedUser, ...formData, profileImage: data.profileImage || formData.profileImage };
                 localStorage.setItem('userInfo', JSON.stringify(updatedUser)); 
+                window.dispatchEvent(new Event('storage')); // 🟢 Trigger Header sync
                 alert("Profile Updated Successfully! ✨");
             
-            if (userRole === 'designer') {
-                navigate('/designer-dashboard');
-            } else {
-                navigate('/buyer-dashboard');
-            }
+                if (userRole === 'admin') {
+                    navigate('/admin-dashboard');
+                } else {
+                    navigate('/designer-dashboard');
+                }
             
         } else {
             alert(data.message || "Update failed");
@@ -149,6 +152,7 @@ export default function Profile() {
             if (response.ok) {
                 const updatedUser = { ...storedUser, profileImage: "" };
                 localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+                window.dispatchEvent(new Event('storage')); // 🟢 Trigger Header sync
                 setFormData(prev => ({ ...prev, profileImage: "" }));
                 alert("Photo removed! 🗑️");
             }
@@ -173,7 +177,7 @@ export default function Profile() {
                 <header className="top-header" style={{ background: '#0d375b' }}>
                     <div className="header-left" onClick={() => navigate(-1)} style={{ cursor: 'pointer', color: 'white' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <img src="/img/back.png" alt="Back" style={{ width: '25px', filter: 'invert(1)', marginRight: '5px' }} />
+                            <img src="/img/back.png" alt="Back" style={{ width: '18px', filter: 'invert(1)', marginRight: '5px' }} />
                             Back to Dashboard
                         </span>
                     </div>
@@ -228,43 +232,28 @@ export default function Profile() {
                                     <input type="text" name="phone" className="form-input" value={formData.phone} onChange={handleChange} style={{ height: '40px', fontSize: '14px' }} />
                                 </div>
 
-                                {userRole === 'buyer' && (
-                                    <>
-                                        <div className="form-group">
-                                            <label style={{ fontSize: '14px', fontWeight: '600' }}>Default Shipping Address</label>
-                                            <input type="text" name="address" className="form-input" value={formData.address} onChange={handleChange} style={{ height: '40px', fontSize: '14px' }} />
-                                        </div>
-                                        <div className="form-group">
-                                            <label style={{ fontSize: '14px', fontWeight: '600' }}>Primary Interest</label>
-                                            <input type="text" name="interest" className="form-input" value={formData.interest} onChange={handleChange} style={{ height: '40px', fontSize: '14px' }} />
-                                        </div>
-                                    </>
-                                )}
+                                {/* Designer Specific Fields (Always show on this page) */}
+                                <div className="form-group">
+                                    <label style={{ fontSize: '14px', fontWeight: '600' }}>Shop Name</label>
+                                    <input type="text" name="shopName" className="form-input" value={formData.shopName} onChange={handleChange} style={{ height: '40px', fontSize: '14px' }} />
+                                </div>
+                                <div className="form-group">
 
-                                {userRole === 'designer' && (
-                                    <>
-                                        <div className="form-group">
-                                            <label style={{ fontSize: '14px', fontWeight: '600' }}>Shop Name</label>
-                                            <input type="text" name="shopName" className="form-input" value={formData.shopName} onChange={handleChange} style={{ height: '40px', fontSize: '14px' }} />
-                                        </div>
-                                        <div className="form-group">
-                                            <label style={{ fontSize: '14px', fontWeight: '600' }}>Portfolio Link</label>
-                                            <input 
-                                                type="url" 
-                                                name="portfolio" 
-                                                className="form-input" 
-                                                value={formData.portfolio} 
-                                                onChange={handleChange} 
-                                                placeholder="https://yourportfolio.com"
-                                                style={{ height: '40px', fontSize: '14px' }} 
-                                            />
-                                        </div>
-                                        <div className="form-group">
-                                            <label style={{ fontSize: '14px', fontWeight: '600' }}>About Me (Bio)</label>
-                                            <textarea name="bio" className="form-input" rows={4} value={formData.bio} onChange={handleChange} style={{ resize: 'none', fontSize: '14px', padding: '12px' }} />
-                                        </div>
-                                    </>
-                                )}
+                                    <label style={{ fontSize: '14px', fontWeight: '600' }}>Portfolio Link</label>
+                                    <input 
+                                        type="url" 
+                                        name="portfolio" 
+                                        className="form-input" 
+                                        value={formData.portfolio} 
+                                        onChange={handleChange} 
+                                        placeholder="https://yourportfolio.com"
+                                        style={{ height: '40px', fontSize: '14px' }} 
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label style={{ fontSize: '14px', fontWeight: '600' }}>About Me (Bio)</label>
+                                    <textarea name="bio" className="form-input" rows={4} value={formData.bio} onChange={handleChange} style={{ resize: 'none', fontSize: '14px', padding: '12px' }} />
+                                </div>
 
                                 <button type="submit" className="btn-signup" style={{ marginTop: '20px', width: '100%', height: '48px', fontSize: '16px', borderRadius: '8px', fontWeight: 'bold' }}>
                                     UPDATE MY PROFILE
@@ -313,7 +302,7 @@ export default function Profile() {
                                 </div>
                                 <h3 style={{ margin: '0 0 5px 0', color: '#0d375b', fontSize: '18px' }}>{formData.name}</h3>
                                 <p style={{ color: '#64748b', fontSize: '12px', fontWeight: '600', letterSpacing: '1px', marginBottom: '8px' }}>
-                                    {userRole === 'designer' ? 'DESIGNER' : 'BUYER'}
+                                    {userRole === 'admin' ? 'ADMIN' : 'DESIGNER'}
                                 </p>
                                 
                                 {/* 🟢 REMOVE PHOTO BUTTON */}

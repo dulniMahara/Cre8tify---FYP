@@ -521,7 +521,7 @@ const ProductDetail = () => {
                                                 border: '2px solid #e2e8f0', minWidth: '80px', cursor: 'pointer'
                                             }}
                                         >
-                                            {size}
+                                            {size.toUpperCase()}
                                         </button>
                                     ))}
                                 </div>
@@ -529,9 +529,20 @@ const ProductDetail = () => {
 
                             {/* Buttons with Correct Text & Navigation (Horizontal Layout) */}
                             <div style={{ display: 'flex', gap: '8px', marginTop: '20px', marginBottom: '10px' }}>
-                                <div style={{ flex: 1 }}><ActionButton text="Try Live Preview" onClick={() => navigate('/live-preview', { state: { product, selectedColor, selectedSize } })} /></div>
-                                <div style={{ flex: 1 }}><ActionButton text="Customize Design" onClick={() => navigate('/design-tool', { state: { product } })} /></div>
-                                <div style={{ flex: 1 }}><ActionButton text="Request Designer Edit" onClick={() => navigate(`/request-edit/${product.id}`, { state: { product, selectedColor, selectedSize } })} /></div>
+                                {(() => {
+                                    const latestProduct = {
+                                        ...product,
+                                        colors: availableColors.length > 0 ? availableColors : product.colors,
+                                        sizes: (availableSizes.length > 0 ? availableSizes : product.sizes).map((s: string) => s.toUpperCase())
+                                    };
+                                    return (
+                                        <>
+                                            <div style={{ flex: 1 }}><ActionButton text="Try Live Preview" onClick={() => navigate('/live-preview', { state: { product: latestProduct, selectedColor, selectedSize } })} /></div>
+                                            <div style={{ flex: 1 }}><ActionButton text="Customize Design" onClick={() => navigate('/design-tool', { state: { product: latestProduct } })} /></div>
+                                            <div style={{ flex: 1 }}><ActionButton text="Request Designer Edit" onClick={() => navigate(`/request-edit/${product.id}`, { state: { product: latestProduct, selectedColor, selectedSize } })} /></div>
+                                        </>
+                                    );
+                                })()}
                             </div>
 
                             {!isDesignerPreview && (

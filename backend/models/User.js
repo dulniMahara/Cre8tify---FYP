@@ -23,7 +23,20 @@ const userSchema = mongoose.Schema(
     isApproved: {
         type: Boolean,
         default: false,
-    }
+    },
+    accountStatus: {
+        type: String,
+        enum: ['active', 'suspended', 'blocked'],
+        default: 'active',
+    },
+    securityLogs: [
+        {
+            event: String,
+            ip: String,
+            location: String,
+            timestamp: { type: Date, default: Date.now }
+        }
+    ]
   },
   {
     timestamps: true,
