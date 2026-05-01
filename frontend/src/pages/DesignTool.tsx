@@ -222,9 +222,14 @@ export default function DesignTool() {
     const cropImageRef = useRef<HTMLImageElement | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [mockupScale, setMockupScale] = useState(1);
+    const [fulfillmentRequest, setFulfillmentRequest] = useState<any>(null);
+
+    // 🟢 HIDDEN WORKSPACE REFS (For background snapshotting)
+    const snapshotMockupRef = useRef<HTMLDivElement | null>(null);
+    const snapshotPrintRef = useRef<HTMLDivElement | null>(null);
 
     const location = useLocation();
-    const productData = location.state?.product || location.state?.selectedProduct;
+    const [productData, setProductData] = useState<any>(location.state?.product || location.state?.selectedProduct);
 
     // Admin synchronization state
     const [adminColors, setAdminColors] = useState<string[]>([]);
@@ -322,17 +327,50 @@ export default function DesignTool() {
             if (location.state.selectedTshirtColor) {
                 setSelectedTshirtColor(location.state.selectedTshirtColor);
             }
+            if (location.state.product) {
+                setProductData(location.state.product);
+            }
             // Clear location state to avoid re-triggering on local updates
             window.history.replaceState({}, document.title);
             return; // EXIT: Don't load recovery data if editing
         }
 
-        // 2. IF IT'S A NEW DESIGN SESSION (From Dashboard)
+        // 2. IF IT'S A FULFILLMENT SESSION (From Requests Page)
+        if (location.state?.fulfillmentRequest) {
+            console.log("FULFILLMENT MODE: Loading customer request design...");
+            const fr = location.state.fulfillmentRequest;
+            setFulfillmentRequest(fr);
+            setSelectedTshirtColor(fr.color || '#ffffff');
+
+            // 🚀 NEW: Load layers from canvasState if available
+            if (fr.canvasState) {
+                console.log("Loading layers from fulfillment canvasState...");
+                setImageLayers(fr.canvasState.imageLayers || []);
+                setTextLayers(fr.canvasState.textLayers || []);
+            } else if (fr.frontDesign) {
+                // Fallback: If they have an existing design image but no canvasState, load it as a single layer
+                const baseLayer: ImageLayer = {
+                    id: Date.now(),
+                    src: fr.frontDesign,
+                    x: 0,
+                    y: 0,
+                    scale: 1,
+                    rotation: 0,
+                    flipX: false,
+                    flipY: false,
+                    zIndex: 1
+                };
+                setImageLayers([baseLayer]);
+            }
+            return;
+        }
+
+        // 3. IF IT'S A NEW DESIGN SESSION (From Dashboard)
         if (location.state?.selectedProduct) {
             console.log("NEW DESIGN: Starting with blank canvas...");
             setImageLayers([]);
             setTextLayers([]);
-            
+
             // Set default color based on availability
             const pColors = location.state.selectedProduct.colors || [];
             const isWhiteAvailable = pColors.includes('White');
@@ -342,7 +380,7 @@ export default function DesignTool() {
             } else {
                 setSelectedTshirtColor('#ffffff');
             }
-            
+
             // Clear recovery so it doesn't pop back on refresh
             localStorage.removeItem('RECOVERY_DESIGN');
             return; // EXIT
@@ -877,23 +915,6 @@ export default function DesignTool() {
             reader.readAsDataURL(blob);
         });
 
-    const normalizeImageLayers = async (layers: ImageLayer[]) => {
-        const normalized = await Promise.all(layers.map(async (layer) => {
-            if (layer.src.startsWith('blob:')) {
-                try {
-                    const res = await fetch(layer.src);
-                    const blob = await res.blob();
-                    const dataUrl = await blobToDataURL(blob);
-                    return { ...layer, src: dataUrl };
-                } catch {
-                    return layer;
-                }
-            }
-            return layer;
-        }));
-        return normalized;
-    };
-
 
 
     // --- 1. CAPTURE UTILITY ---
@@ -910,41 +931,39 @@ export default function DesignTool() {
         await new Promise(resolve => setTimeout(resolve, 800));
         await waitForPaint();
 
-        const workspaceElement = target === 'full' ? mockupContainerRef.current : printAreaRef.current;
+        const workspaceElement = target === 'full' ? snapshotMockupRef.current : snapshotPrintRef.current;
 
         if (!workspaceElement) {
             setCurrentSide(prevSide);
             return { designSrc: "", printAreaPx: null };
         }
 
-        // 2. TEMPORARY FIX: 
-        // We ensure we are in a 'capturing' state so borders are hidden
-        const originalIsSaving = isSaving;
-        setIsSaving(true);
+        // 🟢 ALWAYS in background, no need to toggle isSaving here anymore
+        // as the main process is handled in handleNavigateToSubmit
+        await waitForPaint();
 
         try {
             const canvas = await html2canvas(workspaceElement, {
                 useCORS: true,
                 allowTaint: true,
-                backgroundColor: null, // Keeps background transparent
-                scale: 2, // High quality for the design itself
+                backgroundColor: null,
+                scale: 2,
                 logging: false,
                 width: workspaceElement.offsetWidth,
                 height: workspaceElement.offsetHeight,
             });
 
-            // 3. RESTORE
-            setIsSaving(originalIsSaving);
             setCurrentSide(prevSide);
             setMockupScale(originalScale);
 
             return {
-                // This is now the FULL T-shirt image
                 designSrc: canvas.toDataURL("image/png"),
-                printAreaPx: null
+                printAreaPx: target === 'design' ? {
+                    width: workspaceElement.offsetWidth,
+                    height: workspaceElement.offsetHeight
+                } : null
             };
         } catch (err) {
-            setIsSaving(originalIsSaving);
             setCurrentSide(prevSide);
             setMockupScale(originalScale);
             console.error("Snapshot failed:", err);
@@ -954,18 +973,25 @@ export default function DesignTool() {
 
     // --- 2. NAVIGATION HANDLER ---
     const handleNavigateToSubmit = async () => {
-        setIsSaving(true); // Start loading
+        setIsSaving(true);
+        await waitForPaint();
+        await new Promise(resolve => setTimeout(resolve, 100)); // 🚀 Extra pause to ensure Loader is fully opaque before snapshotting starts
+
         try {
             console.log("Saving recovery state and capturing snapshots...");
 
-            // 1. Save current state to localStorage for recovery
-            const recoveryData = {
-                imageLayers,
-                textLayers,
-                selectedTshirtColor,
-                lastUpdated: new Date().toISOString()
-            };
-            localStorage.setItem('RECOVERY_DESIGN', JSON.stringify(recoveryData));
+            // 1. Save current state to localStorage for recovery (Safe wrap)
+            try {
+                const recoveryData = {
+                    imageLayers,
+                    textLayers,
+                    selectedTshirtColor,
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('RECOVERY_DESIGN', JSON.stringify(recoveryData));
+            } catch (e) {
+                console.warn("Storage quota exceeded for RECOVERY_DESIGN. Continuing without recovery backup.");
+            }
 
             // 2. Capture snapshots for each view
             // 🟢 FULL SHIRT SNAPSHOTS (For shop display)
@@ -979,6 +1005,35 @@ export default function DesignTool() {
             const foldedDesignSnap = await getCanvasSnapshot('folded', 'design');
 
             const backSnap = { designSrc: "", printAreaPx: null };
+
+            // 🟢 FULFILLMENT LOGIC: If this is a response to a customer request
+            if (fulfillmentRequest) {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/requests/${fulfillmentRequest.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            status: 'Completed',
+                            frontDesign: frontDesignSnap.designSrc, // Save the NEW edited design
+                            productImage: frontFull.designSrc // Update the main preview too
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert("Design sent to customer successfully!");
+                        navigate('/requests');
+                    } else {
+                        throw new Error('Failed to send design to customer');
+                    }
+                } catch (err) {
+                    console.error("Fulfillment error:", err);
+                    alert("Error sending design to customer. Please try again.");
+                }
+                return;
+            }
+
+            // 🟢 NORMALIZE LAYERS: Convert blob URLs to Data URLs so they persist in the next page
+            const normalizedImageLayers = await normalizeImageLayers(imageLayers);
 
             const submissionData = {
                 productImages: [
@@ -1015,19 +1070,51 @@ export default function DesignTool() {
                 tshirtColor: selectedTshirtColor,
                 category: productData?.category || 'Unisex',
                 canvasState: {
-                    imageLayers: imageLayers,
+                    imageLayers: normalizedImageLayers,
                     textLayers: textLayers
                 },
                 originalDesign: location.state?.originalDesign
             };
 
+            // 🟢 PERSIST TO LOCALSTORAGE (Safe wrap for huge assets)
+            try {
+                localStorage.setItem('temp_design_snapshots', JSON.stringify(submissionData));
+            } catch (e) {
+                console.warn("Storage quota exceeded for snapshots. Designs will only be available via memory state.");
+                // Optionally clear some space
+                localStorage.removeItem('RECOVERY_DESIGN');
+            }
+
             // 🟢 SUCCESS: Keep isSaving = true so the loader stays while navigating
             navigate('/submit-product', { state: submissionData });
-        } catch (error) {
-            setIsSaving(false); // Only stop loading if there's an error
-            console.error("Navigation failed", error);
-            alert("Failed to prepare submission. Please try again.");
+        } catch (err: any) {
+            console.error("Submission preparation failed:", err);
+            alert(`Failed to prepare submission: ${err.message || "Unknown error"}. Please try again.`);
+            setIsSaving(false);
         }
+    };
+
+
+    // 🟢 HELPER: Convert blob URLs to Data URLs so they persist on navigation
+    const normalizeImageLayers = async (layers: ImageLayer[]): Promise<ImageLayer[]> => {
+        const normalized = await Promise.all(layers.map(async (layer) => {
+            if (layer.src.startsWith('blob:')) {
+                try {
+                    const response = await fetch(layer.src);
+                    const blob = await response.blob();
+                    return new Promise<ImageLayer>((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve({ ...layer, src: reader.result as string });
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (e) {
+                    console.error("Failed to normalize layer:", layer.id, e);
+                    return layer;
+                }
+            }
+            return layer;
+        }));
+        return normalized;
     };
 
 
@@ -1219,124 +1306,132 @@ export default function DesignTool() {
                         height: '800px',
                         pointerEvents: 'none'
                     }}>
-                        <div
-                            ref={printAreaRef}
-                            className={`print-area ${currentSide === 'back' ? 'back-view' : ''}`}
-                            style={{
-                                position: 'absolute',
-                                zIndex: 20,
-                                top: config.printArea.top,
-                                left: config.printArea.left,
-                                width: config.printArea.width,
-                                height: config.printArea.height,
-                                marginLeft: `calc(-1 * ${config.printArea.width} / 2)`,
-                                marginTop: `calc(-1 * ${config.printArea.height} / 2)`,
-                                transform: `rotate(${(config.printArea as any).rotation ?? 0}deg)`,
-                                border: viewMode === 'edit' && !isSaving ? '2px dashed rgba(0,0,0,0.4)' : 'none',
-                                overflow: 'hidden',
-                                boxSizing: 'border-box',
-                                pointerEvents: isPreview ? 'none' : 'auto',
-                                isolation: 'isolate'
-                            }}
-                        >
-                            {/* Image Layers */}
-                            {shouldShowDesign && imageLayers.map((layer) => (
-                                <img
-                                    key={layer.id}
-                                    src={layer.src}
-                                    style={{
-                                        position: 'absolute',
-                                        zIndex: layer.zIndex,
-                                        transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
-                                        mixBlendMode: (isPreview && selectedTshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
-                                        opacity: isPreview ? 0.92 : 1,
-                                        cursor: 'move',
-                                        border: (selectedId === layer.id && viewMode === 'edit' && !isSaving) ? '1px dashed #0d375b' : 'none'
-                                    }}
-                                    onMouseDown={(e) => handleDragStart(e, layer.id, 'image', layer.x, layer.y)}
-                                />
-                            ))}
+                        {/* Outer wrapper handles the positioning and transforms */}
+                        <div style={{
+                            position: 'absolute',
+                            zIndex: 20,
+                            top: config.printArea.top,
+                            left: config.printArea.left,
+                            width: config.printArea.width,
+                            height: config.printArea.height,
+                            marginLeft: `calc(-1 * ${config.printArea.width} / 2)`,
+                            marginTop: `calc(-1 * ${config.printArea.height} / 2)`,
+                            transform: `rotate(${(config.printArea as any).rotation ?? 0}deg)`,
+                            pointerEvents: isPreview ? 'none' : 'auto',
+                        }}>
+                            {/* Inner print area has no transforms, making html2canvas capture perfectly */}
+                            <div
+                                ref={printAreaRef}
+                                className={`print-area ${currentSide === 'back' ? 'back-view' : ''}`}
+                                style={{
+                                    position: 'relative',
+                                    width: '100%',
+                                    height: '100%',
+                                    border: viewMode === 'edit' && !isSaving ? '2px dashed rgba(0,0,0,0.4)' : 'none',
+                                    overflow: 'hidden',
+                                    boxSizing: 'border-box',
+                                    isolation: 'isolate'
+                                }}
+                            >
+                                {/* Image Layers */}
+                                {shouldShowDesign && imageLayers.map((layer) => (
+                                    <img
+                                        key={layer.id}
+                                        src={layer.src}
+                                        style={{
+                                            position: 'absolute',
+                                            zIndex: layer.zIndex,
+                                            transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
+                                            mixBlendMode: (isPreview && selectedTshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
+                                            opacity: isPreview ? 0.92 : 1,
+                                            cursor: 'move',
+                                            border: (selectedId === layer.id && viewMode === 'edit' && !isSaving) ? '1px dashed #0d375b' : 'none'
+                                        }}
+                                        onMouseDown={(e) => handleDragStart(e, layer.id, 'image', layer.x, layer.y)}
+                                    />
+                                ))}
 
-                            {/* Text Layers */}
-                            {shouldShowDesign && textLayers.map((t) => (
-                                <div
-                                    key={t.id}
-                                    style={{
-                                        position: 'absolute',
-                                        zIndex: t.zIndex,
-                                        transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale * (config.designScale || 1)}) rotate(${t.rotation}deg)`,
-                                        cursor: 'move',
-                                        border: (selectedId === t.id && viewMode === 'edit' && !isSaving) ? '1px solid #0d375b' : 'none',
-                                        display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
-                                    }}
-                                    onMouseDown={(e) => handleDragStart(e, t.id, 'text', t.x, t.y)}
-                                >
-                                    {t.styleId === 'default' && (
-                                        <>
-                                            {/* 🚀 If curve exists and isn't 0, render as CurvedText, else render as normal Div */}
-                                            {(t.curve !== 0 && t.curve !== undefined) ? (
-                                                <CurvedText
-                                                    id={t.id}
-                                                    text={t.text}
-                                                    fontFamily={t.font}
-                                                    color={t.color}
-                                                    curve={t.curve ?? 0}
-                                                    letterSpacing={t.letterSpacing || 0}
-                                                />
-                                            ) : (
-                                                <div style={{
-                                                    fontFamily: t.font,
-                                                    color: t.color,
-                                                    fontSize: '24px',
-                                                    fontWeight: 'bold',
-                                                    whiteSpace: 'nowrap',
-                                                    letterSpacing: `${t.letterSpacing || 0}px`,
-                                                    textShadow: isPreview ? '0px 1px 3px rgba(0,0,0,0.3)' : 'none'
-                                                }}>
-                                                    {t.text}
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
+                                {/* Text Layers */}
+                                {shouldShowDesign && textLayers.map((t) => (
+                                    <div
+                                        key={t.id}
+                                        style={{
+                                            position: 'absolute',
+                                            zIndex: t.zIndex,
+                                            transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale * (config.designScale || 1)}) rotate(${t.rotation}deg)`,
+                                            cursor: 'move',
+                                            border: (selectedId === t.id && viewMode === 'edit' && !isSaving) ? '1px solid #0d375b' : 'none',
+                                            display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
+                                        }}
+                                        onMouseDown={(e) => handleDragStart(e, t.id, 'text', t.x, t.y)}
+                                    >
+                                        {t.styleId === 'default' && (
+                                            <>
+                                                {/* 🚀 If curve exists and isn't 0, render as CurvedText, else render as normal Div */}
+                                                {(t.curve !== 0 && t.curve !== undefined) ? (
+                                                    <CurvedText
+                                                        id={t.id}
+                                                        text={t.text}
+                                                        fontFamily={t.font}
+                                                        color={t.color}
+                                                        curve={t.curve ?? 0}
+                                                        letterSpacing={t.letterSpacing || 0}
+                                                    />
+                                                ) : (
+                                                    <div style={{
+                                                        fontFamily: t.font,
+                                                        color: t.color,
+                                                        fontSize: '24px',
+                                                        fontWeight: 'bold',
+                                                        whiteSpace: 'nowrap',
+                                                        letterSpacing: `${t.letterSpacing || 0}px`,
+                                                        textShadow: isPreview ? '0px 1px 3px rgba(0,0,0,0.3)' : 'none'
+                                                    }}>
+                                                        {t.text}
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
 
-                                    {/* --- WAVE STYLE --- */}
-                                    {t.styleId === 'style-wave' && (
-                                        <div style={{
-                                            fontFamily: t.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900',
-                                            textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b',
-                                            transform: 'skewX(-10deg)', fontStyle: 'italic',
-                                            letterSpacing: `${t.letterSpacing || 0}px`
-                                        }}>
-                                            {t.text}
-                                        </div>
-                                    )}
+                                        {/* --- WAVE STYLE --- */}
+                                        {t.styleId === 'style-wave' && (
+                                            <div style={{
+                                                fontFamily: t.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900',
+                                                textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b',
+                                                transform: 'skewX(-10deg)', fontStyle: 'italic',
+                                                letterSpacing: `${t.letterSpacing || 0}px`
+                                            }}>
+                                                {t.text}
+                                            </div>
+                                        )}
 
-                                    {/* --- STACK STYLE --- */}
-                                    {t.styleId === 'style-stack' && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${t.letterSpacing || 0}px` }}>
-                                            {[1, 2, 3].map((i) => (
-                                                <span key={i} style={{ fontFamily: t.font, color: i === 2 ? t.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${t.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{t.text}</span>
-                                            ))}
-                                        </div>
-                                    )}
+                                        {/* --- STACK STYLE --- */}
+                                        {t.styleId === 'style-stack' && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${t.letterSpacing || 0}px` }}>
+                                                {[1, 2, 3].map((i) => (
+                                                    <span key={i} style={{ fontFamily: t.font, color: i === 2 ? t.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${t.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{t.text}</span>
+                                                ))}
+                                            </div>
+                                        )}
 
-                                    {/* --- FISH STYLE --- */}
-                                    {t.styleId === 'style-fish' && (
-                                        <div style={{ fontFamily: t.font, color: t.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(t.letterSpacing || 0) - 1}px` }}>
-                                            {t.text}
-                                        </div>
-                                    )}
+                                        {/* --- FISH STYLE --- */}
+                                        {t.styleId === 'style-fish' && (
+                                            <div style={{ fontFamily: t.font, color: t.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(t.letterSpacing || 0) - 1}px` }}>
+                                                {t.text}
+                                            </div>
+                                        )}
 
-                                    {/* --- CIRCLE & CUSTOM CURVED --- */}
-                                    {!['default', 'style-wave', 'style-stack', 'style-fish'].includes(t.styleId || '') && (
-                                        <CurvedText
-                                            id={t.id} text={t.text} styleId={t.styleId} fontFamily={t.font} color={t.color}
-                                            curve={t.styleId === 'style-circle' ? (t.curve ?? 120) : (t.curve ?? 0)}
-                                            letterSpacing={t.letterSpacing || 0}
-                                        />
-                                    )}
-                                </div>
-                            ))}
+                                        {/* --- CIRCLE & CUSTOM CURVED --- */}
+                                        {!['default', 'style-wave', 'style-stack', 'style-fish'].includes(t.styleId || '') && (
+                                            <CurvedText
+                                                id={t.id} text={t.text} styleId={t.styleId} fontFamily={t.font} color={t.color}
+                                                curve={t.styleId === 'style-circle' ? (t.curve ?? 120) : (t.curve ?? 0)}
+                                                letterSpacing={t.letterSpacing || 0}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1616,8 +1711,84 @@ export default function DesignTool() {
         );
     };
 
+    const renderTShirtWorkspaceForSnapshots = () => {
+        const config = MOCKUP_CONFIG[currentSide as keyof typeof MOCKUP_CONFIG] || MOCKUP_CONFIG.front;
+        const isWideView = currentSide === 'folded' || currentSide === 'neck';
+        const maskSrc = (config as any).mask || config.img;
+
+        return (
+            <div style={{
+                position: 'relative',
+                width: isWideView ? '850px' : '550px',
+                height: '800px',
+                backgroundColor: 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                isolation: 'isolate'
+            }}>
+                <img src={config.img} alt="Mockup" crossOrigin="anonymous" style={{ position: 'absolute', height: '125%', width: '125%', objectFit: 'contain', top: '-100px', right: '-71px', zIndex: 1 }} />
+                <div style={{ position: 'absolute', top: '-100px', right: '-71px', width: '125%', height: '125%', backgroundColor: selectedTshirtColor, display: selectedTshirtColor.toLowerCase() === '#ffffff' ? 'none' : 'block', mixBlendMode: 'multiply', WebkitMaskImage: `url(${maskSrc})`, maskImage: `url(${maskSrc})`, WebkitMaskSize: 'contain', maskSize: 'contain', zIndex: 2 }} />
+                <div style={{ position: 'absolute', top: '-100px', right: '-71px', width: '125%', height: '125%', WebkitMaskImage: `url(${maskSrc})`, maskImage: `url(${maskSrc})`, WebkitMaskSize: 'contain', maskSize: 'contain', zIndex: 20 }}>
+                    <div style={{ position: 'absolute', top: '100px', right: '71px', width: isWideView ? '850px' : '550px', height: '800px' }}>
+                        <div style={{ position: 'absolute', zIndex: 20, top: config.printArea.top, left: config.printArea.left, width: config.printArea.width, height: config.printArea.height, marginLeft: `calc(-1 * ${config.printArea.width} / 2)`, marginTop: `calc(-1 * ${config.printArea.height} / 2)`, transform: `rotate(${(config.printArea as any).rotation ?? 0}deg)` }}>
+                            <div ref={snapshotPrintRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
+                                {imageLayers.map((layer) => (
+                                    <img key={layer.id} src={layer.src} style={{ position: 'absolute', zIndex: layer.zIndex, transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`, transformOrigin: 'center center', width: '100%' }} />
+                                ))}
+                                {textLayers.map((t) => (
+                                    <div key={t.id} style={{ position: 'absolute', zIndex: t.zIndex, transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale * (config.designScale || 1)}) rotate(${t.rotation}deg)`, transformOrigin: 'center center' }}>
+                                        <CurvedText id={t.id} text={t.text} fontFamily={t.font} color={t.color} curve={t.styleId === 'style-circle' ? (t.curve ?? 120) : (t.curve ?? 0)} letterSpacing={t.letterSpacing || 0} styleId={t.styleId} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="design-dashboard-container" style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: '#f5f5f5', position: 'relative' }}>
+            {/* 🟢 INSTANT FULL SCREEN LOADER: Hides EVERYTHING during snapshotting */}
+            {isSaving && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    backgroundColor: '#ffffff',
+                    zIndex: 200000,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'all'
+                }}>
+                    <div style={{
+                        width: '50px',
+                        height: '50px',
+                        border: '5px solid #f3f3f3',
+                        borderTop: '5px solid #0d375b',
+                        borderRadius: '50%',
+                        animation: 'designToolSpin 1s linear infinite',
+                        marginBottom: '20px'
+                    }}></div>
+                    <h2 style={{ color: '#0d375b', fontSize: '24px', fontWeight: '800', margin: 0 }}>Preparing Your Design</h2>
+                    <p style={{ color: '#666', marginTop: '10px', fontWeight: 500 }}>Capturing high-quality mockups for your store...</p>
+                    <style>{`@keyframes designToolSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+                </div>
+            )}
+
+            {/* 🟢 HIDDEN BACKGROUND WORKSPACE FOR SNAPSHOTS */}
+            <div style={{ position: 'absolute', left: '-10000px', top: '-10000px', pointerEvents: 'none' }}>
+                <div ref={snapshotMockupRef} style={{ position: 'relative', width: currentSide === 'folded' || currentSide === 'neck' ? '850px' : '550px', height: '800px' }}>
+                    {/* Re-render the same workspace logic but attached to the hidden refs */}
+                    {renderTShirtWorkspaceForSnapshots()}
+                </div>
+            </div>
 
             {/* 1. SIDEBAR */}
             {viewMode === 'edit' && (
@@ -1665,7 +1836,6 @@ export default function DesignTool() {
                     backgroundColor: '#f5f5f5',
                     width: viewMode === 'preview' ? '100%' : undefined,
                     marginLeft: viewMode === 'preview' ? 0 : undefined,
-                    opacity: isSaving ? 0 : 1,
                     pointerEvents: isSaving ? 'none' : 'auto'
                 }}
             >
@@ -1779,7 +1949,7 @@ export default function DesignTool() {
                                         {availableSizes.map(s => (
                                             <div key={s.label} style={{
                                                 padding: '12px 0', textAlign: 'center', borderRadius: '8px',
-                                                border: s.isAvailable ? '1px solid #e2e8f0' : '1px dashed #cbd5e1', 
+                                                border: s.isAvailable ? '1px solid #e2e8f0' : '1px dashed #cbd5e1',
                                                 fontSize: '11px', fontWeight: '800',
                                                 backgroundColor: s.isAvailable ? '#fff' : '#f8fafc',
                                                 color: s.isAvailable ? '#0f172a' : '#cbd5e1',
@@ -2392,7 +2562,25 @@ export default function DesignTool() {
                                         {/* Scrollable Content Container */}
                                         <div style={{ padding: '0 15px', overflowY: 'auto', flex: 1 }} className="custom-scrollbar">
 
-                                            {/* 1. Header Section */}
+                                            {/* 1. Fulfillment Details Section (If in fulfillment mode) */}
+                                            {fulfillmentRequest && (
+                                                <div style={{ borderTop: '1px solid #f1f5f9', padding: '15px 0' }}>
+                                                    <h4 style={{ fontSize: '10px', fontWeight: '800', color: '#0d375b', textTransform: 'uppercase', marginBottom: '8px' }}>Customer Request</h4>
+                                                    <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                                        <p style={{ fontSize: '11px', fontWeight: '700', margin: '0 0 4px 0', color: '#1e293b' }}>Message:</p>
+                                                        <p style={{ fontSize: '11px', color: '#475569', margin: '0 0 10px 0', lineHeight: '1.4' }}>{fulfillmentRequest.message}</p>
+
+                                                        {fulfillmentRequest.extraNote && (
+                                                            <>
+                                                                <p style={{ fontSize: '11px', fontWeight: '700', margin: '0 0 4px 0', color: '#1e293b' }}>Additional Notes:</p>
+                                                                <p style={{ fontSize: '11px', color: '#475569', margin: 0, lineHeight: '1.4' }}>{fulfillmentRequest.extraNote}</p>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* 2. Header Section */}
                                             <div style={{ display: 'flex', gap: '12px', padding: '15px 0' }}>
                                                 {designImage ? (
                                                     <img src={designImage} alt="Base" style={{ width: '45px', height: '60px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #eee' }} />
@@ -2475,7 +2663,7 @@ export default function DesignTool() {
                                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0a2a45'}
                                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0d375b'}
                                         >
-                                            {isSaving ? "Saving..." : "Submit Product"}
+                                            {isSaving ? "Saving..." : (fulfillmentRequest ? "Send to Customer" : "Submit Product")}
                                         </button>
                                     </div>
                                 </div>
@@ -2645,40 +2833,6 @@ export default function DesignTool() {
                 )}
             </div>
 
-            {/* 🟢 FULL SCREEN SAVING OVERLAY: Hides background glitches during snapshotting */}
-            {isSaving && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100vw',
-                    height: '100vh',
-                    backgroundColor: '#ffffff',
-                    zIndex: 9999,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    animation: 'designToolFadeIn 0.3s ease-out'
-                }}>
-                    <div style={{
-                        width: '50px',
-                        height: '50px',
-                        border: '5px solid #f3f3f3',
-                        borderTop: '5px solid #0d375b',
-                        borderRadius: '50%',
-                        animation: 'designToolSpin 1s linear infinite',
-                        marginBottom: '20px'
-                    }}></div>
-                    <h2 style={{ color: '#0d375b', fontSize: '24px', fontWeight: '800', margin: 0 }}>Preparing Your Design</h2>
-                    <p style={{ color: '#666', marginTop: '10px', fontWeight: 500 }}>Capturing high-quality mockups for your store...</p>
-
-                    <style>{`
-                        @keyframes designToolSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                        @keyframes designToolFadeIn { from { opacity: 0; } to { opacity: 1; } }
-                    `}</style>
-                </div>
-            )}
         </div> // This closes main-content (or dashboard-container depending on your start)
     ); // This closes the return (
 } // This closes the export default function

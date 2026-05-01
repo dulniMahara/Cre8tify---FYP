@@ -29,11 +29,11 @@ const Header: React.FC<HeaderProps> = ({
 
     // 🟢 2. Sync Logic: Refresh the header when profile changes
     useEffect(() => {
-        const handleSync = () => {
-            const savedData = localStorage.getItem('userInfo');
-            if (savedData) {
-                const userObj = JSON.parse(savedData);
-                
+        const handleSync = async () => {
+            const { getUserInfo } = await import('../utils/auth');
+            const userObj = getUserInfo(propRole);
+            
+            if (userObj) {
                 const sessionRole = userObj.role || 'buyer';
                 const effectiveRole = propRole || sessionRole;
 
@@ -74,9 +74,9 @@ const Header: React.FC<HeaderProps> = ({
     }, []);
 
     const fetchNotifications = async () => {
-        const userInfo = localStorage.getItem('userInfo');
-        if (!userInfo) return;
-        const { token } = JSON.parse(userInfo);
+        const { getToken } = await import('../utils/auth');
+        const token = getToken(propRole);
+        if (!token) return;
 
         try {
             const res = await fetch('http://localhost:5000/api/notifications', {
@@ -93,9 +93,9 @@ const Header: React.FC<HeaderProps> = ({
     };
 
     const markAsRead = async () => {
-        const userInfo = localStorage.getItem('userInfo');
-        if (!userInfo) return;
-        const { token } = JSON.parse(userInfo);
+        const { getToken } = await import('../utils/auth');
+        const token = getToken(propRole);
+        if (!token) return;
 
         try {
             await fetch('http://localhost:5000/api/notifications/read-all', {
@@ -151,10 +151,10 @@ const Header: React.FC<HeaderProps> = ({
                     src={navProfileImg} 
                     alt="Profile" 
                     style={profileIconStyle} 
-                    onClick={() => {
-                        const savedData = localStorage.getItem('userInfo');
-                        const sessionRole = savedData ? JSON.parse(savedData).role : 'buyer';
-                        const effectiveRole = propRole || sessionRole;
+                    onClick={async () => {
+                        const { getUserInfo } = await import('../utils/auth');
+                        const userObj = getUserInfo(propRole);
+                        const effectiveRole = propRole || (userObj ? userObj.role : 'buyer');
                         
                         navigate(effectiveRole === 'designer' || effectiveRole === 'admin' ? '/designer-profile' : '/customer-profile');
                     }}
@@ -223,11 +223,10 @@ const Header: React.FC<HeaderProps> = ({
                     src="/img/logout.png" 
                     alt="Logout" 
                     style={utilityIcon} 
-                    onClick={() => {
+                    onClick={async () => {
                         if (window.confirm("Are you sure you want to logout?")) {
-                            localStorage.removeItem('userInfo');
-                            localStorage.removeItem('token');
-                            sessionStorage.clear();
+                            const { clearAuth } = await import('../utils/auth');
+                            clearAuth(propRole);
                             navigate('/');
                         }
                     }} 

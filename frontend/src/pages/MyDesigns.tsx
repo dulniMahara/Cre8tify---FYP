@@ -152,7 +152,7 @@ const MyDesigns = () => {
                                     onClick={() => handleNavigate(item)}
                                     style={{ height: '230px', background: '#f8fafc', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', overflow: 'hidden', padding: '10px', position: 'relative', cursor: 'pointer' }}
                                 >
-                                    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                    <div style={{ position: 'relative', width: '100%', aspectRatio: '1 / 1', maxHeight: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                         {!item.frontDesign ? (
                                             <img
                                                 src={item.image}
@@ -171,7 +171,7 @@ const MyDesigns = () => {
                                                 maskSize="contain"
                                                 maskPosition="center"
                                                 tshirtColor={item.tshirtColor || '#ffffff'}
-                                                printArea={item.frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 }}
+                                                printArea={item.frontPrintArea || { top: '56%', left: '49%', width: '30%', height: '27%', rotation: 0 }}
                                                 designSrc={item.frontDesign}
                                                 overallScale={1.5}
                                             />
@@ -244,7 +244,7 @@ const MockupPreview = ({
     printArea,
     designSrc,
     areaScale = 1.0,
-    designScale = 0.7,
+    designScale = 1.0,
     overallScale = 1.0
 }: MockupPreviewProps) => {
     return (
@@ -262,15 +262,15 @@ const MockupPreview = ({
                 )}
 
                 {/* 2. Mockup Image with Shadows (Top) */}
-                <img 
-                    src={mockupSrc} 
-                    alt="Mockup" 
-                    style={{ 
-                        width: '100%', height: '100%', objectFit: 'contain', 
+                <img
+                    src={mockupSrc}
+                    alt="Mockup"
+                    style={{
+                        width: '100%', height: '100%', objectFit: 'contain',
                         position: 'relative', zIndex: 1,
                         mixBlendMode: 'multiply',
                         filter: 'contrast(1.0) brightness(0.95) saturate(0)'
-                    }} 
+                    }}
                 />
                 {printArea && designSrc && (
                     <div style={{

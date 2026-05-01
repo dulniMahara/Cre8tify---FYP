@@ -8,35 +8,34 @@ import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000";
 
-// --- HELPERS ---
-const VARIANT_COLORS = [
-    { name: 'White', hex: '#FFFFFF', gradient: 'linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%)', isAvailable: true },
-    { name: 'Kiwi', hex: '#8fa749', gradient: 'linear-gradient(135deg, #a4be54 0%, #8fa749 100%)', isAvailable: true },
-    { name: 'Yellow Haze', hex: '#fadfa6', gradient: 'linear-gradient(135deg, #fff2cc 0%, #fadfa6 100%)', isAvailable: true },
-    { name: 'Cornsilk', hex: '#f7ef8f', gradient: 'linear-gradient(135deg, #fffbc7 0%, #f7ef8f 100%)', isAvailable: true },
-    { name: 'Light Blue', hex: '#d6e6f7', gradient: 'linear-gradient(135deg, #ebf4ff 0%, #d6e6f7 100%)', isAvailable: true },
-    { name: 'Light Pink', hex: '#fee0eb', gradient: 'linear-gradient(135deg, #fff0f6 0%, #fee0eb 100%)', isAvailable: true },
-    { name: 'Charcoal', hex: '#2C2C2C', gradient: 'linear-gradient(135deg, #434343 0%, #2C2C2C 100%)', isAvailable: true },
-    { name: 'Khaki', hex: '#F0E68C', gradient: 'linear-gradient(135deg, #f0e68c 0%, #e6d96a 100%)', isAvailable: true },
-    { name: 'Baby Blue', hex: '#E0FFFF', gradient: 'linear-gradient(135deg, #e0ffff 0%, #c7f2f2 100%)', isAvailable: true },
-    { name: 'Lavender', hex: '#E6E6FA', gradient: 'linear-gradient(135deg, #e6e6fa 0%, #d8d8f5 100%)', isAvailable: true },
-    { name: 'Beige', hex: '#F5F5DC', gradient: 'linear-gradient(135deg, #f5f5dc 0%, #e8e8c8 100%)', isAvailable: true },
-    { name: 'Standard Grey', hex: '#808080', gradient: 'linear-gradient(135deg, #a3a3a3 0%, #808080 100%)', isAvailable: true },
-    { name: 'Silver', hex: '#C0C0C0', gradient: 'linear-gradient(135deg, #e0e0e0 0%, #c0c0c0 100%)', isAvailable: true },
-    { name: 'Light Salmon', hex: '#FFA07A', gradient: 'linear-gradient(135deg, #ffa07a 0%, #f08d66 100%)', isAvailable: true },
-    { name: 'Sky Blue', hex: '#87CEFA', gradient: 'linear-gradient(135deg, #87cefa 0%, #70b0e0 100%)', isAvailable: true },
-    { name: 'Pale Turquoise', hex: '#AFEEEE', gradient: 'linear-gradient(135deg, #afeeee 0%, #96dede 100%)', isAvailable: true },
-    { name: 'Plum Light', hex: '#DDA0DD', gradient: 'linear-gradient(135deg, #dda0dd 0%, #c68dc6 100%)', isAvailable: true },
-    { name: 'Mint Green', hex: '#98FB98', gradient: 'linear-gradient(135deg, #98fb98 0%, #7ee07e 100%)', isAvailable: true }
-];
+// --- INTERFACES ---
+interface TextConfig {
+    id: number;
+    text: string;
+    font: string;
+    color: string;
+    styleId?: string;
+    type?: 'arc' | 'wave' | 'circle' | 'straight' | 'upward';
+    zIndex: number;
+    x: number;
+    y: number;
+    scale: number;
+    rotation: number;
+    letterSpacing?: number;
+    curve?: number;
+}
 
-const getColorName = (hex: string) => {
-    if (!hex) return "Default White";
-    const color = VARIANT_COLORS.find((c: { name: string, hex: string }) =>
-        c.hex.toLowerCase() === hex.toLowerCase()
-    );
-    return color ? color.name : "Custom Color";
-};
+interface ImageLayer {
+    id: number;
+    src: string;
+    zIndex: number;
+    x: number;
+    y: number;
+    scale: number;
+    rotation: number;
+    flipX: boolean;
+    flipY: boolean;
+}
 
 const ProductSubmission = () => {
     const navigate = useNavigate();
@@ -56,13 +55,12 @@ const ProductSubmission = () => {
         productImages = [],
         productType = 'Boxy T-shirt',
         tshirtColor = '#ffffff',
-        canvasState = { imageLayers: [], textLayers: [] },
 
         // Design Snapshots
-        frontDesign = fallbackSnapshots.frontDesign || "",
-        backDesign = fallbackSnapshots.backDesign || "",
-        neckDesign = fallbackSnapshots.neckDesign || "",
-        foldedDesign = fallbackSnapshots.foldedDesign || "",
+        frontDesign = location.state?.frontDesign || fallbackSnapshots.frontDesign || "",
+        backDesign = location.state?.backDesign || fallbackSnapshots.backDesign || "",
+        neckDesign = location.state?.neckDesign || fallbackSnapshots.neckDesign || "",
+        foldedDesign = location.state?.foldedDesign || fallbackSnapshots.foldedDesign || "",
 
         // Mockups
         frontMockup = "/img/womenfront-mockup.png",
@@ -97,11 +95,25 @@ const ProductSubmission = () => {
         foldedMaskPosition = "center",
         foldedMaskSize = "contain",
         originalDesign,
-        category = 'Unisex'
+        category = 'Unisex',
+        canvasState: passedCanvasState
     } = (location.state || {});
+
+    // Ensure canvasState is never undefined
+    const canvasState = passedCanvasState || { imageLayers: [], textLayers: [] };
 
     // 🚀 ADJUST THIS LINE to change the size of the T-shirt in the Pricing Setup box
     const pricingMockupScale = 1.5;
+
+    // 🚀 Manually increased design dimensions and shifted position to top-right
+    const submitPageFrontPrintArea = {
+        ...frontPrintArea,
+        width: '110%',
+        height: '100%',
+        top: '54%',
+        left: '50%',
+        rotation: 0
+    };
 
     const ADMIN_SPECS = `
         <div style="margin-bottom: 25px;">
@@ -122,7 +134,6 @@ const ProductSubmission = () => {
         <hr style="border: 0; border-top: 2px solid #cbd5e1; margin: 30px 0;"/>
     `;
 
-    // Helper to strip ADMIN_SPECS if it exists in the saved description
     const getCleanDescription = (fullDesc?: string) => {
         if (!fullDesc) return '';
         const adminSpecsHtml = ADMIN_SPECS + "<br/>";
@@ -138,7 +149,7 @@ const ProductSubmission = () => {
         title: originalDesign?.title || '',
         designDescription: getCleanDescription(originalDesign?.description),
         markup: originalDesign?.markup || 0,
-        allowUserCustomization: originalDesign?.allowUserCustomization || false,
+        allowCustomization: originalDesign?.allowCustomization || false,
         allowEditRequests: originalDesign?.allowEditRequests || false,
         status: originalDesign?.status || 'Pending'
     });
@@ -147,6 +158,7 @@ const ProductSubmission = () => {
     const SERVICE_FEE = 100;
     const [finalPrice, setFinalPrice] = useState(0);
     const [showSuccessModal, setShowSuccessModal] = useState({ show: false, type: 'Draft' });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const markupValue = Number(formData.markup) || 0;
@@ -167,7 +179,7 @@ const ProductSubmission = () => {
         const { token } = JSON.parse(storedUser);
 
         const thumbnailImage = productImages[0] || frontDesign;
-
+        setIsSubmitting(true);
         try {
             const response = await fetch(`${API_URL}/api/products`, {
                 method: 'POST',
@@ -185,22 +197,18 @@ const ProductSubmission = () => {
                     mockupImages: [thumbnailImage, ...productImages.slice(1)],
                     canvasState: canvasState,
                     tshirtColor: tshirtColor,
-                    allowUserCustomization: formData.allowUserCustomization,
+                    allowCustomization: formData.allowCustomization,
                     allowEditRequests: formData.allowEditRequests,
                     status: submissionStatus,
-                    // 🟢 Passing design snapshots using destructured variables
                     frontDesign: frontDesign,
-                    frontPrintArea: frontPrintArea,
+                    frontPrintArea: submitPageFrontPrintArea,
                     frontPrintAreaPx: frontPrintAreaPx,
-
                     backDesign: backDesign,
                     backPrintArea: backPrintArea,
                     backPrintAreaPx: backPrintAreaPx,
-
                     neckDesign: neckDesign,
                     neckPrintArea: neckPrintArea,
                     neckPrintAreaPx: neckPrintAreaPx,
-
                     foldedDesign: foldedDesign,
                     foldedPrintArea: foldedPrintArea,
                     foldedPrintAreaPx: foldedPrintAreaPx
@@ -215,129 +223,108 @@ const ProductSubmission = () => {
                 const result = await response.json();
                 alert(result.message || "Failed to submit product.");
             }
+            setIsSubmitting(false);
         } catch (err) {
             console.error(err);
+            setIsSubmitting(false);
             alert("Error connecting to server.");
         }
     };
-    return (
-        <div className="dashboard-container">
+
+    // 🟢 PREMIUM LOADING OVERLAY
+    const LoadingOverlay = () => (
+        <div style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(8px)',
+            zIndex: 9999, display: 'flex', flexDirection: 'column',
+            justifyContent: 'center', alignItems: 'center',
+            transition: 'opacity 0.3s ease'
+        }}>
+            <div style={{
+                width: '60px', height: '60px', border: '4px solid #0d375b',
+                borderTop: '4px solid transparent', borderRadius: '50%',
+                animation: 'spin 1s linear infinite', marginBottom: '20px'
+            }}></div>
+            <h2 style={{ color: '#0d375b', fontWeight: '900', letterSpacing: '-0.5px', animation: 'pulse 2s ease-in-out infinite' }}>
+                Finalizing your masterpiece...
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '14px', marginTop: '8px' }}>Uploading high-resolution design assets</p>
             <style>{`
-        .main-content { padding-top: 60px !important; } /* Increased to clear the fixed header */
-                .top-header {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    position: fixed;
-                    top: 0;
-                    left: 200px; /* 🚀 Matches sidebar width so it's not hidden behind it */
-                    right: 0;
-                    height: 50px;
-                    background: #0d375b;
-                    z-index: 2000; /* 🚀 High z-index to stay on top of everything */
-                    box-sizing: border-box;
-                    padding: 0 20px;
-                    border-left: 1px solid #0d375b; 
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                }
-                .header-left {
-                    position: absolute;
-                    left: 20px;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    cursor: pointer;
-                    color: white;
-                    transition: opacity 0.2s;
-                }
-                .header-left:hover { opacity: 0.8; }
-                .top-header h2 {
-                    margin: 0 !important;
-                    color: white !important;
-                    font-size: 16px !important;
-                    font-weight: 700;
-                }
-                body { font-size: 14px; }
-                .main-content h3 { font-size: 18px !important; margin-bottom: 14px; }
-                .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-                .switch input { opacity: 0; width: 0; height: 0; }
-                .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-                .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-                input:checked + .slider { background-color: #0d375b; }
-                input:checked + .slider:before { transform: translateX(20px); }
-                .ql-toolbar.ql-snow button { scale: 1; margin-right: 6px !important; }
-                .ql-editor { font-size: 14px !important; min-height: 120px; }
-                .admin-specs-box { 
-                    background: #f1f5f9; padding: 14px; border-radius: 10px 10px 0 0; 
-                    border: 1px solid #cbd5e1; border-bottom: none; font-size: 13px; color: #475569;
-                }
-                .price-item { 
-                    display: grid; 
-                    grid-template-columns: 240px 20px 1fr; 
-                    gap: 10px; 
-                    align-items: center; 
-                    font-size: 15px; 
-                    margin-bottom: 18px; 
-                    font-weight: 600; 
-                }
-                .final-price-text {
-                    font-size: 28px !important;
-                    font-weight: 900 !important;
-                    color: #0d375b !important;
-                }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
             `}</style>
+        </div>
+    );
 
+    return (
+        <div className="dashboard-container" style={{ background: '#f8fafc' }}>
+            {isSubmitting && <LoadingOverlay />}
             <Sidebar />
-
             <div className="main-content">
+                <style>{`
+                    .main-content { padding-top: 60px !important; }
+                    .top-header {
+                        display: flex; align-items: center; justify-content: center;
+                        position: fixed; top: 0; left: 200px; right: 0; height: 50px;
+                        background: #0d375b; z-index: 2000; box-sizing: border-box;
+                        padding: 0 20px; border-left: 1px solid #0d375b; shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    }
+                    .header-left { position: absolute; left: 20px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: white; }
+                    .top-header h2 { margin: 0; color: white; font-size: 16px; font-weight: 700; }
+                    .price-item { display: grid; grid-template-columns: 240px 20px 1fr; gap: 10px; align-items: center; font-size: 15px; margin-bottom: 18px; font-weight: 600; }
+                    .final-price-text { font-size: 28px; font-weight: 900; color: #0d375b; }
+                    .admin-specs-box { background: #f1f5f9; padding: 14px; border-radius: 10px 10px 0 0; border: 1px solid #cbd5e1; border-bottom: none; font-size: 13px; color: #475569; }
+                `}</style>
+
                 <div className="top-header">
-                    <div className="header-left" onClick={() => navigate(-1)}>
+                    <div className="header-left" onClick={() => navigate('/design-tool', {
+                        state: {
+                            isEdit: true,
+                            savedLayers: canvasState,
+                            selectedTshirtColor: tshirtColor,
+                            product: originalDesign || { name: productType }
+                        }
+                    })}>
                         <img src="/img/back.png" alt="Back" style={{ width: '14px', filter: 'invert(1)' }} />
                         <span style={{ fontWeight: 'bold' }}>Back to Editor</span>
                     </div>
                     <h2>Submit Product</h2>
                 </div>
 
-
                 <div className="content-wrapper" style={{ marginTop: '20px', paddingBottom: '50px' }}>
-
-
-                    {/* DETAILS SECTION */}
                     <div style={blueCardStyle}>
-                        <h3 style={{ color: '#0d375b' }}>Product Portfolio Details</h3>
+                        <h3 style={{ color: '#0d375b', marginBottom: '15px' }}>Product Portfolio Details</h3>
                         <label style={largeLabelStyle}>Title</label>
-                        <input type="text" value={formData.title} onChange={(e) => handleInputChange('title', e.target.value)} style={largeInputStyle} placeholder="Enter a title to your design..." />
-
+                        <input type="text" value={formData.title} onChange={(e) => handleInputChange('title', e.target.value)} style={largeInputStyle} placeholder="Enter a title..." />
                         <label style={{ ...largeLabelStyle, marginTop: '20px' }}>Description</label>
                         <div className="admin-specs-box" dangerouslySetInnerHTML={{ __html: ADMIN_SPECS }} />
                         <div style={{ background: 'white', borderRadius: '0 0 10px 10px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
-                            <ReactQuill
-                                theme="snow"
-                                value={formData.designDescription}
-                                onChange={(val: string) => handleInputChange('designDescription', val)}
-                                placeholder="Type here..."
-                            />
+                            <ReactQuill theme="snow" value={formData.designDescription} onChange={(val: string) => handleInputChange('designDescription', val)} />
                         </div>
                     </div>
 
-                    {/* POLICY SECTION */}
                     <div style={blueCardStyle}>
-                        <h3 style={{ color: '#0d375b' }}>Design Personalization Policy</h3>
+                        <h3 style={{ color: '#0d375b', marginBottom: '15px' }}>Design Personalization Policy</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                            {/* Option 1: Live Customization */}
                             <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                                <label className="switch">
-                                    <input type="checkbox" checked={formData.allowUserCustomization} onChange={(e) => handleInputChange('allowUserCustomization', e.target.checked)} />
-                                    <span className="slider"></span>
+                                <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px' }}>
+                                    <input type="checkbox" checked={formData.allowCustomization} onChange={(e) => handleInputChange('allowCustomization', e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
+                                    <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: formData.allowCustomization ? '#0d375b' : '#ccc', transition: '.4s', borderRadius: '34px' }}></span>
+                                    <span style={{ position: 'absolute', content: '""', height: '18px', width: '18px', left: formData.allowCustomization ? '23px' : '3px', bottom: '3px', backgroundColor: 'white', transition: '.4s', borderRadius: '50%' }}></span>
                                 </label>
                                 <div>
                                     <div style={{ fontWeight: '700', fontSize: '14px' }}>Allow User Customization</div>
                                     <div style={{ color: '#555', fontSize: '12px' }}>Users can use the Live Editor for small edits.</div>
                                 </div>
                             </div>
+
+                            {/* Option 2: Edit Requests */}
                             <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                                <label className="switch">
-                                    <input type="checkbox" checked={formData.allowEditRequests} onChange={(e) => handleInputChange('allowEditRequests', e.target.checked)} />
-                                    <span className="slider"></span>
+                                <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px' }}>
+                                    <input type="checkbox" checked={formData.allowEditRequests} onChange={(e) => handleInputChange('allowEditRequests', e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
+                                    <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: formData.allowEditRequests ? '#0d375b' : '#ccc', transition: '.4s', borderRadius: '34px' }}></span>
+                                    <span style={{ position: 'absolute', content: '""', height: '18px', width: '18px', left: formData.allowEditRequests ? '23px' : '3px', bottom: '3px', backgroundColor: 'white', transition: '.4s', borderRadius: '50%' }}></span>
                                 </label>
                                 <div>
                                     <div style={{ fontWeight: '700', fontSize: '14px' }}>Allow Designer-Handled Edit Requests</div>
@@ -347,222 +334,154 @@ const ProductSubmission = () => {
                         </div>
                     </div>
 
-                    {/* PRICING SECTION */}
                     <div style={blueCardStyle}>
                         <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                            <div style={{ flex: 1, minWidth: '300px' }}>
+                            <div style={{ flex: 1 }}>
                                 <h3 style={{ color: '#0d375b', marginBottom: '20px' }}>Pricing Setup</h3>
-
+                                <div className="price-item"><span>Base Price</span><span>:</span><span style={{ fontWeight: '800' }}>{formatPrice(BASE_PRICE)}</span></div>
                                 <div className="price-item">
-                                    <span>Base Price <small style={{ fontSize: '11px', color: '#666' }}>(Fixed Production Cost)</small></span>
-                                    <span>:</span>
-                                    <span style={{ fontWeight: '800' }}>{formatPrice(BASE_PRICE)}</span>
-                                </div>
-
-                                <div className="price-item">
-                                    <span>Designer Markup (Your Profit)</span>
-                                    <span>:</span>
+                                    <span>Designer Markup</span><span>:</span>
                                     <div style={{ display: 'flex', alignItems: 'center', border: '2px solid #0d375b', borderRadius: '8px', padding: '8px 12px', width: '160px', background: 'white' }}>
-                                        <span style={{ marginRight: '6px', fontWeight: 'bold', fontSize: '13px' }}>LKR</span>
-                                        <input type="number" value={formData.markup} onChange={(e) => handleInputChange('markup', e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', fontWeight: '800', fontSize: '14px' }} />
+                                        <span style={{ marginRight: '6px', fontWeight: 'bold' }}>LKR</span>
+                                        <input type="number" value={formData.markup} onChange={(e) => handleInputChange('markup', e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', fontWeight: '800' }} />
                                     </div>
                                 </div>
-
-                                <div className="price-item">
-                                    <span>Service Fee <small style={{ fontSize: '11px', color: '#666' }}>(Platform Hosting)</small></span>
-                                    <span>:</span>
-                                    <span style={{ fontWeight: '800' }}>{formatPrice(SERVICE_FEE)}</span>
-                                </div>
-
+                                <div className="price-item"><span>Service Fee</span><span>:</span><span style={{ fontWeight: '800' }}>{formatPrice(SERVICE_FEE)}</span></div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '200px 20px 1fr', gap: '10px', marginTop: '20px', borderTop: '1px solid #cbd5e1', paddingTop: '20px' }}>
-                                    <strong style={{ color: '#0d375b', fontSize: '16px' }}>Final Selling Price</strong>
-                                    <strong style={{ fontSize: '16px' }}>:</strong>
-                                    <strong className="final-price-text">{formatPrice(finalPrice)}</strong>
+                                    <strong style={{ color: '#0d375b' }}>Final Selling Price</strong><strong>:</strong><strong className="final-price-text">{formatPrice(finalPrice)}</strong>
                                 </div>
                             </div>
 
-                            {/* Preview image next to pricing */}
-                            <div style={{ width: '220px', height: '220px', background: 'white', borderRadius: '16px', boxShadow: '0 8px 20px rgba(0,0,0,0.08)', overflow: 'hidden', position: 'relative', flexShrink: 0, border: '1px solid #e2e8f0' }}>
+                            <div style={{ width: '220px', height: '265px', background: 'white', borderRadius: '16px', overflow: 'hidden', position: 'relative', border: '1px solid #e2e8f0' }}>
                                 <MockupPreview
-                                    mockupSrc={frontMockup || productImages[0]}
-                                    maskSrc={frontMockup || productImages[0]}
-                                    maskSize="contain"
-                                    maskPosition="center"
+                                    mockupSrc={frontMockup}
+                                    maskSrc={frontMockup}
                                     tshirtColor={tshirtColor}
-                                    printArea={frontPrintArea}
+                                    printArea={submitPageFrontPrintArea}
                                     designSrc={frontDesign}
-                                    originalPrintAreaPx={frontPrintAreaPx}
-                                    areaScale={frontAreaScale}
-                                    designScale={frontDesignScale}
                                     overallScale={pricingMockupScale}
                                 />
-                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.9)', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: '700', color: '#0d375b', borderTop: '1px solid #eee' }}>
-                                    FRONT PREVIEW
-                                </div>
+                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.9)', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: '700', color: '#0d375b', borderTop: '1px solid #eee' }}>FRONT PREVIEW</div>
                             </div>
                         </div>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '30px' }}>
                         <button
+                            disabled={isSubmitting}
                             onClick={() => submitProduct('Draft')}
-                            style={{ padding: '10px 28px', borderRadius: '24px', border: '2px solid #ccc', background: 'white', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
+                            style={{ padding: '10px 28px', borderRadius: '24px', border: '2px solid #ccc', background: 'white', fontWeight: 'bold', cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
                         >
-                            Save Draft
+                            {isSubmitting ? "..." : "Save Draft"}
                         </button>
-
                         <button
+                            disabled={isSubmitting || !formData.title}
                             onClick={() => submitProduct('Pending')}
-                            style={(formData.title && formData.designDescription) ? { padding: '10px 40px', borderRadius: '24px', background: '#0d375b', color: 'white', fontWeight: '900', fontSize: '14px', cursor: 'pointer', boxShadow: '0 6px 14px rgba(13,55,91,0.3)' } : { padding: '10px 40px', borderRadius: '24px', background: '#94a3b8', color: 'white', fontWeight: '900', fontSize: '14px', cursor: 'not-allowed', opacity: 0.7 }}
+                            style={{
+                                padding: '10px 40px', borderRadius: '24px',
+                                background: (formData.title && !isSubmitting) ? '#0d375b' : '#94a3b8',
+                                color: 'white', fontWeight: '900',
+                                cursor: (formData.title && !isSubmitting) ? 'pointer' : 'not-allowed',
+                                display: 'flex', alignItems: 'center', gap: '8px'
+                            }}
                         >
-                            Publish
+                            {isSubmitting && <div style={{ width: '14px', height: '14px', border: '2px solid #fff', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>}
+                            {isSubmitting ? "Publishing..." : "Publish"}
                         </button>
                     </div>
                 </div>
             </div>
 
             {showSuccessModal.show && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(13, 55, 91, 0.8)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
-                    <div style={{ background: 'white', padding: '40px', borderRadius: '24px', width: '420px', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ width: '60px', height: '60px', background: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
-                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <div style={{
+                    position: 'fixed', inset: 0,
+                    backgroundColor: 'rgba(13, 55, 91, 0.7)',
+                    backdropFilter: 'blur(8px)',
+                    zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    animation: 'fadeIn 0.3s ease-out'
+                }}>
+                    <div style={{
+                        background: 'white', padding: '40px', borderRadius: '32px',
+                        width: '400px', textAlign: 'center',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+                    }}>
+                        <style>{`
+                            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                            @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                        `}</style>
+
+                        <div style={{
+                            width: '80px', height: '80px', background: '#dcfce7',
+                            borderRadius: '50%', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', margin: '0 auto 24px'
+                        }}>
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
                         </div>
-                        <h2 style={{ color: '#0d375b', fontSize: '24px', fontWeight: '900', marginBottom: '10px' }}>Success!</h2>
-                        <p style={{ color: '#64748b', fontSize: '16px', marginBottom: '25px', lineHeight: '1.5' }}>
+
+                        <h2 style={{
+                            color: '#0d375b', fontSize: '32px', fontWeight: '900',
+                            marginBottom: '12px', fontFamily: '"Outfit", sans-serif',
+                            letterSpacing: '-1px'
+                        }}>Success!</h2>
+
+                        <p style={{
+                            color: '#475569', fontSize: '16px', fontWeight: '500',
+                            marginBottom: '32px', lineHeight: '1.5'
+                        }}>
                             {showSuccessModal.type === 'Draft'
-                                ? "Your design draft is successfully stored in My Shop."
-                                : "Your design is successfully sent for admin review."
-                            }
+                                ? "Your draft has been saved successfully. You can find it in your shop portfolio."
+                                : "Your design has been submitted for review. We'll notify you once it's live!"}
                         </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <button onClick={() => navigate('/my-shop')} style={{ padding: '12px', background: '#0d375b', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}>
-                                Go to My Shop
-                            </button>
-                            <button onClick={() => navigate('/')} style={{ padding: '12px', background: 'transparent', color: '#64748b', border: 'none', borderRadius: '12px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>
-                                Back to Dashboard
-                            </button>
-                        </div>
+
+                        <button
+                            onClick={() => navigate('/my-shop')}
+                            style={{
+                                padding: '16px', background: '#0d375b', color: 'white',
+                                border: 'none', borderRadius: '16px', width: '100%',
+                                cursor: 'pointer', fontSize: '16px', fontWeight: '800',
+                                transition: 'transform 0.2s, box-shadow 0.2s',
+                                boxShadow: '0 4px 12px rgba(13, 55, 91, 0.25)'
+                            }}
+                            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(13, 55, 91, 0.3)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(13, 55, 91, 0.25)'; }}
+                        >
+                            Go to My Shop
+                        </button>
                     </div>
                 </div>
             )}
-        </div >
+        </div>
     );
 };
 
-const blueCardStyle: React.CSSProperties = { background: '#dfe9f5', padding: '16px 20px', borderRadius: '12px', marginBottom: '16px' };
-const largeLabelStyle: React.CSSProperties = { display: 'block', fontWeight: '800', fontSize: '13px', marginBottom: '6px' };
-const largeInputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '2px solid #cbd5e1', fontSize: '13px', fontWeight: '700', outline: 'none', boxSizing: 'border-box' };
-
-type PrintArea = { top: string; left: string; width: string; height: string; rotation?: number };
-type MockupPreviewProps = {
-    mockupSrc: string;
-    maskSrc: string;
-    maskSize: string;
-    maskPosition: string;
-    tshirtColor: string;
-    printArea?: PrintArea;
-    designSrc?: string;
-    originalPrintAreaPx?: { width: number; height: number } | null;
-    editorMockupScale?: number;
-    areaScale?: number;
-    designScale?: number;
-    overallScale?: number;
-};
-
-const MockupPreview = ({
-    mockupSrc,
-    maskSrc,
-    maskSize,
-    maskPosition,
-    tshirtColor,
-    printArea,
-    designSrc,
-    originalPrintAreaPx,
-    areaScale = 1.0,
-    designScale = 1.0,
-    overallScale = 1.0
-}: MockupPreviewProps) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    // 🚀 LOGIC CHECK: 
-    // If designSrc is a full snapshot from our new capture logic, 
-    // it will ALREADY contain the T-shirt and the design.
-    // We check if printArea is missing – if so, we treat it as a full-image preview.
-    const isFullSnapshot = designSrc && !printArea;
-
-    if (isFullSnapshot) {
-        return (
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
-                <img
-                    src={designSrc}
-                    alt="Final Product"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-            </div>
-        );
-    }
-
+const MockupPreview = ({ mockupSrc, maskSrc, tshirtColor, designSrc, printArea, overallScale }: any) => {
     return (
-        <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-            {/* Wrapper to scale the entire mockup (Shirt + Design) */}
-            <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale})`, transformOrigin: 'center center', position: 'relative' }}>
-                {/* 1. Base Mockup Image */}
-                <img src={mockupSrc} alt="Mockup" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'relative', zIndex: 1 }} />
-
-                {/* 2. Color Overlay */}
+        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+            <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale || 1})`, transformOrigin: 'center center', position: 'relative' }}>
+                <img src={mockupSrc} alt="Shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute' }} />
                 {tshirtColor && (
                     <div style={{
-                        position: 'absolute',
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: tshirtColor,
-                        mixBlendMode: 'multiply',
-                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`,
-                        maskImage: `url(${maskSrc || mockupSrc})`,
-                        WebkitMaskSize: maskSize || 'contain',
-                        WebkitMaskPosition: maskPosition || 'center',
-                        WebkitMaskRepeat: 'no-repeat',
-                        pointerEvents: 'none',
-                        zIndex: 2
+                        position: 'absolute', inset: 0, backgroundColor: tshirtColor, mixBlendMode: 'multiply',
+                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
+                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center', WebkitMaskRepeat: 'no-repeat', zIndex: 2
                     }}></div>
                 )}
-
-                {/* 3. Proportional Design Layer (Masked to T-shirt silhouette) */}
                 {printArea && designSrc && (
                     <div style={{
-                        position: 'absolute',
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`,
-                        maskImage: `url(${maskSrc || mockupSrc})`,
-                        WebkitMaskSize: maskSize || 'contain',
-                        WebkitMaskPosition: maskPosition || 'center',
-                        WebkitMaskRepeat: 'no-repeat',
-                        zIndex: 3,
-                        pointerEvents: 'none'
+                        position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none',
+                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
+                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center', WebkitMaskRepeat: 'no-repeat',
                     }}>
                         <div style={{
-                            position: 'absolute',
-                            top: printArea.top,
-                            left: printArea.left,
-                            width: `calc(${printArea.width} * ${areaScale})`,
-                            height: `calc(${printArea.height} * ${areaScale})`,
+                            position: 'absolute', top: printArea.top, left: printArea.left,
+                            width: printArea.width, height: printArea.height,
                             transform: `translate(-50%, -50%) rotate(${printArea.rotation || 0}deg)`,
-                            transformOrigin: 'center center',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            overflow: 'hidden'
+                            transformOrigin: 'center center', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
                         }}>
-                            <img
-                                src={designSrc}
-                                alt="Design"
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'contain',
-                                    transform: `scale(${designScale})`,
-                                    transformOrigin: 'center center'
-                                }}
-                            />
+                            <img src={designSrc} alt="Design" style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal' }} />
                         </div>
                     </div>
                 )}
@@ -571,4 +490,8 @@ const MockupPreview = ({
     );
 };
 
-export default ProductSubmission
+const blueCardStyle: React.CSSProperties = { background: '#dfe9f5', padding: '16px 20px', borderRadius: '12px', marginBottom: '16px' };
+const largeLabelStyle: React.CSSProperties = { display: 'block', fontWeight: '800', fontSize: '13px', marginBottom: '6px' };
+const largeInputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '2px solid #cbd5e1', fontSize: '13px', fontWeight: '700', outline: 'none', boxSizing: 'border-box' };
+
+export default ProductSubmission;

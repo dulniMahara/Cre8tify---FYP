@@ -9,6 +9,93 @@ import { originalProducts as womenProducts } from './WomenCollection';
 import { originalProducts as kidsProducts } from './KidsCollection';
 import { useCart } from '../context/CartContext';
 
+// --- INTERFACES ---
+interface TextConfig {
+    id: number;
+    text: string;
+    font: string;
+    color: string;
+    styleId?: string;
+    type?: 'arc' | 'wave' | 'circle' | 'straight' | 'upward';
+    zIndex: number;
+    x: number;
+    y: number;
+    scale: number;
+    rotation: number;
+    letterSpacing?: number;
+    curve?: number;
+}
+
+interface ImageLayer {
+    id: number;
+    src: string;
+    zIndex: number;
+    x: number;
+    y: number;
+    scale: number;
+    rotation: number;
+    flipX: boolean;
+    flipY: boolean;
+}
+
+const CurvedText = ({ text, fontFamily, color, curve, letterSpacing, id, styleId }: {
+    text: string,
+    fontFamily: string,
+    color: string,
+    curve: number,
+    letterSpacing: number,
+    id: number,
+    styleId?: string
+}) => {
+    const pathId = `path-detail-${id}`;
+    const isFullCircle = styleId === 'style-circle';
+    const cx = 250;
+    const cy = 250;
+    const r = 160;
+
+    let pathData = "";
+    if (isFullCircle) {
+        pathData = `
+            M ${cx - r}, ${cy}
+            a ${r},${r} 0 1,1 ${r * 2},0
+            a ${r},${r} 0 1,1 -${r * 2},0
+        `;
+    } else {
+        const intensity = curve * 2.5;
+        pathData = `M 50,250 Q 250,${250 - intensity} 450,250`;
+    }
+
+    return (
+        <svg
+            viewBox="0 0 500 500"
+            width="200"
+            height="200"
+            style={{ overflow: 'visible', display: 'block', pointerEvents: 'none' }}
+        >
+            <defs>
+                <path id={pathId} d={pathData} fill="none" />
+            </defs>
+            <text
+                fill={color}
+                style={{
+                    fontFamily: fontFamily,
+                    fontSize: isFullCircle ? '32px' : '40px',
+                    fontWeight: 'bold',
+                    letterSpacing: `${letterSpacing}px`,
+                }}
+            >
+                <textPath
+                    xlinkHref={`#${pathId}`}
+                    startOffset="50%"
+                    textAnchor="middle"
+                >
+                    {text}
+                </textPath>
+            </text>
+        </svg>
+    );
+};
+
 // 🟢 Styles for the Purchase Modal
 const modalOptionStyle: React.CSSProperties = {
     padding: '15px 20px',
@@ -31,37 +118,45 @@ const closeButtonStyle: React.CSSProperties = {
 
 //  HELPER COMPONENTS
 
-const ActionButton = ({ text, onClick }: { text: string; onClick?: () => void }) => {
+const ActionButton = ({ text, onClick, disabled = false }: { text: string; onClick?: () => void; disabled?: boolean }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isActive, setIsActive] = useState(false);
 
     return (
         <button
-            onClick={onClick}
-            onMouseEnter={() => setIsHovered(true)}
+            disabled={disabled}
+            onClick={(e) => {
+                if (disabled) {
+                    e.preventDefault();
+                    return;
+                }
+                onClick?.();
+            }}
+            onMouseEnter={() => !disabled && setIsHovered(true)}
             onMouseLeave={() => { setIsHovered(false); setIsActive(false); }}
-            onMouseDown={() => setIsActive(true)}
+            onMouseDown={() => !disabled && setIsActive(true)}
             onMouseUp={() => setIsActive(false)}
             style={{
                 padding: '12px 20px',
-                background: isActive ? '#3B82F6' : (isHovered ? '#D1E8FF' : '#E0EEFF'),
+                background: disabled ? '#f1f5f9' : (isActive ? '#3B82F6' : (isHovered ? '#D1E8FF' : '#E0EEFF')),
                 border: 'none',
                 borderRadius: '50px', // Pill shape
                 fontSize: '14px',
                 fontWeight: '900',
-                color: '#000',
+                color: disabled ? '#94a3b8' : '#000',
                 width: '100%',
-                cursor: 'pointer',
+                cursor: disabled ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
-                transform: isActive ? 'scale(0.95)' : 'scale(1)',
+                transform: (!disabled && isActive) ? 'scale(0.95)' : 'scale(1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 minHeight: '55px',
-                lineHeight: '1.2'
+                lineHeight: '1.2',
+                opacity: disabled ? 0.7 : 1
             }}
         >
-            {text}
+            {disabled ? `🔒 ${text}` : text}
         </button>
     );
 };
@@ -232,7 +327,8 @@ const ProductDetail = () => {
         tshirtColor: incoming?.tshirtColor,
         baseProduct: incoming?.baseProduct,
         allowCustomization: incoming?.allowCustomization ?? true,
-        allowEditRequests: true // 🟢 Force true as requested
+        allowEditRequests: incoming?.allowEditRequests ?? true,
+        canvasState: incoming?.canvasState
     };
 
     // 3. Selection States
@@ -334,7 +430,6 @@ const ProductDetail = () => {
                                                 position: 'relative',
                                                 zIndex: 2,
                                                 pointerEvents: 'none',
-                                                // We mask the design with the same T-shirt mask to ensure it doesn't spill over
                                                 WebkitMaskImage: `url(${product.baseImages[currentImgIndex]})`,
                                                 maskImage: `url(${product.baseImages[currentImgIndex]})`,
                                                 WebkitMaskSize: 'contain',
@@ -353,17 +448,108 @@ const ProductDetail = () => {
                                                     justifyContent: 'center',
                                                     overflow: 'hidden'
                                                 }}>
-                                                    <img
-                                                        src={currentImgIndex === 0 ? product.frontDesign : product.backDesign}
-                                                        alt="Design"
-                                                        style={{
-                                                            width: '100%',
-                                                            height: '100%',
-                                                            objectFit: 'contain',
-                                                            transform: 'scale(1.0)',
-                                                            transformOrigin: 'center center'
-                                                        }}
-                                                    />
+                                                    {product.canvasState ? (
+                                                        <div style={{ position: 'relative', width: '100%', height: '100%', isolation: 'isolate' }}>
+                                                            {[
+                                                                ...(product.canvasState.imageLayers?.map((l: any) => ({ ...l, layerType: 'image' })) || []),
+                                                                ...(product.canvasState.textLayers?.map((t: any) => ({ ...t, layerType: 'text' })) || [])
+                                                            ].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)).map((layer: any) => (
+                                                                layer.layerType === 'image' ? (
+                                                                    <img
+                                                                        key={layer.id}
+                                                                        src={layer.src}
+                                                                        style={{
+                                                                            position: 'absolute',
+                                                                            zIndex: layer.zIndex,
+                                                                            transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
+                                                                            mixBlendMode: (selectedColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
+                                                                            opacity: 0.95,
+                                                                            width: 'auto',
+                                                                            height: 'auto'
+                                                                        }}
+                                                                    />
+                                                                ) : (
+                                                                    <div
+                                                                        key={layer.id}
+                                                                        style={{
+                                                                            position: 'absolute',
+                                                                            zIndex: layer.zIndex,
+                                                                            transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg)`,
+                                                                            display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
+                                                                        }}
+                                                                    >
+                                                                        {layer.styleId === 'default' && (
+                                                                            <>
+                                                                                {(layer.curve !== 0 && layer.curve !== undefined) ? (
+                                                                                    <CurvedText
+                                                                                        id={layer.id}
+                                                                                        text={layer.text}
+                                                                                        fontFamily={layer.font}
+                                                                                        color={layer.color}
+                                                                                        curve={layer.curve ?? 0}
+                                                                                        letterSpacing={layer.letterSpacing || 0}
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div style={{
+                                                                                        fontFamily: layer.font,
+                                                                                        color: layer.color,
+                                                                                        fontSize: '24px',
+                                                                                        fontWeight: 'bold',
+                                                                                        whiteSpace: 'nowrap',
+                                                                                        letterSpacing: `${layer.letterSpacing || 0}px`,
+                                                                                        textShadow: '0px 1px 3px rgba(0,0,0,0.3)'
+                                                                                    }}>
+                                                                                        {layer.text}
+                                                                                    </div>
+                                                                                )}
+                                                                            </>
+                                                                        )}
+                                                                        {layer.styleId === 'style-wave' && (
+                                                                            <div style={{
+                                                                                fontFamily: layer.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900',
+                                                                                textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b',
+                                                                                transform: 'skewX(-10deg)', fontStyle: 'italic',
+                                                                                letterSpacing: `${layer.letterSpacing || 0}px`
+                                                                            }}>
+                                                                                {layer.text}
+                                                                            </div>
+                                                                        )}
+                                                                        {layer.styleId === 'style-stack' && (
+                                                                            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${layer.letterSpacing || 0}px` }}>
+                                                                                {[1, 2, 3].map((i) => (
+                                                                                    <span key={i} style={{ fontFamily: layer.font, color: i === 2 ? layer.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${layer.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{layer.text}</span>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                        {layer.styleId === 'style-fish' && (
+                                                                            <div style={{ fontFamily: layer.font, color: layer.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(layer.letterSpacing || 0) - 1}px` }}>
+                                                                                {layer.text}
+                                                                            </div>
+                                                                        )}
+                                                                        {!['default', 'style-wave', 'style-stack', 'style-fish'].includes(layer.styleId || '') && (
+                                                                            <CurvedText
+                                                                                id={layer.id} text={layer.text} styleId={layer.styleId} fontFamily={layer.font} color={layer.color}
+                                                                                curve={layer.styleId === 'style-circle' ? (layer.curve ?? 120) : (layer.curve ?? 0)}
+                                                                                letterSpacing={layer.letterSpacing || 0}
+                                                                            />
+                                                                        )}
+                                                                    </div>
+                                                                )
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <img
+                                                            src={currentImgIndex === 0 ? product.frontDesign : product.backDesign}
+                                                            alt="Design"
+                                                            style={{
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                objectFit: 'contain',
+                                                                transform: 'scale(1.0)',
+                                                                transformOrigin: 'center center'
+                                                            }}
+                                                        />
+                                                    )}
                                                 </div>
                                             </div>
                                         )}
@@ -387,7 +573,6 @@ const ProductDetail = () => {
                                                     alt={product.title}
                                                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                                 />
-                                                {/* Design Overlay */}
                                                 <div style={{
                                                     position: 'absolute',
                                                     top: product.frontPrintArea?.top || '50%',
@@ -400,17 +585,108 @@ const ProductDetail = () => {
                                                     justifyContent: 'center',
                                                     overflow: 'hidden'
                                                 }}>
-                                                    <img
-                                                        src={product.frontDesign}
-                                                        alt="Design"
-                                                        style={{
-                                                            width: '100%',
-                                                            height: '100%',
-                                                            objectFit: 'contain',
-                                                            transform: 'scale(1.0)',
-                                                            transformOrigin: 'center center'
-                                                        }}
-                                                    />
+                                                    {product.canvasState ? (
+                                                        <div style={{ position: 'relative', width: '100%', height: '100%', isolation: 'isolate' }}>
+                                                            {[
+                                                                ...(product.canvasState.imageLayers?.map((l: any) => ({ ...l, layerType: 'image' })) || []),
+                                                                ...(product.canvasState.textLayers?.map((t: any) => ({ ...t, layerType: 'text' })) || [])
+                                                            ].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)).map((layer: any) => (
+                                                                layer.layerType === 'image' ? (
+                                                                    <img
+                                                                        key={layer.id}
+                                                                        src={layer.src}
+                                                                        style={{
+                                                                            position: 'absolute',
+                                                                            zIndex: layer.zIndex,
+                                                                            transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
+                                                                            mixBlendMode: (selectedColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
+                                                                            opacity: 0.95,
+                                                                            width: 'auto',
+                                                                            height: 'auto'
+                                                                        }}
+                                                                    />
+                                                                ) : (
+                                                                    <div
+                                                                        key={layer.id}
+                                                                        style={{
+                                                                            position: 'absolute',
+                                                                            zIndex: layer.zIndex,
+                                                                            transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg)`,
+                                                                            display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
+                                                                        }}
+                                                                    >
+                                                                        {layer.styleId === 'default' && (
+                                                                            <>
+                                                                                {(layer.curve !== 0 && layer.curve !== undefined) ? (
+                                                                                    <CurvedText
+                                                                                        id={layer.id}
+                                                                                        text={layer.text}
+                                                                                        fontFamily={layer.font}
+                                                                                        color={layer.color}
+                                                                                        curve={layer.curve ?? 0}
+                                                                                        letterSpacing={layer.letterSpacing || 0}
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div style={{
+                                                                                        fontFamily: layer.font,
+                                                                                        color: layer.color,
+                                                                                        fontSize: '24px',
+                                                                                        fontWeight: 'bold',
+                                                                                        whiteSpace: 'nowrap',
+                                                                                        letterSpacing: `${layer.letterSpacing || 0}px`,
+                                                                                        textShadow: '0px 1px 3px rgba(0,0,0,0.3)'
+                                                                                    }}>
+                                                                                        {layer.text}
+                                                                                    </div>
+                                                                                )}
+                                                                            </>
+                                                                        )}
+                                                                        {layer.styleId === 'style-wave' && (
+                                                                            <div style={{
+                                                                                fontFamily: layer.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900',
+                                                                                textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b',
+                                                                                transform: 'skewX(-10deg)', fontStyle: 'italic',
+                                                                                letterSpacing: `${layer.letterSpacing || 0}px`
+                                                                            }}>
+                                                                                {layer.text}
+                                                                            </div>
+                                                                        )}
+                                                                        {layer.styleId === 'style-stack' && (
+                                                                            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${layer.letterSpacing || 0}px` }}>
+                                                                                {[1, 2, 3].map((i) => (
+                                                                                    <span key={i} style={{ fontFamily: layer.font, color: i === 2 ? layer.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${layer.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{layer.text}</span>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                        {layer.styleId === 'style-fish' && (
+                                                                            <div style={{ fontFamily: layer.font, color: layer.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(layer.letterSpacing || 0) - 1}px` }}>
+                                                                                {layer.text}
+                                                                            </div>
+                                                                        )}
+                                                                        {!['default', 'style-wave', 'style-stack', 'style-fish'].includes(layer.styleId || '') && (
+                                                                            <CurvedText
+                                                                                id={layer.id} text={layer.text} styleId={layer.styleId} fontFamily={layer.font} color={layer.color}
+                                                                                curve={layer.styleId === 'style-circle' ? (layer.curve ?? 120) : (layer.curve ?? 0)}
+                                                                                letterSpacing={layer.letterSpacing || 0}
+                                                                            />
+                                                                        )}
+                                                                    </div>
+                                                                )
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <img
+                                                            src={product.frontDesign}
+                                                            alt="Design"
+                                                            style={{
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                objectFit: 'contain',
+                                                                transform: 'scale(1.0)',
+                                                                transformOrigin: 'center center'
+                                                            }}
+                                                        />
+                                                    )}
                                                 </div>
                                             </>
                                         ) : (
@@ -538,8 +814,20 @@ const ProductDetail = () => {
                                     return (
                                         <>
                                             <div style={{ flex: 1 }}><ActionButton text="Try Live Preview" onClick={() => navigate('/live-preview', { state: { product: latestProduct, selectedColor, selectedSize } })} /></div>
-                                            <div style={{ flex: 1 }}><ActionButton text="Customize Design" onClick={() => navigate('/design-tool', { state: { product: latestProduct } })} /></div>
-                                            <div style={{ flex: 1 }}><ActionButton text="Request Designer Edit" onClick={() => navigate(`/request-edit/${product.id}`, { state: { product: latestProduct, selectedColor, selectedSize } })} /></div>
+                                            <div style={{ flex: 1 }}>
+                                                <ActionButton
+                                                    text="Customize Design"
+                                                    disabled={!product.allowCustomization}
+                                                    onClick={() => navigate('/design-tool', { state: { product: latestProduct } })}
+                                                />
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <ActionButton
+                                                    text="Request Designer Edit"
+                                                    disabled={!product.allowEditRequests}
+                                                    onClick={() => navigate(`/request-edit/${product.id}`, { state: { product: latestProduct, selectedColor, selectedSize } })}
+                                                />
+                                            </div>
                                         </>
                                     );
                                 })()}
@@ -736,4 +1024,4 @@ const ProductDetail = () => {
     );
 };
 
-export default ProductDetail;
+export default ProductDetail;

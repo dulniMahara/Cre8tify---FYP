@@ -61,34 +61,52 @@ const RequestEdit = () => {
         setStatus('loading');
         
         try {
-            console.log("Submitting request for product:", product);
-            // 🟢 PERSIST REQUEST TO LOCALSTORAGE
-            const newRequest = {
-                id: `#${Math.floor(100000 + Math.random() * 900000)}`,
-                customer: JSON.parse(localStorage.getItem('userInfo') || '{}').name || 'Customer',
-                status: 'Pending',
-                submittedOn: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            
+            // Helper to convert File to Base64
+            const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = error => reject(error);
+            });
+
+            let base64File = null;
+            if (selectedFile) {
+                base64File = await toBase64(selectedFile);
+            }
+
+            const requestPayload = {
+                productId: product?._id || product?.id,
                 productName: product?.title || 'Custom T-shirt',
                 productImage: product?.baseImages?.[0] || '/img/womenfront-mockup.png',
+                customer: userInfo.name || 'Customer',
+                customerId: userInfo._id,
                 message: formData.preferredChanges,
                 preferredTime: formData.preferredTime,
                 extraNote: formData.extraNote,
                 color: currentColor,
-                size: currentSize,
-                price: product?.price,
+                referenceImage: base64File,
+                status: 'Pending',
                 frontDesign: product?.frontDesign,
-                frontPrintArea: product?.frontPrintArea
+                frontPrintArea: product?.frontPrintArea ? JSON.stringify(product.frontPrintArea) : null
             };
-            console.log("New Request Payload:", newRequest);
 
-            const existingRequests = JSON.parse(localStorage.getItem('designer_requests') || '[]');
-            localStorage.setItem('designer_requests', JSON.stringify([newRequest, ...existingRequests]));
+            const response = await fetch('http://localhost:5000/api/requests', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestPayload),
+            });
 
-            // Simulate API Call
-            setTimeout(() => {
-                setStatus('success'); 
-            }, 1000);
+            if (response.ok) {
+                setStatus('success');
+            } else {
+                throw new Error('Failed to submit request');
+            }
         } catch (err) {
+            console.error("Submission error:", err);
             setStatus('error');
         }
     };
@@ -240,7 +258,7 @@ const RequestEdit = () => {
                 <div style={modalOverlay}>
                     <div style={modalContent}>
                         <div style={{ fontSize: '40px', marginBottom: '15px' }}>
-                            {status === 'success' ? '✨' : '⚠️'}
+                            {status === 'error' && '⚠️'}
                         </div>
                         <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#0d375b', margin: '0 0 10px 0' }}>
                             {status === 'success' ? 'Request Sent!' : 'Oops! Failed'}
@@ -253,7 +271,7 @@ const RequestEdit = () => {
                         <button 
                             style={status === 'success' ? successBtn : errorBtn}
                             onClick={() => {
-                                if (status === 'success') navigate('/requests');
+                                if (status === 'success') navigate('/customer-requests');
                                 else setStatus('idle');
                             }}
                         >

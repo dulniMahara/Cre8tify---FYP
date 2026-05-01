@@ -1,9 +1,96 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
 import '../styles/dashboard.css';
+
+// --- INTERFACES ---
+interface TextConfig {
+    id: number;
+    text: string;
+    font: string;
+    color: string;
+    styleId?: string;
+    type?: 'arc' | 'wave' | 'circle' | 'straight' | 'upward';
+    zIndex: number;
+    x: number;
+    y: number;
+    scale: number;
+    rotation: number;
+    letterSpacing?: number;
+    curve?: number;
+}
+
+interface ImageLayer {
+    id: number;
+    src: string;
+    zIndex: number;
+    x: number;
+    y: number;
+    scale: number;
+    rotation: number;
+    flipX: boolean;
+    flipY: boolean;
+}
+
+const CurvedText = ({ text, fontFamily, color, curve, letterSpacing, id, styleId }: {
+    text: string,
+    fontFamily: string,
+    color: string,
+    curve: number,
+    letterSpacing: number,
+    id: number,
+    styleId?: string
+}) => {
+    const pathId = `path-shop-${id}`;
+    const isFullCircle = styleId === 'style-circle';
+    const cx = 250;
+    const cy = 250;
+    const r = 160;
+
+    let pathData = "";
+    if (isFullCircle) {
+        pathData = `
+            M ${cx - r}, ${cy}
+            a ${r},${r} 0 1,1 ${r * 2},0
+            a ${r},${r} 0 1,1 -${r * 2},0
+        `;
+    } else {
+        const intensity = curve * 2.5;
+        pathData = `M 50,250 Q 250,${250 - intensity} 450,250`;
+    }
+
+    return (
+        <svg
+            viewBox="0 0 500 500"
+            width="200"
+            height="200"
+            style={{ overflow: 'visible', display: 'block', pointerEvents: 'none' }}
+        >
+            <defs>
+                <path id={pathId} d={pathData} fill="none" />
+            </defs>
+            <text
+                fill={color}
+                style={{
+                    fontFamily: fontFamily,
+                    fontSize: isFullCircle ? '32px' : '40px',
+                    fontWeight: 'bold',
+                    letterSpacing: `${letterSpacing}px`,
+                }}
+            >
+                <textPath
+                    xlinkHref={`#${pathId}`}
+                    startOffset="50%"
+                    textAnchor="middle"
+                >
+                    {text}
+                </textPath>
+            </text>
+        </svg>
+    );
+};
 
 interface DesignItem {
     id: number;
@@ -21,7 +108,40 @@ interface DesignItem {
     frontDesign?: string;
     frontPrintArea?: any;
     frontPrintAreaPx?: any;
+    backDesign?: string;
+    backPrintArea?: any;
+    backPrintAreaPx?: any;
+    neckDesign?: string;
+    neckPrintArea?: any;
+    neckPrintAreaPx?: any;
+    foldedDesign?: string;
+    foldedPrintArea?: any;
+    foldedPrintAreaPx?: any;
+    allowCustomization?: boolean;
+    allowEditRequests?: boolean;
 }
+
+const formatDescription = (desc?: string) => {
+    if (!desc) return "This uniquely crafted t-shirt blends comfort with expressive design, created to match a wide range of personal styles. The artwork features soft, minimal strokes that highlight subtle elegance while keeping the look modern.";
+
+    if (desc.includes('<div') || desc.includes('<h4')) {
+        return desc;
+    }
+
+    let clean = desc.replace(/\s{2,}/g, ' ').trim();
+
+    // Split by sections if they are just text
+    clean = clean.replace('🛠 Product Specifications & Quality Assurance', '<div style="margin-bottom: 15px;"><strong style="color: #0d375b; font-size: 11px; display: block; margin-bottom: 5px;">🛠 Product Specifications & Quality Assurance</strong>');
+    clean = clean.replace(/(Material:|Fabric Weight:|Finish:|Fit:|Durability:)/g, '<br/><span style="color: #64748b; font-weight: 700;">$1</span>');
+    clean = clean.replace('🧺 Care Instructions:', '</div><div style="background: #f1f5f9; padding: 8px; border-radius: 6px; border-left: 3px solid #0d375b;"><strong style="color: #0d375b; font-size: 11px; display: block; margin-bottom: 3px;">🧺 Care Instructions:</strong>');
+
+    if (clean.includes('Care Instructions:')) {
+        clean += '</div>';
+    }
+
+    return clean;
+
+};
 
 const MyShop = () => {
     const navigate = useNavigate();
@@ -36,10 +156,14 @@ const MyShop = () => {
     // STATE FOR POPUPS
     const [rejectionPopup, setRejectionPopup] = useState<{ show: boolean, reason: string } | null>(null);
     const [previewPopup, setPreviewPopup] = useState<DesignItem | null>(null);
+    const [deleteConfirmation, setDeleteConfirmation] = useState<DesignItem | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const [selectedColor, setSelectedColor] = useState('#e5e5e5'); // Default color
     const [selectedSize, setSelectedSize] = useState('M');         // Default size
     const [designerInfo, setDesignerInfo] = useState({ name: 'Designer', shopName: 'Cre8tify Studio', profileImg: '/img/profile-picture.png' });
+    const [isLoading, setIsLoading] = useState(true);
+    const isInitialLoad = useRef(true);
 
     const VARIANT_COLORS = [
         { name: 'White', hex: '#FFFFFF', isAvailable: true },
@@ -148,7 +272,7 @@ const MyShop = () => {
                     id: item._id, // MongoDB uses _id
                     title: item.title,
                     price: item.price,
-                    image: item.mockupImages[0], // Take first mockup
+                    image: (item.mockupImages && item.mockupImages.length > 0) ? item.mockupImages[0] : '/img/shop1.png', // Take first mockup
                     status: item.status === 'Pending' ? 'Submitted' : item.status,
                     updatedDate: new Date(item.createdAt).toLocaleDateString('en-GB', {
                         day: 'numeric', month: 'short', year: 'numeric'
@@ -160,20 +284,36 @@ const MyShop = () => {
                     tshirtColor: item.tshirtColor,
                     frontDesign: item.frontDesign,
                     frontPrintArea: item.frontPrintArea,
-                    frontPrintAreaPx: item.frontPrintAreaPx
+                    frontPrintAreaPx: item.frontPrintAreaPx,
+                    backDesign: item.backDesign,
+                    backPrintArea: item.backPrintArea,
+                    backPrintAreaPx: item.backPrintAreaPx,
+                    neckDesign: item.neckDesign,
+                    neckPrintArea: item.neckPrintArea,
+                    neckPrintAreaPx: item.neckPrintAreaPx,
+                    foldedDesign: item.foldedDesign,
+                    foldedPrintArea: item.foldedPrintArea,
+                    foldedPrintAreaPx: item.foldedPrintAreaPx,
+                    allowCustomization: item.allowCustomization,
+                    allowEditRequests: item.allowEditRequests
                 }));
 
                 setDbDesigns(formattedDB);
                 // Combine: Newest DB designs first, then hardcoded ones
                 setAllDesigns([...formattedDB, ...hardcodedDesigns]);
-            } catch (error) {
+                setIsLoading(false);
+                isInitialLoad.current = false;
+            } catch (error: any) {
                 console.error("Failed to fetch designs", error);
-                setAllDesigns(hardcodedDesigns); // Fallback to just hardcoded on error
+                alert(`Shop Sync Error: ${error.message}`); // 🟢 DEBUG ALERT
+                setIsLoading(false);
+                isInitialLoad.current = false;
+                setAllDesigns(hardcodedDesigns);
             }
         };
 
         fetchMyDesigns();
-        
+
         // 🟢 REAL-TIME POLLING: Check for status updates every 15 seconds
         const interval = setInterval(fetchMyDesigns, 15000);
         return () => clearInterval(interval);
@@ -203,15 +343,45 @@ const MyShop = () => {
         drafts: allDesigns.filter(d => d.status === 'Draft').length,
     };
 
+    const handleDelete = async (id: number) => {
+        const storedUser = localStorage.getItem('userInfo');
+        if (!storedUser) return;
+        const { token } = JSON.parse(storedUser);
+
+        setIsDeleting(true);
+        try {
+            const response = await fetch(`${API_URL}/api/products/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                // Update local state
+                setAllDesigns(prev => prev.filter(d => d.id !== id));
+                setDbDesigns(prev => prev.filter(d => d.id !== id));
+                setDeleteConfirmation(null);
+            } else {
+                const err = await response.json();
+                alert(err.message || "Failed to delete design");
+            }
+        } catch (error) {
+            console.error("Delete error:", error);
+            alert("An error occurred while deleting the design.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const handleEdit = (design: DesignItem) => {
         // 🟢 Send them back to the TOOL, not the SUBMIT page
         navigate('/design-tool', {
             state: {
                 isEdit: true,
-                // We pass the canvasState (layers, positions, text) 
+                // we pass the canvasState (layers, positions, text) 
                 // so the DesignTool can "rebuild" the design
                 savedLayers: (design as any).canvasState,
-                selectedTshirtColor: design.tshirtColor
+                selectedTshirtColor: design.tshirtColor,
+                originalDesign: design // Pass the full design object to preserve flags
             }
         });
     };
@@ -296,15 +466,21 @@ const MyShop = () => {
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc' }}>
 
                 {/* HEADER */}
-                <Header 
-                    mode="search" 
-                    onSearch={(q) => setSearchQuery(q)} 
-                    showCart={false} 
+                <Header
+                    mode="search"
+                    onSearch={(q) => setSearchQuery(q)}
+                    showCart={false}
                     title="My Shop"
                     userRole="designer"
                 />
 
-                <div className="content-wrapper" style={{ padding: '20px', flex: 1, maxWidth: '700px', margin: '0 auto', width: '100%' }}>
+                <div className="content-wrapper" style={{ padding: '0 20px 20px 20px', flex: 1, maxWidth: '700px', margin: '0 auto', width: '100%', position: 'relative' }}>
+                    {isLoading && (
+                        <div style={{ position: 'absolute', top: '100px', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10 }}>
+                            <div style={{ width: '40px', height: '40px', border: '3px solid #f3f3f3', borderTop: '3px solid #0d375b', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                            <p style={{ marginTop: '10px', fontSize: '10px', color: '#64748b', fontWeight: '600' }}>Fetching your shop data...</p>
+                        </div>
+                    )}
 
                     {/* STATS */}
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between', marginBottom: '25px' }}>
@@ -357,28 +533,42 @@ const MyShop = () => {
                                                 )}
                                             </>
                                         ) : (
-                                            <MockupPreview
-                                                mockupSrc="/img/womenfront-mockup.png"
-                                                maskSrc="/img/womenfront-mockup.png"
-                                                maskSize="contain"
-                                                maskPosition="center"
-                                                tshirtColor={design.tshirtColor || '#ffffff'}
-                                                printArea={design.frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 }}
-                                                designSrc={design.frontDesign}
-                                                overallScale={1.5}
-                                            />
+                                            <div style={{ position: 'relative', width: '100%', aspectRatio: '1 / 1', maxHeight: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                <MockupPreview
+                                                    mockupSrc="/img/womenfront-mockup.png"
+                                                    maskSrc="/img/womenfront-mockup.png"
+                                                    maskSize="contain"
+                                                    maskPosition="center"
+                                                    tshirtColor={design.tshirtColor || '#ffffff'}
+                                                    printArea={design.frontPrintArea || { top: '56%', left: '49%', width: '30%', height: '27%', rotation: 0 }}
+                                                    designSrc={design.frontDesign}
+                                                    canvasState={design.canvasState}
+                                                    designScale={1.0}
+                                                    overallScale={1.5}
+                                                />
+                                            </div>
                                         )}
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                     <div style={{ fontWeight: '800', fontSize: '10px', fontFamily: '"Outfit", sans-serif', color: '#0f172a', letterSpacing: '-0.2px' }}>{design.title}</div>
-                                    <div style={{ background: '#f1f5f9', padding: '3px 6px', borderRadius: '4px', fontSize: '7px', fontWeight: '800', color: '#0d375b', border: '1px solid #e2e8f0' }}>LKR {design.price}</div>
+                                    <div style={{ background: '#f1f5f9', padding: '3px 6px', borderRadius: '4px', fontSize: '7px', fontWeight: '800', color: '#0d375b', border: '1px solid #e2e8f0' }}>LKR {design.price.toLocaleString()}</div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
                                     {/* 🟢 UPDATED PREVIEW CLICK */}
                                     <ActionButton text="Preview" onClick={() => openPreview(design)} />
                                     <ActionButton text="Edit" onClick={() => handleEdit(design)} />
-                                    <ActionButton text="Delete" isDestructive={true} onClick={() => alert(`Deleting ${design.title}`)} />
+                                    <ActionButton
+                                        text="Delete"
+                                        isDestructive={true}
+                                        onClick={() => {
+                                            if (design.status === 'hardcoded') {
+                                                alert("Cannot delete hardcoded demonstration designs.");
+                                            } else {
+                                                setDeleteConfirmation(design);
+                                            }
+                                        }}
+                                    />
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '6px', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>📅 {design.updatedDate}</span>
@@ -447,15 +637,17 @@ const MyShop = () => {
                                         <img src={previewPopup.image} alt={previewPopup.title} style={{ width: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.15))' }} />
                                     </div>
                                 ) : (
-                                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                                    <div style={{ position: 'relative', width: '100%', aspectRatio: '1 / 1', maxHeight: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                         <MockupPreview
                                             mockupSrc="/img/womenfront-mockup.png"
                                             maskSrc="/img/womenfront-mockup.png"
                                             maskSize="contain"
                                             maskPosition="center"
                                             tshirtColor={selectedColor}
-                                            printArea={previewPopup.frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 }}
+                                            printArea={previewPopup.frontPrintArea || { top: '56%', left: '49%', width: '30%', height: '27%', rotation: 0 }}
                                             designSrc={previewPopup.frontDesign}
+                                            canvasState={previewPopup.canvasState}
+                                            designScale={1.0}
                                             overallScale={1.5}
                                         />
                                     </div>
@@ -474,13 +666,14 @@ const MyShop = () => {
                             </div>
 
                             <div style={{ marginBottom: '15px' }}>
-                                <h3 style={{ fontSize: '9px', fontWeight: '700', fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', marginBottom: '5px', color: '#1e293b' }}>Description</h3>
-                                <p style={{ fontSize: '8px', color: '#475569', lineHeight: '1.7' }}>{previewPopup.description || "This uniquely crafted t-shirt blends comfort with expressive design, created to match a wide range of personal styles. The artwork features soft, minimal strokes that highlight subtle elegance while keeping the look modern."}</p>
+                                <h3 style={{ fontSize: '9px', fontWeight: '700', marginBottom: '5px', color: '#1e293b' }}>Description</h3>
+                                <div style={{ fontSize: '8px', color: '#475569', lineHeight: '1.7' }} dangerouslySetInnerHTML={{ __html: formatDescription(previewPopup.description) }} />
                             </div>
 
                             {/* 🟢 INTERACTIVE COLORS */}
                             <div style={{ marginBottom: '13px' }}>
-                                <div style={{ fontSize: '8px', fontWeight: '700', fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', marginBottom: '5px', color: '#1e293b' }}>Colors</div>
+                                <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '8px', color: '#0f172a', fontFamily: '"Outfit", sans-serif' }}>Colors</div>
+
                                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                     {VARIANT_COLORS.map((c) => (
                                         <div
@@ -501,7 +694,8 @@ const MyShop = () => {
 
                             {/* 🟢 INTERACTIVE SIZES */}
                             <div style={{ marginBottom: '18px' }}>
-                                <div style={{ fontSize: '8px', fontWeight: '700', fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', marginBottom: '5px', color: '#1e293b' }}>Sizes</div>
+                                <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '8px', color: '#0f172a', fontFamily: '"Outfit", sans-serif' }}>Sizes</div>
+
                                 <div style={{ display: 'flex', gap: '5px' }}>
                                     {VARIANT_SIZES.map((s) => (
                                         <div
@@ -542,6 +736,50 @@ const MyShop = () => {
                                 </div>
                                 <button style={{ background: '#0f172a', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', fontSize: '6px', fontWeight: '700', cursor: 'pointer' }}>Visit Shop</button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* DELETE CONFIRMATION POPUP */}
+            {deleteConfirmation && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4000, animation: 'fadeIn 0.2s ease-out', backdropFilter: 'blur(4px)' }}>
+                    <div style={{ background: 'white', width: '300px', padding: '25px', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', animation: 'scaleUp 0.3s ease-out', textAlign: 'center' }}>
+                        <div style={{ width: '45px', height: '45px', background: '#fee2e2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto' }}>
+                            <img src="/img/delete.png" alt="Delete" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                        </div>
+                        <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#111827', marginBottom: '8px', fontFamily: '"Outfit", sans-serif' }}>Delete Design?</h2>
+                        <p style={{ fontSize: '10px', color: '#6b7280', lineHeight: '1.5', marginBottom: '20px' }}>
+                            Are you sure you want to delete <strong style={{ color: '#111827' }}>"{deleteConfirmation.title}"</strong>? This action cannot be undone.
+                        </p>
+
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button
+                                onClick={() => setDeleteConfirmation(null)}
+                                disabled={isDeleting}
+                                style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '9px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
+                                onMouseOver={(e) => { e.currentTarget.style.background = '#f9fafb' }}
+                                onMouseOut={(e) => { e.currentTarget.style.background = 'white' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleDelete(deleteConfirmation.id)}
+                                disabled={isDeleting}
+                                style={{
+                                    flex: 1, padding: '10px', borderRadius: '10px', border: 'none',
+                                    background: isDeleting ? '#9ca3af' : '#ef4444',
+                                    color: 'white', fontSize: '9px', fontWeight: '600',
+                                    cursor: isDeleting ? 'not-allowed' : 'pointer',
+                                    boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.2)',
+                                    transition: 'all 0.2s',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'
+                                }}
+                                onMouseOver={(e) => { if (!isDeleting) e.currentTarget.style.background = '#dc2626' }}
+                                onMouseOut={(e) => { if (!isDeleting) e.currentTarget.style.background = '#ef4444' }}
+                            >
+                                {isDeleting ? 'Deleting...' : 'Delete Now'}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -587,6 +825,7 @@ type MockupPreviewProps = {
     areaScale?: number;
     designScale?: number;
     overallScale?: number;
+    canvasState?: { imageLayers: ImageLayer[]; textLayers: TextConfig[] };
 };
 
 const MockupPreview = ({
@@ -598,9 +837,18 @@ const MockupPreview = ({
     printArea,
     designSrc,
     areaScale = 1.0,
-    designScale = 0.7,
-    overallScale = 1.0
+    designScale = 1.0,
+    overallScale = 1.0,
+    canvasState
 }: MockupPreviewProps) => {
+    // Combine and sort layers by zIndex
+    const allLayers = [
+        ...(canvasState?.imageLayers?.map(l => ({ ...l, layerType: 'image' })) || []),
+        ...(canvasState?.textLayers?.map(t => ({ ...t, layerType: 'text' })) || [])
+    ].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+
+    const hasLayers = allLayers.length > 0;
+
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
             <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale})`, transformOrigin: 'center center', position: 'relative' }}>
@@ -616,18 +864,18 @@ const MockupPreview = ({
                 )}
 
                 {/* 2. Mockup Image with Shadows (Top) */}
-                <img 
-                    src={mockupSrc} 
-                    alt="Mockup" 
-                    style={{ 
-                        width: '100%', height: '100%', objectFit: 'contain', 
+                <img
+                    src={mockupSrc}
+                    alt="Mockup"
+                    style={{
+                        width: '100%', height: '100%', objectFit: 'contain',
                         position: 'relative', zIndex: 1,
                         mixBlendMode: 'multiply',
                         filter: 'contrast(1.0) brightness(0.95) saturate(0)'
-                    }} 
+                    }}
                 />
 
-                {printArea && designSrc && (
+                {printArea && (hasLayers || designSrc) && (
                     <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                         WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
@@ -642,10 +890,103 @@ const MockupPreview = ({
                             transformOrigin: 'center center', display: 'flex', alignItems: 'center',
                             justifyContent: 'center', overflow: 'hidden'
                         }}>
-                            <img src={designSrc} alt="Design" style={{
-                                width: '100%', height: '100%', objectFit: 'contain',
-                                transform: `scale(${designScale})`, transformOrigin: 'center center'
-                            }} />
+                            {designSrc ? (
+                                <img src={designSrc} alt="Design" style={{
+                                    width: '100%', height: '100%', objectFit: 'contain',
+                                    transform: `scale(${designScale})`, transformOrigin: 'center center'
+                                }} />
+                            ) : hasLayers ? (
+                                <div style={{ position: 'relative', width: '100%', height: '100%', isolation: 'isolate' }}>
+                                    {allLayers.map((layer: any) => (
+                                        layer.layerType === 'image' ? (
+                                            <img
+                                                key={layer.id}
+                                                src={layer.src}
+                                                style={{
+                                                    position: 'absolute',
+                                                    zIndex: layer.zIndex,
+                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
+                                                    mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
+                                                    opacity: 0.95,
+                                                    width: 'auto',
+                                                    height: 'auto'
+                                                }}
+                                            />
+                                        ) : (
+                                            <div
+                                                key={layer.id}
+                                                style={{
+                                                    position: 'absolute',
+                                                    zIndex: layer.zIndex,
+                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (designScale || 1)}) rotate(${layer.rotation}deg)`,
+                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
+                                                }}
+                                            >
+                                                {layer.styleId === 'default' && (
+                                                    <>
+                                                        {(layer.curve !== 0 && layer.curve !== undefined) ? (
+                                                            <CurvedText
+                                                                id={layer.id}
+                                                                text={layer.text}
+                                                                fontFamily={layer.font}
+                                                                color={layer.color}
+                                                                curve={layer.curve ?? 0}
+                                                                letterSpacing={layer.letterSpacing || 0}
+                                                            />
+                                                        ) : (
+                                                            <div style={{
+                                                                fontFamily: layer.font,
+                                                                color: layer.color,
+                                                                fontSize: '24px',
+                                                                fontWeight: 'bold',
+                                                                whiteSpace: 'nowrap',
+                                                                letterSpacing: `${layer.letterSpacing || 0}px`,
+                                                                textShadow: '0px 1px 3px rgba(0,0,0,0.3)'
+                                                            }}>
+                                                                {layer.text}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                                {layer.styleId === 'style-wave' && (
+                                                    <div style={{
+                                                        fontFamily: layer.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900',
+                                                        textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b',
+                                                        transform: 'skewX(-10deg)', fontStyle: 'italic',
+                                                        letterSpacing: `${layer.letterSpacing || 0}px`
+                                                    }}>
+                                                        {layer.text}
+                                                    </div>
+                                                )}
+                                                {layer.styleId === 'style-stack' && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${layer.letterSpacing || 0}px` }}>
+                                                        {[1, 2, 3].map((i) => (
+                                                            <span key={i} style={{ fontFamily: layer.font, color: i === 2 ? layer.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${layer.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{layer.text}</span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {layer.styleId === 'style-fish' && (
+                                                    <div style={{ fontFamily: layer.font, color: layer.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(layer.letterSpacing || 0) - 1}px` }}>
+                                                        {layer.text}
+                                                    </div>
+                                                )}
+                                                {!['default', 'style-wave', 'style-stack', 'style-fish'].includes(layer.styleId || '') && (
+                                                    <CurvedText
+                                                        id={layer.id} text={layer.text} styleId={layer.styleId} fontFamily={layer.font} color={layer.color}
+                                                        curve={layer.styleId === 'style-circle' ? (layer.curve ?? 120) : (layer.curve ?? 0)}
+                                                        letterSpacing={layer.letterSpacing || 0}
+                                                    />
+                                                )}
+                                            </div>
+                                        )
+                                    ))}
+                                </div>
+                            ) : (
+                                <img src={designSrc} alt="Design" style={{
+                                    width: '100%', height: '100%', objectFit: 'contain',
+                                    transform: `scale(${designScale})`, transformOrigin: 'center center'
+                                }} />
+                            )}
                         </div>
                     </div>
                 )}

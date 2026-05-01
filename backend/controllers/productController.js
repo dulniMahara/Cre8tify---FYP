@@ -44,7 +44,7 @@ const handleVirtualTryOn = async (req, res) => {
 // @desc    Create new product
 const createProduct = async (req, res) => {
     const {
-        title, description, baseProduct, category, price, markup, mockupImages, canvasState, tshirtColor, allowUserCustomization, allowEditRequests, status,
+        title, description, baseProduct, category, price, markup, mockupImages, canvasState, tshirtColor, allowCustomization, allowEditRequests, status,
         frontDesign, frontPrintArea, frontPrintAreaPx,
         backDesign, backPrintArea, backPrintAreaPx,
         neckDesign, neckPrintArea, neckPrintAreaPx,
@@ -63,7 +63,7 @@ const createProduct = async (req, res) => {
             mockupImages,
             canvasState,
             tshirtColor,
-            allowCustomization: allowUserCustomization,
+            allowCustomization: allowCustomization,
             allowEditRequests,
             status: status || 'Pending',
             isApproved: false,
@@ -88,7 +88,7 @@ const getProducts = async (req, res) => {
     try {
         const { category } = req.query;
         let query = { status: 'Approved' };
-        
+
         if (category && category !== 'All') {
             query.category = { $regex: new RegExp(`^${category}$`, 'i') };
         }
@@ -96,9 +96,10 @@ const getProducts = async (req, res) => {
         const products = await Product.find(query)
             .populate('designer', 'name shopName bio profileImage')
             .sort({ createdAt: -1 });
-            
+
         res.status(200).json(products);
     } catch (error) {
+        console.error("[ProductController] Error fetching products:", error);
         res.status(500).json({ message: "Error fetching products" });
     }
 };
@@ -107,10 +108,12 @@ const getProducts = async (req, res) => {
 const getDesignerProducts = async (req, res) => {
     try {
         const products = await Product.find({ designer: req.user._id })
+            .select('title price mockupImages status markup salesCount updatedAt')
             .populate('designer', 'name shopName bio profileImage')
             .sort({ createdAt: -1 });
         res.status(200).json(products);
     } catch (error) {
+        console.error("[ProductController] Error fetching designer products:", error);
         res.status(500).json({ message: "Error fetching your designs" });
     }
 };
@@ -120,23 +123,23 @@ const getPendingProducts = async (req, res) => {
     try {
         console.log("[ProductController] Admin fetching pending products...");
         // Use case-insensitive search just in case
-        const products = await Product.find({ 
-            status: { $regex: /^pending$/i } 
+        const products = await Product.find({
+            status: { $regex: /^pending$/i }
         })
-        .populate({
-            path: 'designer',
-            select: 'name email shopName'
-        })
-        .sort({ createdAt: -1 })
-        .lean(); // Use lean for faster, read-only results
-        
+            .populate({
+                path: 'designer',
+                select: 'name email shopName'
+            })
+            .sort({ createdAt: -1 })
+            .lean(); // Use lean for faster, read-only results
+
         console.log(`[ProductController] Found ${products ? products.length : 0} pending products.`);
         res.status(200).json(products || []);
     } catch (error) {
         console.error("[ProductController] ERROR fetching pending:", error);
-        res.status(500).json({ 
-            message: "Server Error while fetching pending products", 
-            error: error.message 
+        res.status(500).json({
+            message: "Server Error while fetching pending products",
+            error: error.message
         });
     }
 };
@@ -167,7 +170,7 @@ const updateProductStatus = async (req, res) => {
         await Notification.create({
             user: product.designer,
             title: `Design ${status}`,
-            message: status === 'Approved' 
+            message: status === 'Approved'
                 ? `Great news! Your design "${product.title}" has been approved and is now live in the collection.`
                 : `Your design "${product.title}" was not approved. Reason: ${rejectionReason || "Please check details in My Shop."}`,
             type: 'status_update'
@@ -179,11 +182,34 @@ const updateProductStatus = async (req, res) => {
     }
 };
 
+// @desc    Delete a product
+// @route   DELETE /api/products/:id
+const deleteProduct = async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        // Check if the user is the owner of the product
+        if (product.designer.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ message: "Not authorized to delete this product" });
+        }
+
+        await Product.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: "Product deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error deleting product", error: error.message });
+    }
+};
+
 module.exports = {
     createProduct,
     getProducts,
     getDesignerProducts,
     getPendingProducts,
     updateProductStatus,
-    handleVirtualTryOn
+    handleVirtualTryOn,
+    deleteProduct
 };

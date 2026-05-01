@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import '../styles/dashboard.css'; 
+import { getUserInfo, getToken } from '../utils/auth';
+import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000";
 
@@ -9,14 +10,14 @@ const cardStyle = { background: '#0f172a', borderRadius: '12px', overflow: 'hidd
 const imageContainerStyle = { background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px', position: 'relative' as const };
 const approveBtnStyle = { flex: 1, padding: '10px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' as const, fontSize: '12px', cursor: 'pointer' };
 const rejectBtnStyle = { flex: 1, padding: '10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' as const, fontSize: '12px', cursor: 'pointer' };
-const cancelBtnStyle = { 
-    background: 'transparent', 
-    color: '#94a3b8', 
-    padding: '10px 20px', 
-    borderRadius: '8px', 
-    border: '1px solid rgba(255,255,255,0.1)', 
-    fontWeight: 'bold' as const, 
-    cursor: 'pointer' 
+const cancelBtnStyle = {
+    background: 'transparent',
+    color: '#94a3b8',
+    padding: '10px 20px',
+    borderRadius: '8px',
+    border: '1px solid rgba(255,255,255,0.1)',
+    fontWeight: 'bold' as const,
+    cursor: 'pointer'
 };
 const tabBtnStyle: React.CSSProperties = { border: '1px solid rgba(255,255,255,0.1)', padding: '10px 25px', borderRadius: '30px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', minWidth: '120px', textAlign: 'center' };
 
@@ -118,7 +119,7 @@ const BackHeader = ({ title }: { title: string }) => {
     const navigate = useNavigate();
     return (
         <div style={{ padding: '15px 30px', background: '#0f2950', display: 'flex', alignItems: 'center', gap: '15px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', height: '60px' }}>
-            <button 
+            <button
                 onClick={() => navigate('/admin-dashboard')}
                 style={{ background: 'none', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
@@ -139,11 +140,11 @@ const MarketplaceOperations = () => {
     const [approvals, setApprovals] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
     const [orders, setOrders] = useState<any[]>([]);
-    
+
     // Order Filtering & Search
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
-    
+
     // Approvals State
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -166,7 +167,7 @@ const MarketplaceOperations = () => {
         name: string; category: string; material: string; basePrice: number | string;
         image: string; colors: string[]; sizes: string[]; fit: string; gsm: string;
     }>({
-        name: '', category: '', material: 'Premium Cotton', basePrice: '', 
+        name: '', category: '', material: 'Premium Cotton', basePrice: '',
         image: '', colors: [], sizes: [], fit: 'Standard', gsm: '200 GSM'
     });
 
@@ -177,7 +178,7 @@ const MarketplaceOperations = () => {
     const [payoutForm, setPayoutForm] = useState({ designerId: '', name: '', amount: '', method: 'Bank Transfer', note: '' });
     const [allOrders, setAllOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-    
+
     const activeTabRef = React.useRef(activeTab);
     const handleTabChange = (tab: string) => {
         setActiveTab(tab);
@@ -188,7 +189,7 @@ const MarketplaceOperations = () => {
         const fetchAll = async () => {
             setLoading(true);
             console.log("[Admin] Initializing parallel data fetch...");
-            
+
             // We'll run them all in parallel but won't let one hang the whole UI
             // Payouts can be slow, so we prioritize the others
             try {
@@ -209,11 +210,10 @@ const MarketplaceOperations = () => {
     }, []);
 
     const fetchData = async (tab: string) => {
-        const storedUser = localStorage.getItem('userInfo');
-        if (!storedUser) return;
-        const parsedUser = JSON.parse(storedUser);
-        const { token } = parsedUser;
-        
+        const parsedUser = getUserInfo('admin');
+        if (!parsedUser) return;
+        const token = getToken('admin');
+
         if (parsedUser.role !== 'admin') return;
 
         try {
@@ -249,7 +249,7 @@ const MarketplaceOperations = () => {
             const result = await res.json();
             const validatedData = Array.isArray(result) ? result : [];
             console.log(`[AdminFetch] ${tab} loaded: ${validatedData.length} items`);
-            
+
             if (tab === 'Approvals') setApprovals(validatedData);
             else if (tab === 'Categories') setCategories(validatedData);
             else if (tab === 'Orders') {
@@ -263,7 +263,7 @@ const MarketplaceOperations = () => {
 
     // Sub-tab: Approvals Actions
     const handleStatusUpdate = async (id: string, status: string, rejectionReason?: string) => {
-        const { token } = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const token = getToken('admin');
         try {
             const res = await fetch(`${API_URL}/api/products/${id}/status`, {
                 method: 'PUT',
@@ -281,7 +281,7 @@ const MarketplaceOperations = () => {
 
     // Sub-tab: Orders Actions
     const updateOrderStatus = async (id: string, status: string) => {
-        const { token } = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const token = getToken('admin');
         try {
             await fetch(`${API_URL}/api/admin/orders/${id}/status`, {
                 method: 'PATCH',
@@ -294,7 +294,7 @@ const MarketplaceOperations = () => {
 
     const handleRefund = async (id: string) => {
         if (!window.confirm("Are you sure you want to refund this order? This will update financial records.")) return;
-        const { token } = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const token = getToken('admin');
         try {
             const res = await fetch(`${API_URL}/api/admin/orders/${id}/refund`, {
                 method: 'POST',
@@ -308,7 +308,7 @@ const MarketplaceOperations = () => {
     };
 
     const submitPayout = async () => {
-        const { token } = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const token = getToken('admin');
         try {
             const res = await fetch(`${API_URL}/api/admin/financial/payout`, {
                 method: 'POST',
@@ -330,10 +330,10 @@ const MarketplaceOperations = () => {
 
     // Sub-tab: Categories Actions
     const handleSaveCategory = async () => {
-        const { token } = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const token = getToken('admin');
         const Method = editingCategory ? 'PUT' : 'POST';
         const Url = editingCategory ? `${API_URL}/api/base-products/${editingCategory._id}` : `${API_URL}/api/base-products`;
-        
+
         const payload = {
             ...categoryForm
         };
@@ -357,7 +357,7 @@ const MarketplaceOperations = () => {
 
     const handleDeleteCategory = async (id: string) => {
         if (!window.confirm("Delete this base template? This action cannot be undone.")) return;
-        const { token } = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const token = getToken('admin');
         try {
             await fetch(`${API_URL}/api/base-products/${id}`, {
                 method: 'DELETE',
@@ -372,7 +372,7 @@ const MarketplaceOperations = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
             {approvals.map((product: any) => (
                 <div key={product._id} style={cardStyle}>
-                    <div style={{...imageContainerStyle, height: '220px', padding: '15px'}}>
+                    <div style={{ ...imageContainerStyle, height: '220px', padding: '15px' }}>
                         <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                             {!product.frontDesign ? (
                                 <img
@@ -411,13 +411,13 @@ const MarketplaceOperations = () => {
                     </div>
                 </div>
             ))}
-            {approvals.length === 0 && !loading && <p style={{color: '#64748b', fontSize: '13px'}}>No pending approvals.</p>}
+            {approvals.length === 0 && !loading && <p style={{ color: '#64748b', fontSize: '13px' }}>No pending approvals.</p>}
         </div>
     );
 
     const renderCategories = () => {
         const groups = ['Women', 'Men', 'Kids'];
-        
+
         return (
             <div>
 
@@ -459,14 +459,14 @@ const MarketplaceOperations = () => {
                         </div>
                     );
                 })}
-                {categories.length === 0 && !loading && <p style={{padding: '20px', fontSize: '13px', color: '#64748b', textAlign: 'center', background: 'white', borderRadius: '12px'}}>No Base T-Shirts configured.</p>}
+                {categories.length === 0 && !loading && <p style={{ padding: '20px', fontSize: '13px', color: '#64748b', textAlign: 'center', background: 'white', borderRadius: '12px' }}>No Base T-Shirts configured.</p>}
             </div>
         );
     };
 
     const renderOrders = () => {
         const statuses = ['All', 'Processing', 'Printing', 'Shipped', 'Delivered', 'Cancelled'];
-        
+
         const getStatusColor = (status: string) => {
             switch (status) {
                 case 'Pending': return { bg: '#fef3c7', text: '#92400e' };
@@ -481,9 +481,9 @@ const MarketplaceOperations = () => {
         // Compute filtered orders during render for accuracy
         const filteredOrders = allOrders.filter((order: any) => {
             const matchesStatus = filterStatus === 'All' || order.status === filterStatus;
-            const matchesSearch = (order._id?.toLowerCase() || '').includes(searchQuery.toLowerCase()) || 
-                                 (order.user?.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-                                 (order.user?.email?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+            const matchesSearch = (order._id?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                (order.user?.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                (order.user?.email?.toLowerCase() || '').includes(searchQuery.toLowerCase());
             return matchesStatus && matchesSearch;
         });
 
@@ -493,8 +493,8 @@ const MarketplaceOperations = () => {
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '35px', gap: '20px', flexWrap: 'wrap', marginTop: '10px' }}>
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
                         {statuses.map(s => (
-                            <button 
-                                key={s} 
+                            <button
+                                key={s}
                                 onClick={() => setFilterStatus(s)}
                                 style={{
                                     padding: '8px 18px',
@@ -514,16 +514,16 @@ const MarketplaceOperations = () => {
                         ))}
                     </div>
                     <div style={{ flex: 1, maxWidth: '280px', position: 'relative' }}>
-                        <input 
-                            type="text" 
-                            placeholder="Search Order ID or Customer..." 
+                        <input
+                            type="text"
+                            placeholder="Search Order ID or Customer..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             style={{ ...inputStyle, paddingLeft: '40px', height: '40px', borderRadius: '10px' }}
                         />
-                        <img 
-                            src="/img/search.png" 
-                            style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', opacity: 0.6 }} 
+                        <img
+                            src="/img/search.png"
+                            style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', opacity: 0.6 }}
                             alt="search"
                         />
                     </div>
@@ -552,8 +552,8 @@ const MarketplaceOperations = () => {
                                         </td>
                                         <td style={tdStyle}>
                                             <div style={{ width: '50px', height: '50px', background: '#1e293b', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                                <img 
-                                                    src={order.orderItems?.[0]?.product?.mockupImages?.[0] || order.orderItems?.[0]?.image || '/img/womenfront-mockup.png'} 
+                                                <img
+                                                    src={order.orderItems?.[0]?.product?.mockupImages?.[0] || order.orderItems?.[0]?.image || '/img/womenfront-mockup.png'}
                                                     style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0.9)' }} alt=""
                                                 />
                                             </div>
@@ -574,12 +574,12 @@ const MarketplaceOperations = () => {
                                             LKR {order.totalPrice ? Number(order.totalPrice).toLocaleString() : '0'}
                                         </td>
                                         <td style={tdStyle}>
-                                            <span style={{ 
-                                                padding: '5px 12px', 
-                                                borderRadius: '20px', 
-                                                fontSize: '11px', 
+                                            <span style={{
+                                                padding: '5px 12px',
+                                                borderRadius: '20px',
+                                                fontSize: '11px',
                                                 fontWeight: '700',
-                                                background: getStatusColor(order.status || '').bg, 
+                                                background: getStatusColor(order.status || '').bg,
                                                 color: getStatusColor(order.status || '').text,
                                                 display: 'inline-block',
                                                 minWidth: '70px',
@@ -589,22 +589,22 @@ const MarketplaceOperations = () => {
                                             </span>
                                         </td>
                                         <td style={tdStyle}>
-                                             <select 
-                                                 value={order.status} 
-                                                 onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                                                 style={{ padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '11px', fontWeight: 'bold' }}
-                                             >
-                                                 {['Processing', 'Printing', 'Shipped', 'Delivered', 'Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
-                                             </select>
-                                             {order.isPaid && !order.isRefunded && (
-                                                 <button 
-                                                     onClick={() => handleRefund(order._id)}
-                                                     style={{ marginLeft: '10px', padding: '6px 12px', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
-                                                 >
-                                                     Refund
-                                                 </button>
-                                             )}
-                                         </td>
+                                            <select
+                                                value={order.status}
+                                                onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                                                style={{ padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '11px', fontWeight: 'bold' }}
+                                            >
+                                                {['Processing', 'Printing', 'Shipped', 'Delivered', 'Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                            {order.isPaid && !order.isRefunded && (
+                                                <button
+                                                    onClick={() => handleRefund(order._id)}
+                                                    style={{ marginLeft: '10px', padding: '6px 12px', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                                                >
+                                                    Refund
+                                                </button>
+                                            )}
+                                        </td>
                                     </tr>
                                 );
                             })}
@@ -624,64 +624,94 @@ const MarketplaceOperations = () => {
 
 
     const renderPayouts = () => (
-        <div style={{ padding: '0 20px' }}>
+        <div style={{ padding: '0 20px', textAlign: 'left' }}>
             {/* Revenue Summary Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '25px', marginBottom: '40px' }}>
-                <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #0d375b 0%, #1e40af 100%)', color: 'white' }}>
-                    <div style={{ fontSize: '14px', opacity: 0.8, marginBottom: '8px' }}>Total Revenue</div>
-                    <div style={{ fontSize: '28px', fontWeight: '900' }}>LKR {financialSummary?.totalRevenue?.toLocaleString() || '0'}.00</div>
-                    <div style={{ fontSize: '11px', marginTop: '10px', opacity: 0.7 }}>Across all paid orders</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '50px' }}>
+                <div style={{ ...cardStyle, padding: '30px', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(56, 189, 248, 0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Revenue</div>
+                        <div style={{ width: '32px', height: '32px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span style={{ color: '#38bdf8', fontSize: '16px' }}>$</span>
+                        </div>
+                    </div>
+                    <div style={{ fontSize: '32px', fontWeight: '800', color: '#f8fafc' }}>
+                        LKR {financialSummary?.totalRevenue?.toLocaleString() || '0'}.00
+                    </div>
+                    <div style={{ fontSize: '12px', marginTop: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <span style={{ color: '#22c55e' }}>↑ 100%</span> Across all paid orders
+                    </div>
                 </div>
-                <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: 'white' }}>
-                    <div style={{ fontSize: '14px', opacity: 0.8, marginBottom: '8px' }}>Pending Payouts</div>
-                    <div style={{ fontSize: '28px', fontWeight: '900' }}>LKR {financialSummary?.pendingPayouts?.toLocaleString() || '0'}.00</div>
-                    <div style={{ fontSize: '11px', marginTop: '10px', opacity: 0.7 }}>Owed to designers</div>
+
+                <div style={{ ...cardStyle, padding: '30px', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(245, 158, 11, 0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Pending Payouts</div>
+                        <div style={{ width: '32px', height: '32px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span style={{ color: '#f59e0b', fontSize: '16px' }}>◔</span>
+                        </div>
+                    </div>
+                    <div style={{ fontSize: '32px', fontWeight: '800', color: '#f8fafc' }}>
+                        LKR {financialSummary?.pendingPayouts?.toLocaleString() || '0'}.00
+                    </div>
+                    <div style={{ fontSize: '12px', marginTop: '12px', color: '#64748b' }}>Owed to designers</div>
                 </div>
-                <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white' }}>
-                    <div style={{ fontSize: '14px', opacity: 0.8, marginBottom: '8px' }}>Platform Profit</div>
-                    <div style={{ fontSize: '28px', fontWeight: '900' }}>LKR {financialSummary?.platformProfit?.toLocaleString() || '0'}.00</div>
-                    <div style={{ fontSize: '11px', marginTop: '10px', opacity: 0.7 }}>Net Service Fees</div>
+
+                <div style={{ ...cardStyle, padding: '30px', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Platform Profit</div>
+                        <div style={{ width: '32px', height: '32px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span style={{ color: '#10b981', fontSize: '16px' }}>📈</span>
+                        </div>
+                    </div>
+                    <div style={{ fontSize: '32px', fontWeight: '800', color: '#f8fafc' }}>
+                        LKR {financialSummary?.platformProfit?.toLocaleString() || '0'}.00
+                    </div>
+                    <div style={{ fontSize: '12px', marginTop: '12px', color: '#64748b' }}>Net Service Fees</div>
                 </div>
             </div>
 
-            <h3 style={{ marginBottom: '20px', color: '#0d375b', fontWeight: '800' }}>Designer Earnings & Settlements</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+                <h3 style={{ margin: 0, color: 'white', fontWeight: '700', fontSize: '20px' }}>Designer Earnings & Settlements</h3>
+                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Total Designers: {designerPayouts.length}</div>
+            </div>
+
             <div style={tableCardStyle}>
                 <table style={tableStyle}>
                     <thead>
                         <tr style={thStyle}>
-                            <th style={{ paddingLeft: '20px' }}>Designer</th>
-                            <th>Total Earned</th>
-                            <th>Already Paid</th>
-                            <th>Balance Owed</th>
-                            <th>Action</th>
+                            <th style={{ padding: '15px 20px' }}>Designer</th>
+                            <th style={{ padding: '15px 20px' }}>Total Earned</th>
+                            <th style={{ padding: '15px 20px' }}>Already Paid</th>
+                            <th style={{ padding: '15px 20px' }}>Balance Owed</th>
+                            <th style={{ padding: '15px 20px' }}>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {designerPayouts.map((d: any) => (
                             <tr key={d.id} style={tdRowStyle}>
-                                <td style={{ ...tdStyle, paddingLeft: '20px' }}>
-                                    <div style={{ fontWeight: 'bold' }}>{d.name}</div>
+                                <td style={{ ...tdStyle, padding: '16px 20px' }}>
+                                    <div style={{ fontWeight: '600', color: '#f8fafc' }}>{d.name}</div>
                                     <div style={{ fontSize: '11px', color: '#64748b' }}>{d.email}</div>
                                 </td>
                                 <td style={tdStyle}>LKR {d.totalEarned.toLocaleString()}.00</td>
                                 <td style={tdStyle}>LKR {d.alreadyPaid.toLocaleString()}.00</td>
-                                <td style={{ ...tdStyle, color: d.balance > 0 ? '#b91c1c' : '#059669', fontWeight: 'bold' }}>LKR {d.balance.toLocaleString()}.00</td>
+                                <td style={{ ...tdStyle, color: d.balance > 0 ? '#f43f5e' : '#10b981', fontWeight: '700' }}>LKR {d.balance.toLocaleString()}.00</td>
                                 <td style={tdStyle}>
-                                    <button 
+                                    <button
                                         disabled={d.balance <= 0}
                                         onClick={() => {
                                             setPayoutForm({ ...payoutForm, designerId: d.id, name: d.name, amount: d.balance.toString() });
                                             setShowPayoutModal(true);
                                         }}
-                                        style={{ 
-                                            padding: '8px 15px', 
-                                            background: d.balance > 0 ? '#0d375b' : '#94a3b8', 
-                                            color: 'white', 
-                                            border: 'none', 
-                                            borderRadius: '8px', 
+                                        style={{
+                                            padding: '8px 16px',
+                                            background: d.balance > 0 ? '#38bdf8' : 'rgba(148, 163, 184, 0.1)',
+                                            color: d.balance > 0 ? 'white' : '#64748b',
+                                            border: 'none',
+                                            borderRadius: '8px',
                                             cursor: d.balance > 0 ? 'pointer' : 'not-allowed',
-                                            fontWeight: 'bold',
-                                            fontSize: '11px'
+                                            fontWeight: '700',
+                                            fontSize: '11px',
+                                            transition: 'all 0.2s'
                                         }}
                                     >
                                         Process Payout
@@ -691,42 +721,43 @@ const MarketplaceOperations = () => {
                         ))}
                     </tbody>
                 </table>
-                {designerPayouts.length === 0 && <p style={{ padding: '20px', color: '#64748b', textAlign: 'center' }}>No designer records available.</p>}
+                {designerPayouts.length === 0 && <p style={{ padding: '40px', color: '#64748b', textAlign: 'center' }}>No designer records available.</p>}
             </div>
 
-            <h3 style={{ marginTop: '50px', marginBottom: '20px', color: '#0d375b', fontWeight: '800' }}>Recent Transaction History</h3>
+            <h3 style={{ marginTop: '60px', marginBottom: '25px', color: 'white', fontWeight: '700', fontSize: '20px' }}>Recent Transaction History</h3>
             <div style={tableCardStyle}>
                 <table style={tableStyle}>
                     <thead>
                         <tr style={thStyle}>
-                            <th style={{ paddingLeft: '20px' }}>Date</th>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Total Amount</th>
-                            <th>Payment</th>
+                            <th style={{ padding: '15px 20px' }}>Date</th>
+                            <th style={{ padding: '15px 20px' }}>Order ID</th>
+                            <th style={{ padding: '15px 20px' }}>Customer</th>
+                            <th style={{ padding: '15px 20px' }}>Total Amount</th>
+                            <th style={{ padding: '15px 20px' }}>Payment</th>
                         </tr>
                     </thead>
                     <tbody>
                         {allOrders.slice(0, 10).map((order: any) => (
                             <tr key={order._id} style={tdRowStyle}>
-                                <td style={{ ...tdStyle, paddingLeft: '20px', fontSize: '11px' }}>
+                                <td style={{ ...tdStyle, padding: '16px 20px', fontSize: '12px' }}>
                                     {new Date(order.createdAt).toLocaleDateString()}
                                 </td>
-                                <td style={{ ...tdStyle, fontWeight: 'bold' }}>
+                                <td style={{ ...tdStyle, fontWeight: '700', color: '#38bdf8' }}>
                                     #CR8-{order._id?.substring(order._id.length - 6).toUpperCase()}
                                 </td>
                                 <td style={tdStyle}>
-                                    <div style={{ fontWeight: '500' }}>{order.user?.name}</div>
+                                    <div style={{ fontWeight: '500', color: '#f1f5f9' }}>{order.user?.name}</div>
                                 </td>
-                                <td style={tdStyle}>LKR {order.totalPrice.toLocaleString()}.00</td>
+                                <td style={{ ...tdStyle, fontWeight: '600' }}>LKR {order.totalPrice.toLocaleString()}.00</td>
                                 <td style={tdStyle}>
-                                    <span style={{ 
-                                        padding: '4px 10px', 
-                                        borderRadius: '12px', 
-                                        fontSize: '10px', 
+                                    <span style={{
+                                        padding: '4px 12px',
+                                        borderRadius: '20px',
+                                        fontSize: '10px',
                                         fontWeight: '800',
-                                        background: order.isPaid ? '#dcfce7' : '#fee2e2',
-                                        color: order.isPaid ? '#15803d' : '#b91c1c'
+                                        background: order.isPaid ? 'rgba(34, 197, 94, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                                        color: order.isPaid ? '#22c55e' : '#f43f5e',
+                                        border: order.isPaid ? '1px solid rgba(34, 197, 94, 0.2)' : '1px solid rgba(244, 63, 94, 0.2)'
                                     }}>
                                         {order.isPaid ? 'PAID' : 'UNPAID'}
                                     </span>
@@ -735,7 +766,7 @@ const MarketplaceOperations = () => {
                         ))}
                     </tbody>
                 </table>
-                {allOrders.length === 0 && <p style={{ padding: '20px', color: '#64748b', textAlign: 'center' }}>No transactions recorded.</p>}
+                {allOrders.length === 0 && <p style={{ padding: '40px', color: '#64748b', textAlign: 'center' }}>No transactions recorded.</p>}
             </div>
         </div>
     );
@@ -747,8 +778,8 @@ const MarketplaceOperations = () => {
                 <div style={{ display: 'flex', gap: '15px', marginBottom: '40px', justifyContent: 'center', position: 'relative' }}>
                     <div style={{ display: 'flex', gap: '12px' }}>
                         {['Approvals', 'Categories', 'Orders', 'Payouts'].map(tab => (
-                            <button 
-                                key={tab} 
+                            <button
+                                key={tab}
                                 onClick={() => handleTabChange(tab)}
                                 style={{ ...tabBtnStyle, border: '1px solid rgba(255,255,255,0.1)', background: activeTab === tab ? '#38bdf8' : '#0f172a', color: activeTab === tab ? 'white' : '#94a3b8' }}
                             >
@@ -757,7 +788,7 @@ const MarketplaceOperations = () => {
                         ))}
                     </div>
                     {activeTab === 'Categories' && (
-                        <button 
+                        <button
                             onClick={() => {
                                 setEditingCategory(null);
                                 setCategoryForm({ name: '', category: '', material: '100% Cotton', basePrice: '', image: '', colors: [], sizes: [], fit: 'Standard', gsm: '200 GSM' });
@@ -776,16 +807,23 @@ const MarketplaceOperations = () => {
                 {activeTab === 'Categories' && renderCategories()}
                 {activeTab === 'Orders' && renderOrders()}
                 {activeTab === 'Payouts' && renderPayouts()}
-                
-                {localStorage.getItem('userInfo') && JSON.parse(localStorage.getItem('userInfo') || '{}').role !== 'admin' && (
-                    <div style={{ marginTop: '50px', padding: '30px', background: '#fff1f2', borderRadius: '12px', border: '1px solid #fda4af', textAlign: 'center' }}>
-                        <h3 style={{ color: '#be123c', margin: '0 0 10px 0' }}>Admin Authorization Required</h3>
-                        <p style={{ color: '#e11d48', fontSize: '14px', margin: 0 }}>
-                            You are currently logged in as a <strong>{JSON.parse(localStorage.getItem('userInfo') || '{}').role}</strong>. 
-                            Please log out and sign in with an Admin account to manage orders and operations.
-                        </p>
-                    </div>
-                )}
+
+                {(() => {
+                    const adminSession = getUserInfo('admin');
+                    const globalSession = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                    if (!adminSession && globalSession.role && globalSession.role !== 'admin') {
+                        return (
+                            <div style={{ marginTop: '50px', padding: '30px', background: '#fff1f2', borderRadius: '12px', border: '1px solid #fda4af', textAlign: 'center' }}>
+                                <h3 style={{ color: '#be123c', margin: '0 0 10px 0' }}>Admin Authorization Required</h3>
+                                <p style={{ color: '#e11d48', fontSize: '14px', margin: 0 }}>
+                                    You are currently logged in as a <strong>{globalSession.role}</strong>.
+                                    Please log out and sign in with an Admin account to manage orders and operations.
+                                </p>
+                            </div>
+                        );
+                    }
+                    return null;
+                })()}
             </div>
 
             {/* Modals Section */}
@@ -809,11 +847,11 @@ const MarketplaceOperations = () => {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
                             <div>
                                 <label style={labelStyle}>Product Name</label>
-                                <input value={categoryForm.name} placeholder="enter product name..." onChange={e => setCategoryForm({...categoryForm, name: e.target.value})} style={inputStyle} />
+                                <input value={categoryForm.name} placeholder="enter product name..." onChange={e => setCategoryForm({ ...categoryForm, name: e.target.value })} style={inputStyle} />
                             </div>
                             <div>
                                 <label style={labelStyle}>Category</label>
-                                <select value={categoryForm.category} onChange={e => setCategoryForm({...categoryForm, category: e.target.value})} style={{ ...inputStyle, color: 'white' }}>
+                                <select value={categoryForm.category} onChange={e => setCategoryForm({ ...categoryForm, category: e.target.value })} style={{ ...inputStyle, color: 'white' }}>
                                     <option value="" disabled hidden>Select option</option>
                                     <option value="Women" style={{ background: '#1e293b' }}>Women</option>
                                     <option value="Men" style={{ background: '#1e293b' }}>Men</option>
@@ -822,11 +860,11 @@ const MarketplaceOperations = () => {
                             </div>
                             <div>
                                 <label style={labelStyle}>Base Price (LKR)</label>
-                                <input type="number" value={categoryForm.basePrice} placeholder="set base price..." onChange={e => setCategoryForm({...categoryForm, basePrice: e.target.value ? parseInt(e.target.value) : ''})} style={inputStyle} />
+                                <input type="number" value={categoryForm.basePrice} placeholder="set base price..." onChange={e => setCategoryForm({ ...categoryForm, basePrice: e.target.value ? parseInt(e.target.value) : '' })} style={inputStyle} />
                             </div>
                             <div>
                                 <label style={labelStyle}>Image URL</label>
-                                <input value={categoryForm.image} placeholder="/img/model-placeholder.png" onChange={e => setCategoryForm({...categoryForm, image: e.target.value})} style={inputStyle} />
+                                <input value={categoryForm.image} placeholder="/img/model-placeholder.png" onChange={e => setCategoryForm({ ...categoryForm, image: e.target.value })} style={inputStyle} />
                             </div>
                         </div>
                         <div style={{ marginBottom: '15px' }}>
@@ -838,7 +876,7 @@ const MarketplaceOperations = () => {
                             </label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '5px' }}>
                                 {PREDEFINED_COLORS.map(color => (
-                                    <div 
+                                    <div
                                         key={color.name}
                                         onClick={() => {
                                             const newColors = categoryForm.colors.includes(color.name)
@@ -846,8 +884,8 @@ const MarketplaceOperations = () => {
                                                 : [...categoryForm.colors, color.name];
                                             setCategoryForm({ ...categoryForm, colors: newColors });
                                         }}
-                                        style={{ 
-                                            padding: '4px 8px', borderRadius: '20px', border: `1px solid ${categoryForm.colors.includes(color.name) ? '#38bdf8' : '#cbd5e1'}`, 
+                                        style={{
+                                            padding: '4px 8px', borderRadius: '20px', border: `1px solid ${categoryForm.colors.includes(color.name) ? '#38bdf8' : '#cbd5e1'}`,
                                             background: categoryForm.colors.includes(color.name) ? '#38bdf8' : 'white',
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#000'
                                         }}
@@ -867,7 +905,7 @@ const MarketplaceOperations = () => {
                             </label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '5px' }}>
                                 {PREDEFINED_SIZES.map(size => (
-                                    <div 
+                                    <div
                                         key={size}
                                         onClick={() => {
                                             const newSizes = categoryForm.sizes.includes(size)
@@ -875,8 +913,8 @@ const MarketplaceOperations = () => {
                                                 : [...categoryForm.sizes, size];
                                             setCategoryForm({ ...categoryForm, sizes: newSizes });
                                         }}
-                                        style={{ 
-                                            padding: '4px 12px', borderRadius: '6px', border: `1px solid ${categoryForm.sizes.includes(size) ? '#0d375b' : '#cbd5e1'}`, 
+                                        style={{
+                                            padding: '4px 12px', borderRadius: '6px', border: `1px solid ${categoryForm.sizes.includes(size) ? '#0d375b' : '#cbd5e1'}`,
                                             background: categoryForm.sizes.includes(size) ? '#0d375b' : 'white', color: categoryForm.sizes.includes(size) ? 'white' : '#475569',
                                             cursor: 'pointer', fontSize: '11px', fontWeight: 'bold'
                                         }}
@@ -934,7 +972,7 @@ const UserManagement = () => {
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('All');
-    
+
     // Modals
     const [showLogsModal, setShowLogsModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -947,7 +985,7 @@ const UserManagement = () => {
 
     const fetchUsers = async () => {
         setLoading(true);
-        const { token } = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const token = getToken('admin');
         try {
             const res = await fetch(`${API_URL}/api/admin/users`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -964,7 +1002,7 @@ const UserManagement = () => {
     };
 
     const handleRoleUpdate = async (id: string, role: string) => {
-        const { token } = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const token = getToken('admin');
         try {
             const res = await fetch(`${API_URL}/api/admin/users/${id}/role`, {
                 method: 'PUT',
@@ -979,7 +1017,7 @@ const UserManagement = () => {
     };
 
     const handleStatusUpdate = async (id: string, status: string) => {
-        const { token } = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const token = getToken('admin');
         try {
             const res = await fetch(`${API_URL}/api/admin/users/${id}/status`, {
                 method: 'PUT',
@@ -995,7 +1033,7 @@ const UserManagement = () => {
 
     const handlePasswordReset = async () => {
         if (!newPassword) return alert("Please enter a new password");
-        const { token } = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const token = getToken('admin');
         try {
             const res = await fetch(`${API_URL}/api/admin/users/${selectedUser._id}/reset-password`, {
                 method: 'PUT',
@@ -1011,12 +1049,12 @@ const UserManagement = () => {
     };
 
     const filteredUsers = users.filter(user => {
-        const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             user.email.toLowerCase().includes(searchQuery.toLowerCase());
-        
+        const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchQuery.toLowerCase());
+
         let targetRole = roleFilter.toLowerCase();
         if (targetRole === 'customer') targetRole = 'buyer';
-        
+
         const matchesRole = roleFilter === 'All' || user.role === targetRole;
         return matchesSearch && matchesRole;
     });
@@ -1043,13 +1081,13 @@ const UserManagement = () => {
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#020617' }}>
             <BackHeader title="User Management" />
             <div style={{ padding: '25px', maxWidth: '1200px', margin: '0 auto', flex: 1, width: '100%' }}>
-                
+
                 {/* Search and Filters */}
                 <div style={{ display: 'flex', gap: '20px', marginBottom: '30px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, maxWidth: '400px', position: 'relative' }}>
-                        <input 
-                            type="text" 
-                            placeholder="Search by name or email..." 
+                        <input
+                            type="text"
+                            placeholder="Search by name or email..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             autoComplete="off"
@@ -1057,10 +1095,10 @@ const UserManagement = () => {
                         />
                         <img src="/img/search.png" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', width: '18px', opacity: 0.9 }} alt="" />
                     </div>
-                    
+
                     <div style={{ display: 'flex', gap: '10px' }}>
                         {['All', 'Customer', 'Designer', 'Admin'].map(role => (
-                            <button 
+                            <button
                                 key={role}
                                 onClick={() => setRoleFilter(role)}
                                 style={{
@@ -1093,7 +1131,7 @@ const UserManagement = () => {
                                     <th style={{ paddingLeft: '150px', verticalAlign: 'middle' }}>User</th>
                                     <th style={{ paddingLeft: '55px', verticalAlign: 'middle' }}>Role</th>
                                     <th style={{ paddingLeft: '18px', verticalAlign: 'middle' }}>Join Date</th>
-                                    <th style={{paddingLeft: '30px', verticalAlign: 'middle' }}>Status</th>
+                                    <th style={{ paddingLeft: '30px', verticalAlign: 'middle' }}>Status</th>
                                     <th style={{ textAlign: 'right', paddingRight: '240px', verticalAlign: 'middle' }}>Actions</th>
                                 </tr>
                             </thead>
@@ -1112,7 +1150,7 @@ const UserManagement = () => {
                                             </div>
                                         </td>
                                         <td style={{ ...tdStyle, paddingLeft: '33px', verticalAlign: 'middle' }}>
-                                            <span style={{ 
+                                            <span style={{
                                                 padding: '4px 12px', borderRadius: '20px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase',
                                                 background: getRoleBadgeStyle(user.role).bg, color: getRoleBadgeStyle(user.role).color
                                             }}>
@@ -1123,7 +1161,7 @@ const UserManagement = () => {
                                             {new Date(user.createdAt).toLocaleDateString()}
                                         </td>
                                         <td style={{ ...tdStyle, paddingLeft: '25px', verticalAlign: 'middle' }}>
-                                            <span style={{ 
+                                            <span style={{
                                                 padding: '4px 12px', borderRadius: '20px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase',
                                                 background: getStatusBadgeStyle(user.accountStatus || 'active').bg, color: getStatusBadgeStyle(user.accountStatus || 'active').color
                                             }}>
@@ -1132,21 +1170,21 @@ const UserManagement = () => {
                                         </td>
                                         <td style={{ ...tdStyle, textAlign: 'right', paddingRight: '150px', verticalAlign: 'middle' }}>
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                                <button 
+                                                <button
                                                     title="Security Logs"
                                                     onClick={() => { setSelectedUser(user); setShowLogsModal(true); }}
                                                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                                                 >
-                                                    <img src="/img/log.png" style={{ width: '16px', height: '18px', filter: 'invert(1)'}} alt="logs" />
+                                                    <img src="/img/log.png" style={{ width: '16px', height: '18px', filter: 'invert(1)' }} alt="logs" />
                                                 </button>
-                                                <button 
+                                                <button
                                                     title="Reset Password"
                                                     onClick={() => { setSelectedUser(user); setShowPasswordModal(true); }}
                                                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                                                 >
-                                                    <img src="/img/pwd.png" style={{ width: '15px', height: 'auto',filter: 'invert(1)' }} alt="pwd" />
+                                                    <img src="/img/pwd.png" style={{ width: '15px', height: 'auto', filter: 'invert(1)' }} alt="pwd" />
                                                 </button>
-                                                <select 
+                                                <select
                                                     value={user.role}
                                                     onChange={(e) => handleRoleUpdate(user._id, e.target.value)}
                                                     style={{ ...selectStyle, padding: '6px 8px' }}
@@ -1155,7 +1193,7 @@ const UserManagement = () => {
                                                     <option value="designer">Designer</option>
                                                     <option value="admin">Admin</option>
                                                 </select>
-                                                <select 
+                                                <select
                                                     value={user.accountStatus || 'active'}
                                                     onChange={(e) => handleStatusUpdate(user._id, e.target.value)}
                                                     style={{ ...selectStyle, padding: '6px 8px', border: user.accountStatus === 'blocked' ? '1px solid #ef4444' : '1px solid #cbd5e1' }}
@@ -1214,9 +1252,9 @@ const UserManagement = () => {
                         <h2 style={{ fontSize: '18px', color: '#0d375b', marginBottom: '10px' }}>Reset Password</h2>
                         <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '20px' }}>Set a new password for <strong>{selectedUser.name}</strong></p>
                         <label style={labelStyle}>New Password</label>
-                        <input 
-                            type="password" 
-                            value={newPassword} 
+                        <input
+                            type="password"
+                            value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
                             placeholder="Enter new password..."
                             autoComplete="new-password"
@@ -1245,7 +1283,7 @@ const AnalyticsInsights = () => {
             try {
                 const response = await fetch(`${API_URL}/api/admin/analytics`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+                        'Authorization': `Bearer ${getToken('admin')}`
                     }
                 });
                 const data = await response.json();
@@ -1271,7 +1309,7 @@ const AnalyticsInsights = () => {
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#020617', color: '#f1f5f9' }}>
             <BackHeader title="Analytics & Insights" />
             <div style={{ padding: '25px', maxWidth: '1200px', margin: '0 auto', flex: 1, width: '100%' }}>
-                
+
                 {/* Platform-Wide Financial Statistics */}
                 <div style={{ ...sectionHeaderStyle, marginTop: '10px' }}>
                     <span style={sectionTitleStyle}>Platform Performance Overview</span>
@@ -1353,16 +1391,16 @@ const AnalyticsInsights = () => {
                                     const height = (day.totalRevenue / maxRev) * 200;
                                     return (
                                         <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                            <div 
+                                            <div
                                                 title={`LKR ${day.totalRevenue}`}
-                                                style={{ 
-                                                    width: '100%', 
-                                                    height: `${height}px`, 
-                                                    background: '#38bdf8', 
+                                                style={{
+                                                    width: '100%',
+                                                    height: `${height}px`,
+                                                    background: '#38bdf8',
                                                     borderRadius: '4px 4px 0 0',
                                                     boxShadow: '0 0 10px rgba(56, 189, 248, 0.3)',
                                                     transition: 'all 0.3s ease'
-                                                }} 
+                                                }}
                                             />
                                         </div>
                                     );
@@ -1410,15 +1448,15 @@ const AnalyticsInsights = () => {
                                 const height = (day.newUsers / maxUsers) * 120;
                                 return (
                                     <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <div 
+                                        <div
                                             title={`${day.newUsers} New Users`}
-                                            style={{ 
-                                                width: '100%', 
-                                                height: `${height}px`, 
-                                                background: '#f59e0b', 
+                                            style={{
+                                                width: '100%',
+                                                height: `${height}px`,
+                                                background: '#f59e0b',
                                                 borderRadius: '2px',
                                                 boxShadow: '0 0 8px rgba(245, 158, 11, 0.2)'
-                                            }} 
+                                            }}
                                         />
                                     </div>
                                 );
@@ -1526,7 +1564,7 @@ const sectionDividerStyle = {
 // -------------------------------------------------------------
 const HubCard = ({ title, imgSrc, desc, onClick }: any) => {
     return (
-        <div 
+        <div
             onClick={onClick}
             style={{
                 background: 'rgba(255,255,255,0.05)',
@@ -1562,16 +1600,16 @@ const HubCard = ({ title, imgSrc, desc, onClick }: any) => {
 const AdminHub = () => {
     const navigate = useNavigate();
     return (
-        <div style={{ 
-            background: 'linear-gradient(135deg, #020617 0%, #0f172a 100%)', 
-            minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+        <div style={{
+            background: 'linear-gradient(135deg, #020617 0%, #0f172a 100%)',
+            minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             fontFamily: "'Inter', sans-serif", position: 'relative', overflow: 'hidden'
         }}>
             {/* Decors */}
             <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(56,189,248,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(60px)', zIndex: 0 }} />
-            
+
             <div style={{ position: 'absolute', top: '25px', left: '35px', zIndex: 10, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span 
+                <span
                     onClick={() => navigate('/')}
                     style={{ color: 'white', fontSize: '20px', fontWeight: '900', letterSpacing: '1px', cursor: 'pointer' }}
                 >
@@ -1579,30 +1617,30 @@ const AdminHub = () => {
                 </span>
                 <span style={{ background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '3px 10px', borderRadius: '15px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>Admin</span>
             </div>
-            
+
             <div style={{ zIndex: 10, textAlign: 'center', marginBottom: '45px', marginTop: '40px' }}>
                 <h1 style={{ color: 'white', fontSize: '36px', fontWeight: '800', marginBottom: '10px' }}>Admin Panel</h1>
                 <p style={{ color: '#94a3b8', fontSize: '14px', maxWidth: '500px', margin: '0 auto' }}>Monitor platform activity, curate designs, and manage payouts natively.</p>
             </div>
 
-            <div style={{ zIndex: 10, display: 'flex', gap: '25px', flexWrap: 'wrap', justifyContent: 'center',  padding: '0 20px' }}>
-                <HubCard 
-                    title="Marketplace Operations" 
-                    imgSrc="/img/admin-modules.png" 
-                    desc="Manage design approvals, product catalogs, order fulfillment, and designer payouts." 
-                    onClick={() => navigate('/admin-dashboard/operations')} 
+            <div style={{ zIndex: 10, display: 'flex', gap: '25px', flexWrap: 'wrap', justifyContent: 'center', padding: '0 20px' }}>
+                <HubCard
+                    title="Marketplace Operations"
+                    imgSrc="/img/admin-modules.png"
+                    desc="Manage design approvals, product catalogs, order fulfillment, and designer payouts."
+                    onClick={() => navigate('/admin-dashboard/operations')}
                 />
-                <HubCard 
-                    title="User Management" 
-                    imgSrc="/img/admin-manage.png" 
-                    desc="Manage community roles, block accounts, and oversee security." 
-                    onClick={() => navigate('/admin-dashboard/users')} 
+                <HubCard
+                    title="User Management"
+                    imgSrc="/img/admin-manage.png"
+                    desc="Manage community roles, block accounts, and oversee security."
+                    onClick={() => navigate('/admin-dashboard/users')}
                 />
-                <HubCard 
-                    title="Analytics & Insights" 
-                    imgSrc="/img/admin-analytics.png" 
-                    desc="Track platform growth, sales metrics, and evaluate active users." 
-                    onClick={() => navigate('/admin-dashboard/analytics')} 
+                <HubCard
+                    title="Analytics & Insights"
+                    imgSrc="/img/admin-analytics.png"
+                    desc="Track platform growth, sales metrics, and evaluate active users."
+                    onClick={() => navigate('/admin-dashboard/analytics')}
                 />
             </div>
         </div>
@@ -1633,7 +1671,7 @@ const MockupPreview = ({
     printArea,
     designSrc,
     areaScale = 1.0,
-    designScale = 0.7,
+    designScale = 1.0,
     overallScale = 1.0
 }: MockupPreviewProps) => {
     return (
@@ -1651,15 +1689,15 @@ const MockupPreview = ({
                 )}
 
                 {/* 2. Mockup Image with Shadows (Top) */}
-                <img 
-                    src={mockupSrc} 
-                    alt="Mockup" 
-                    style={{ 
-                        width: '100%', height: '100%', objectFit: 'contain', 
+                <img
+                    src={mockupSrc}
+                    alt="Mockup"
+                    style={{
+                        width: '100%', height: '100%', objectFit: 'contain',
                         position: 'relative', zIndex: 1,
                         mixBlendMode: 'multiply',
                         filter: 'contrast(1.0) brightness(0.95) saturate(0)'
-                    }} 
+                    }}
                 />
                 {printArea && designSrc && (
                     <div style={{

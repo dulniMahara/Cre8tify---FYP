@@ -1,0 +1,98 @@
+<Route path="/admin" element={<AdminDashboard />} />
+<Route path="/admin/add" element={<AddFurniture />} />
+
+hi, i think im in trouble n i need to clarify some things with you.... in my project, i have been developing both backend n frontend, but there seems to be some issues that are harder to manage by myself.. so my friend offered to help me in this matter... 
+
+The Technical Roadblock (The Current Issue)
+We have attempted three different ways to make the "Try-On" look professional(its like, when a customer click on a tshirt design n wanna try it virtually, they can upload their upper body image n then generate n check how the choosen tshirt will look on them, theirbody realistically...):
+
+The "Sticker" Method (Initial): Simple image overlay. Problem: Looked fake; didn't follow body shape.
+
+The "Cloud AI" Method (Replicate/Hugging Face): Trying to use professional models like OOTDiffusion. Problem: The free versions are currently unstable, "busy," or require paid providers, making them unreliable for your demo.
+
+so my current repository is private okay, my friend said that about training models etc... (im sorry but i dont hve much knwledge on these.. IT seems not to be my thing, anyway i wanna complete this project by April end!)
+what do u think about this situation?
+
+..........................
+
+so, since my friend oferred to help me... i thot of kinda depending on him for the time being while i manage the remaining other pages... my repository is private... so how can i share my project with him? i cant collaborate cz then this will get caught right ?
+
+
+ const baseDate = new Date(createdAt);
+    const warehouseLocation = "Lotus Tower, Colombo, Sri Lanka";
+    const publicDirectionsUrl = `https://maps.google.com/maps?q=${encodeURIComponent(warehouseLocation)}&daddr=${encodeURIComponent(address + ", Sri Lanka")}&output=embed&t=m`;
+
+
+
+
+
+The Prompt for Antigravity
+Role: Senior React & Full-stack Developer
+
+Task: Implement a professional Admin Order Management Module for a T-shirt Print-on-Demand platform called "Cre8tify."
+
+1. Data Model (Schema):
+Create an Order schema that includes:
+
+orderId: Unique string (e.g., #CR8-1001).
+
+customer: Object containing name, email, and shippingAddress.
+
+items: Array of objects containing productId (ref), title, thumbnail (snapshot URL), size, color, and quantity.
+
+financials: totalPrice, designerCommission, and platformFee.
+
+status: Enum (Pending, Printing, Shipped, Delivered, Cancelled).
+
+trackingNumber: String (optional).
+
+createdAt: Date.
+
+2. UI Components (Frontend):
+
+Orders Dashboard Table: A clean, scannable table showing: Order ID, Thumbnail, Customer Name, Size/Color, Total Price, and a Color-coded Status Badge (e.g., Green for Delivered, Blue for Printing).
+
+Search & Filter: Add a search bar for Order IDs and a dropdown filter to view orders by status (e.g., "Show only Pending").
+
+Order Details Modal/Drawer: When a row is clicked, open a detail view showing:
+
+Full customer shipping address.
+
+The high-resolution design layers (from canvasState).
+
+An "Update Status" dropdown that triggers a backend API call to change the order's progress.
+
+A "Print Packing Slip" button mockup.
+
+3. Design Requirements:
+
+Use a professional "Admin Dashboard" aesthetic (clean white cards, #0d375b primary color for headers, and subtle grey borders).
+
+Ensure the layout is responsive and matches the existing Sidebar navigation of the platform.
+
+Include a "Total Sales" and "Active Orders" summary card at the top of the page.
+
+4. Logic:
+
+Fetch orders from ${API_URL}/api/admin/orders.
+
+Implement a handleStatusUpdate function using a PATCH request to the backend.
+
+
+
+white color.......
+filter: 'invert(1)'
+
+const submitPageFrontPrintArea = {
+        ...frontPrintArea,
+        width: '102%',
+        height: '98%',
+        top: '50%',  // Shifted UP
+        left: '51%' // Shifted RIGHT
+    };
+
+width: '60%',
+        height: '58%',
+        top: '50%',
+        left: '50%',
+        rotation: 0

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
+import { getUserInfo, clearAuth } from '../utils/auth';
 import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000"; // 🟢 Added API_URL for profile images
@@ -19,16 +20,10 @@ export default function DesignerDashboard() {
   // 2. Effect to fetch name and image from localStorage, and fetch products
   useEffect(() => {
     window.scrollTo(0, 0); // 🟢 Always start at the top
-    const storedUser = localStorage.getItem('userInfo');
-
-    if (storedUser) {
-      try {
-        const userObj = JSON.parse(storedUser);
+    const userObj = getUserInfo('designer');
+    if (userObj) {
         const name = userObj.name || "Designer";
         setUserName(`Welcome, ${name}!`);
-      } catch (error) {
-        console.error("Error parsing user info:", error);
-      }
     }
 
     const fetchProducts = async () => {
@@ -52,8 +47,7 @@ export default function DesignerDashboard() {
   const handleLogout = () => {
     const confirmLogout = window.confirm("Are you sure you want to logout?");
     if (confirmLogout) {
-      localStorage.removeItem('userInfo');
-      sessionStorage.clear();
+      clearAuth('designer');
       alert("You have been logged out successfully.");
       navigate('/');
     }

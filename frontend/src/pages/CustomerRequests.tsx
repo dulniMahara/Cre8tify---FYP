@@ -25,11 +25,28 @@ const CustomerRequests = () => {
     const [requests, setRequests] = useState<RequestItem[]>([]);
     const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
 
+    const fetchRequests = async () => {
+        try {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            if (!userInfo._id) return;
+
+            const response = await fetch(`http://localhost:5000/api/requests/customer/${userInfo._id}`);
+            const data = await response.json();
+            
+            // Map MongoDB _id to id for frontend compatibility
+            const mappedData = data.map((req: any) => ({
+                ...req,
+                id: req._id,
+            }));
+
+            setRequests(mappedData);
+        } catch (err) {
+            console.error("Error fetching customer requests:", err);
+        }
+    };
+
     useEffect(() => {
-        const savedRequests = JSON.parse(localStorage.getItem('designer_requests') || '[]');
-        // In a real app, we would filter by customer ID. 
-        // For this demo, we show all persisted requests since they are all from the local user.
-        setRequests(savedRequests);
+        fetchRequests();
     }, []);
 
     const getStatusStyle = (status: string) => {
@@ -197,10 +214,36 @@ const CustomerRequests = () => {
                         </div>
 
                         <div style={{ marginTop: '30px', borderTop: '1px solid #f1f5f9', paddingTop: '20px', textAlign: 'center' }}>
-                            <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '15px' }}>Communication with the designer will be enabled once the request is accepted.</p>
-                            <button disabled style={{ width: '100%', padding: '12px', borderRadius: '30px', background: '#e2e8f0', color: '#94a3b8', border: 'none', fontWeight: '700', cursor: 'not-allowed' }}>
-                                Open Chat (Waiting for Acceptance)
-                            </button>
+                            {selectedRequest.status === 'Completed' ? (
+                                <>
+                                    <p style={{ fontSize: '13px', color: '#15803d', fontWeight: '700', marginBottom: '15px' }}>
+                                        🎉 The designer has finished your edit! Review it above.
+                                    </p>
+                                    <button
+                                        onClick={() => {
+                                            // Handle checkout logic here - e.g., add to cart and navigate
+                                            alert("Proceeding to checkout with your custom design...");
+                                            navigate('/checkout', { state: { customProduct: selectedRequest } });
+                                        }}
+                                        style={{
+                                            width: '100%', padding: '15px', borderRadius: '30px',
+                                            background: '#0d375b', color: 'white', border: 'none',
+                                            fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 15px rgba(13, 55, 91, 0.2)'
+                                        }}
+                                    >
+                                        Proceed to Checkout
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '15px' }}>
+                                        Communication with the designer will be enabled once the request is accepted.
+                                    </p>
+                                    <button disabled style={{ width: '100%', padding: '12px', borderRadius: '30px', background: '#e2e8f0', color: '#94a3b8', border: 'none', fontWeight: '700', cursor: 'not-allowed' }}>
+                                        {selectedRequest.status === 'Pending' ? 'Waiting for Designer' : 'Open Chat (Accepted)'}
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

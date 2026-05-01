@@ -24,23 +24,30 @@ export default function Profile() {
     });
 
     useEffect(() => {
-        window.scrollTo(0, 0); // 🟢 Always start at the top
-        const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
-        // 🟢 Force 'admin' to be treated as 'designer' for this page's layout
-        const role = storedUser.role === 'admin' ? 'designer' : (storedUser.role || 'buyer');
-        setUserRole(role);
-        
-        setFormData({
-            name: storedUser.name || '',
-            email: storedUser.email || '',
-            phone: storedUser.phone || storedUser.contact || '', 
-            address: storedUser.address || '',
-            interest: storedUser.interest || '',
-            shopName: storedUser.shopName || '',
-            portfolio: storedUser.portfolio || '',
-            bio: storedUser.bio || storedUser.description || '',
-            profileImage: storedUser.profileImage || '', 
-        });
+        const initProfile = async () => {
+            window.scrollTo(0, 0);
+            const { getUserInfo } = await import('../utils/auth');
+            const storedUser = getUserInfo('designer'); // This page is for designers
+            
+            if (storedUser) {
+                // 🟢 Force 'admin' to be treated as 'designer' for this page's layout if they are admin
+                const role = storedUser.role === 'admin' ? 'designer' : (storedUser.role || 'buyer');
+                setUserRole(role);
+                
+                setFormData({
+                    name: storedUser.name || '',
+                    email: storedUser.email || '',
+                    phone: storedUser.phone || storedUser.contact || '', 
+                    address: storedUser.address || '',
+                    interest: storedUser.interest || '',
+                    shopName: storedUser.shopName || '',
+                    portfolio: storedUser.portfolio || '',
+                    bio: storedUser.bio || storedUser.description || '',
+                    profileImage: storedUser.profileImage || '', 
+                });
+            }
+        };
+        initProfile();
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

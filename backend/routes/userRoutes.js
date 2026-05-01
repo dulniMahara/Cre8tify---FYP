@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const User = require('../models/User');
 const { registerUser, loginUser, updateUserProfile } = require('../controllers/userController'); 
+const { getDesignerSales } = require('../controllers/financialController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
@@ -12,6 +13,7 @@ router.post('/login', loginUser);
 
 // --- PRIVATE ROUTES ---
 router.put('/profile', protect, updateUserProfile);
+router.get('/sales', protect, getDesignerSales);
 
 router.post('/upload-avatar', protect, upload.single('avatar'), async (req, res) => {
     try {

@@ -46,4 +46,7 @@ const designSchema = mongoose.Schema(
 );
 
 // Export the model
+designSchema.index({ designer: 1, createdAt: -1 });
+designSchema.index({ status: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Design', designSchema);

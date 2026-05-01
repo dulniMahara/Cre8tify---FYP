@@ -7,7 +7,8 @@ const {
     getDesignerProducts,
     getPendingProducts,
     updateProductStatus,
-    handleVirtualTryOn // 👈 ADD THIS HERE
+    handleVirtualTryOn,
+    deleteProduct
 } = require('../controllers/productController');
 
 // Public Routes
@@ -24,5 +25,6 @@ router.post('/virtual-try-on', handleVirtualTryOn);
 // 🟢 Admin Approval Routes
 router.get('/admin/pending', protect, getPendingProducts);
 router.put('/:id/status', protect, updateProductStatus);
+router.delete('/:id', protect, deleteProduct);
 
 module.exports = router;

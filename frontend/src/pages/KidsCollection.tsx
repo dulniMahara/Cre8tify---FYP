@@ -31,7 +31,7 @@ const MockupPreview = ({
     printArea,
     designSrc,
     areaScale = 1.0,
-    designScale = 0.7,
+    designScale = 1.0,
     overallScale = 1.0
 }: MockupPreviewProps) => {
     return (

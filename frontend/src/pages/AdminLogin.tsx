@@ -8,13 +8,13 @@ const AdminLogin = () => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        // Clear session if already logged in as something else?
-        // Or check if already admin
-        const userInfo = localStorage.getItem('userInfo');
-        if (userInfo) {
-            const user = JSON.parse(userInfo);
-            if (user.role === 'admin') navigate('/admin-dashboard');
-        }
+        // 🟢 Check for existing admin session in isolated storage
+        const checkAdmin = async () => {
+            const { getUserInfo } = await import('../utils/auth');
+            const adminUser = getUserInfo('admin');
+            if (adminUser) navigate('/admin-dashboard');
+        };
+        checkAdmin();
     }, [navigate]);
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -35,8 +35,11 @@ const AdminLogin = () => {
                     setLoading(false);
                     return;
                 }
-                localStorage.setItem('userInfo', JSON.stringify(data));
-                localStorage.setItem('token', data.token);
+                
+                // 🟢 Use centralized auth utility for role-based storage
+                const { setUserInfo } = await import('../utils/auth');
+                setUserInfo(data);
+                
                 navigate('/admin-dashboard');
             } else {
                 alert(data.message || "Invalid Admin Credentials");

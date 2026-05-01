@@ -8,29 +8,44 @@ const CustomerProfile = () => {
     const navigate = useNavigate();
 
     // 🟢 UPDATED: Pulls real data from localStorage if it exists
-   const [profile, setProfile] = useState(() => {
-        const savedData = localStorage.getItem('userInfo');
-        const parsed = savedData ? JSON.parse(savedData) : null;
-        
-        return {
-            // 🟢 If data exists, use it. If not, stay completely empty/blank.
-            name: parsed?.name || "", 
-            email: parsed?.email || "",
-            contact: parsed?.contact || "", 
-            address: parsed?.address || "",
-            image: parsed?.image || "/img/profile-picture.png",
-            orders: parsed?.orders || 0, 
-            likes: parsed?.likes || 0, 
-            points: parsed?.points || 0
-        };
+    // 🟢 UPDATED: Pulls real data from role-specific storage
+    const [profile, setProfile] = useState({
+        name: "", 
+        email: "",
+        contact: "", 
+        address: "",
+        image: "/img/profile-picture.png",
+        orders: 0, 
+        likes: 0, 
+        points: 0
     });
+
+    useEffect(() => {
+        const init = async () => {
+            const { getUserInfo } = await import('../utils/auth');
+            const parsed = getUserInfo('customer');
+            if (parsed) {
+                setProfile(prev => ({
+                    ...prev,
+                    name: parsed.name || "", 
+                    email: parsed.email || "",
+                    contact: parsed.contact || parsed.phone || "", 
+                    address: parsed.address || "",
+                    image: parsed.image || parsed.profileImage || "/img/profile-picture.png",
+                    orders: parsed.orders || 0, 
+                    likes: parsed.likes || 0, 
+                    points: parsed.points || 0
+                }));
+            }
+        };
+        init();
+    }, []);
 
     // 🟢 NEW: Fetch real stats from Backend & LocalStorage
     useEffect(() => {
         const fetchStats = async () => {
-            const savedData = localStorage.getItem('userInfo');
-            const parsed = savedData ? JSON.parse(savedData) : null;
-            const token = parsed?.token || localStorage.getItem('token');
+            const { getToken } = await import('../utils/auth');
+            const token = getToken('customer');
 
             // 1. Fetch Orders count from Backend
             if (token) {
@@ -70,16 +85,15 @@ const CustomerProfile = () => {
         }
     };
 
-    const handleUpdate = (e: React.FormEvent) => {
+    const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
-        const savedData = localStorage.getItem('userInfo');
-        const existingInfo = savedData ? JSON.parse(savedData) : {};
+        const { getUserInfo, setUserInfo } = await import('../utils/auth');
+        const existingInfo = getUserInfo('customer') || {};
         
         // 🟢 Merging the new profile data into existing userInfo
-        // This ensures 'token', 'role', 'profileImage', etc. are NOT deleted!
         const updatedInfo = { ...existingInfo, ...profile };
         
-        localStorage.setItem('userInfo', JSON.stringify(updatedInfo));
+        setUserInfo(updatedInfo);
         window.dispatchEvent(new Event('storage'));
         alert("Profile Updated Successfully!");
         navigate('/customer-dashboard'); 

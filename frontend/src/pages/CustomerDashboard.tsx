@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar';
 import { useCart } from '../context/CartContext';
 import Footer from '../components/Footer'; 
 import Header from '../components/Header';
+import { getUserInfo } from '../utils/auth';
 import '../styles/dashboard.css';            
 
 // 1. Static Product Data
@@ -62,9 +63,8 @@ const CustomerDashboard = () => {
 
     useEffect(() => {
         window.scrollTo(0, 0); // 🟢 Always start at the top
-        const storedUser = localStorage.getItem('userInfo');
-        if (storedUser) {
-            const userObj = JSON.parse(storedUser);
+        const userObj = getUserInfo('customer');
+        if (userObj) {
             setGreeting(`Welcome back, ${userObj.name || "Customer"}.`);
         }
     }, []);

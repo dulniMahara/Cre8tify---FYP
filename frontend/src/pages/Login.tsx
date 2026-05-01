@@ -33,12 +33,11 @@ const Login = () => {
         if (response.ok) {
             console.log("Login successful, data received:", data);
             
-            // logic tosave the user info and Token in the browser
-            localStorage.setItem('userInfo', JSON.stringify(data));
+            // 🟢 Use centralized auth utility for role-based storage
+            import('../utils/auth').then(({ setUserInfo }) => {
+                setUserInfo(data);
+            });
 
-            if (data.token) {
-            localStorage.setItem('token', data.token); 
-        }
             // Go to the correct dashboard based on the role from the Database
             if (data.role === 'designer') {
                 navigate('/designer-dashboard');

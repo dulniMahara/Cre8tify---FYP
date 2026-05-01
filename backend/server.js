@@ -1,8 +1,8 @@
-require('dotenv').config(); 
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cors = require('cors'); // 1. Import CORS
-const connectDB = require('./config/db'); 
+const connectDB = require('./config/db');
 const { errorHandler } = require('./middleware/errorMiddleware');
 const libraryRoutes = require('./routes/libraryRoutes');
 const baseProductRoutes = require('./routes/baseProductRoutes');
@@ -18,12 +18,12 @@ app.use(cors({
     credentials: true
 }));
 
-connectDB(); 
+connectDB();
 
 const port = process.env.PORT || 5000;
 
 // 3. Body Parsers - set limits high for base64 mockup images
-app.use(express.json({ limit: '50mb' })); 
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: false }));
 
 // 4. Static Folder
@@ -41,6 +41,7 @@ app.use('/api/cutout', cutoutRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/tryon', require('./routes/tryonRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/requests', require('./routes/requestRoutes'));
 
 
 
@@ -80,7 +81,7 @@ app.post('/api/cutout', uploadMemory.single('image'), async (req, res) => {
         // 3. Send the transparent PNG back to the frontend
         res.set('Content-Type', 'image/png');
         res.send(buffer);
-        
+
         console.log("AI Cutout complete!");
 
     } catch (error) {

@@ -134,9 +134,78 @@ const refundOrder = async (req, res) => {
     }
 };
 
+// @desc    Get sales and earnings for a specific designer
+// @route   GET /api/users/sales
+const getDesignerSales = async (req, res) => {
+    try {
+        const designerId = req.user._id;
+
+        // 1. Get all paid orders containing this designer's products
+        const orders = await Order.find({ isPaid: true, isRefunded: false })
+            .populate({
+                path: 'orderItems.product',
+                select: 'title designer mockupImages'
+            });
+
+        const sales = [];
+        let totalEarned = 0;
+
+        orders.forEach(order => {
+            order.orderItems.forEach(item => {
+                if (item.product && item.product.designer && item.product.designer.toString() === designerId.toString()) {
+                    const earned = (item.markup || 0) * item.qty;
+                    totalEarned += earned;
+                    sales.push({
+                        id: `#${order._id.toString().substring(order._id.toString().length - 6).toUpperCase()}`,
+                        item: item.product.title || item.name,
+                        date: order.createdAt,
+                        earned: `LKR ${earned}`,
+                        status: order.status,
+                        img: item.product.mockupImages?.[0] || item.image
+                    });
+                }
+            });
+        });
+
+        // 2. Get total already paid to this designer
+        const payouts = await Payout.find({ designer: designerId });
+        const alreadyPaid = payouts.reduce((sum, p) => sum + p.amount, 0);
+
+        // 3. Calculate this month's earnings
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        let thisMonthEarned = 0;
+        orders.filter(o => new Date(o.createdAt) >= startOfMonth).forEach(order => {
+            order.orderItems.forEach(item => {
+                if (item.product && item.product.designer && item.product.designer.toString() === designerId.toString()) {
+                    thisMonthEarned += (item.markup || 0) * item.qty;
+                }
+            });
+        });
+
+        res.json({
+            summary: {
+                totalEarned,
+                alreadyPaid,
+                balance: Math.max(0, totalEarned - alreadyPaid),
+                totalOrders: sales.length,
+                thisMonthEarned,
+                pendingOrders: sales.filter(s => s.status === 'Processing' || s.status === 'Printing').length
+            },
+            sales: sales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        });
+    } catch (error) {
+        console.error("getDesignerSales Error:", error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getFinancialSummary,
     getDesignerPayouts,
     processPayout,
-    refundOrder
+    refundOrder,
+    getDesignerSales
 };

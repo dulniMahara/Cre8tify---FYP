@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Added useNavigate
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
@@ -7,221 +7,292 @@ import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000";
 
-// Mock Data Interfaces
-interface Order {
+interface Sale {
     id: string;
     item: string;
     date: string;
     earned: string;
-    status: 'Completed' | 'Pending' | 'Cancelled';
+    status: string;
     img: string;
+}
+
+interface Summary {
+    totalEarned: number;
+    alreadyPaid: number;
+    balance: number;
+    totalOrders: number;
+    thisMonthEarned: number;
+    pendingOrders: number;
 }
 
 const MySales = () => {
     const navigate = useNavigate();
+    const [sales, setSales] = useState<Sale[]>([]);
+    const [summary, setSummary] = useState<Summary | null>(null);
+    const [loading, setLoading] = useState(true);
     const [orderFilter, setOrderFilter] = useState('Today');
     const [chartFilter, setChartFilter] = useState('Last 7 Days');
     const [searchQuery, setSearchQuery] = useState('');
 
+    useEffect(() => {
+        const fetchSales = async () => {
+            const storedUser = localStorage.getItem('userInfo');
+            if (!storedUser) return;
+            const { token } = JSON.parse(storedUser);
 
-    const orders: Order[] = [
-        { id: '#12245', item: 'Neon Waves T-shirt', date: '2 Oct 2025', earned: 'LKR 1300', status: 'Completed', img: '/img/shop4.png' },
-        { id: '#12246', item: 'Neon Waves T-shirt', date: '2 Sep 2025', earned: 'LKR 1100', status: 'Completed', img: '/img/shop4.png' },
-        { id: '#12247', item: 'Neon Waves T-shirt', date: '2 Oct 2025', earned: 'LKR 1100', status: 'Pending', img: '/img/shop4.png' },
-    ];
+            try {
+                const res = await fetch(`${API_URL}/api/users/sales`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setSales(data.sales);
+                    setSummary(data.summary);
+                }
+            } catch (err) {
+                console.error("Failed to fetch sales:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchSales();
+    }, []);
+
+    const filteredSales = sales.filter(sale => {
+        const matchesSearch = sale.item.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             sale.id.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        if (orderFilter === 'All') return matchesSearch;
+        
+        const saleDate = new Date(sale.date);
+        const now = new Date();
+        
+        if (orderFilter === 'Today') return matchesSearch && saleDate.toDateString() === now.toDateString();
+        if (orderFilter === 'Last 7 Days') {
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(now.getDate() - 7);
+            return matchesSearch && saleDate >= sevenDaysAgo;
+        }
+        if (orderFilter === 'Last 30 Days') {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(now.getDate() - 30);
+            return matchesSearch && saleDate >= thirtyDaysAgo;
+        }
+        return matchesSearch;
+    });
 
     return (
         <div className="dashboard-container">
             <Sidebar />
 
-            <style>
-                @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-                {`
-                    .animate-fade { animation: fadeIn 0.5s ease-out; }
-                    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-                    
-                    .glass-search-bar {
-                        display: flex;
-                        align-items: center;
-                        background: rgba(255, 255, 255, 0.15);
-                        border: 1px solid rgba(255, 255, 255, 0.3);
-                        border-radius: 25px;
-                        padding: 8px 10px;
-                        width: 100%;
-                        max-width: 225px;
-                        backdrop-filter: blur(4px);
-                        transition: all 0.3s ease;
-                    }
-                    .search-input::placeholder {
-                        color: rgba(255, 255, 255, 0.8) !important;
-                    }
-
-                    .sales-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 13px; }
-                    .sales-table th { 
-                        background: #0f172a; color: white; padding: 11px; text-align: left; 
-                        font-size: 8px; font-family: 'Inter', sans-serif; letter-spacing: 0.3px; text-transform: uppercase;
-                    }
-                    .sales-table th:first-child { border-top-left-radius: 8px; }
-                    .sales-table th:last-child { border-top-right-radius: 8px; }
-                    
-                    .sales-table td { 
-                        padding: 13px 11px;
-                        border-bottom: 1px solid #f1f5f9; 
-                        color: #334155; 
-                        font-size: 8px;
-                        font-weight: 600; 
-                        font-family: 'Inter', sans-serif; 
-                        background: white;
-                    }
-
-                    .filter-btn { padding: 5px 12px; border: 1px solid #e2e8f0; background: white; color: #64748b; cursor: pointer; font-weight: 600; font-size: 7px; transition: 0.2s; }
-                    .filter-btn.active { background: #0d375b; color: white; border-color: #0d375b; }
-
-                    .donut-chart {
-                        position: relative;
-                        width: 100px; height: 100px;
-                        border-radius: 50%;
-                        display: flex; justify-content: center; alignItems: center;
-                        box-shadow: 0 5px 13px rgba(37, 99, 235, 0.1);
-                    }
-                    .donut-inner {
-                        width: 80px; height: 80px;
-                        background: #ffffff;
-                        border-radius: 50%;
-                        display: flex; justify-content: center; alignItems: center;
-                        flex-direction: column;
-                        z-index: 2;
-                    }
-                `}
-            </style>
-
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc' }}>
-
                 <Header showCart={false} onSearch={setSearchQuery} userRole="designer" />
 
-                <div className="content-wrapper animate-fade" style={{ padding: '20px', flex: 1, maxWidth: '700px', margin: '0 auto', width: '100%' }}>
-
-                    <h2 style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: '14px',
-                        fontWeight: '700',
-                        marginBottom: '18px',
-                        color: '#1e293b',
-                        display: 'flex', alignItems: 'center', gap: '5px'
-                    }}>
-                        Track your income and orders 📈
-                    </h2>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '13px', marginBottom: '25px' }}>
-                        <StatCard title="TOTAL EARNING" value="LKR 9,500.00" icon="💰" />
-                        <StatCard title="TOTAL ORDERS" value="8 ORDERS" icon="📦" />
-                        <StatCard title="PENDING" value="2 PENDING" icon="⏳" />
-                        <StatCard title="THIS MONTH" value="LKR 3,780.00" icon="📅" />
+                <div style={{ padding: '30px', flex: 1, width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
+                    <div style={{ marginBottom: '30px', textAlign: 'center' }}>
+                        <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Track your income and orders 📈</h1>
                     </div>
 
-                    <div style={{ marginBottom: '30px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '13px' }}>
+                    {/* Stat Cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '35px' }}>
+                        <StatCard title="TOTAL EARNING" value={`LKR ${summary?.totalEarned.toLocaleString() || '0'}.00`} icon="💰" color="#2563eb" />
+                        <StatCard title="TOTAL ORDERS" value={`${summary?.totalOrders || '0'} ORDERS`} icon="📦" color="#2563eb" />
+                        <StatCard title="PENDING" value={`${summary?.pendingOrders || '0'} PENDING`} icon="⏳" color="#2563eb" />
+                        <StatCard title="THIS MONTH" value={`LKR ${summary?.thisMonthEarned.toLocaleString() || '0'}.00`} icon="📅" color="#2563eb" />
+                    </div>
+
+                    {/* Sales Table Section */}
+                    <div style={{ marginBottom: '40px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '15px' }}>
                             {['All', 'Today', 'Last 7 Days', 'Last 30 Days', 'This Year'].map(f => (
-                                <button key={f} className={`filter-btn ${orderFilter === f ? 'active' : ''}`} onClick={() => setOrderFilter(f)}>{f}</button>
+                                <button 
+                                    key={f} 
+                                    onClick={() => setOrderFilter(f)}
+                                    style={{
+                                        padding: '8px 16px',
+                                        borderRadius: '6px',
+                                        fontSize: '12px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        background: orderFilter === f ? '#0d375b' : 'white',
+                                        color: orderFilter === f ? 'white' : '#64748b',
+                                        border: '1px solid #e2e8f0',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    {f}
+                                </button>
                             ))}
                         </div>
 
-                        <div style={{ textAlign: 'center', fontSize: '8px', fontStyle: 'italic', color: '#64748b', marginBottom: '8px' }}>
+                        <div style={{ textAlign: 'center', fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
                             Viewing: <b>{orderFilter}</b>
                         </div>
 
-                        <div style={{ borderRadius: '8px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)' }}>
-                            <table className="sales-table">
+                        <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
-                                    <tr>
-                                        <th>Product Name</th>
-                                        <th>Date</th>
-                                        <th>Earned</th>
-                                        <th>Status</th>
-                                        <th>Preview</th>
+                                    <tr style={{ background: '#0f172a' }}>
+                                        <th style={{ padding: '15px', color: 'white', textAlign: 'left', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Product Name</th>
+                                        <th style={{ padding: '15px', color: 'white', textAlign: 'left', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Date</th>
+                                        <th style={{ padding: '15px', color: 'white', textAlign: 'left', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Earned</th>
+                                        <th style={{ padding: '15px', color: 'white', textAlign: 'left', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</th>
+                                        <th style={{ padding: '15px', color: 'white', textAlign: 'left', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Preview</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {orders
-                                        .filter(order => 
-                                            order.item.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                            order.id.toLowerCase().includes(searchQuery.toLowerCase())
-                                        )
-                                        .map((order, i) => (
-                                        <tr key={i}>
-                                            <td style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                                <span style={{ fontWeight: '700', fontSize: '9px', color: '#0f172a' }}>{order.item}</span>
-                                                <span style={{ fontSize: '7px', color: '#64748b', fontFamily: 'monospace' }}>{order.id}</span>
+                                    {filteredSales.map((sale, i) => (
+                                        <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                            <td style={{ padding: '15px' }}>
+                                                <div style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a' }}>{sale.item}</div>
+                                                <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>{sale.id}</div>
                                             </td>
-                                            <td style={{ fontSize: '8px' }}>{order.date}</td>
-                                            <td style={{ fontWeight: '700', fontSize: '9px', color: '#0f172a' }}>{order.earned}</td>
-                                            <td>
-                                                <span style={{ padding: '4px 8px', borderRadius: '15px', fontSize: '7px', fontWeight: '700', background: order.status === 'Completed' ? '#dcfce7' : '#fff7ed', color: order.status === 'Completed' ? '#166534' : '#c2410c', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>{order.status}</span>
+                                            <td style={{ padding: '15px', fontSize: '13px', color: '#334155' }}>{new Date(sale.date).toLocaleDateString()}</td>
+                                            <td style={{ padding: '15px', fontWeight: '700', fontSize: '14px', color: '#0f172a' }}>{sale.earned}</td>
+                                            <td style={{ padding: '15px' }}>
+                                                <span style={{ 
+                                                    padding: '5px 12px', 
+                                                    borderRadius: '15px', 
+                                                    fontSize: '11px', 
+                                                    fontWeight: '700', 
+                                                    background: sale.status === 'Delivered' ? '#dcfce7' : '#fff7ed', 
+                                                    color: sale.status === 'Delivered' ? '#166534' : '#c2410c' 
+                                                }}>{sale.status}</span>
                                             </td>
-                                            <td>
-                                                <img src={order.img} alt="Product" style={{ width: '35px', height: '35px', objectFit: 'contain', background: '#f8fafc', borderRadius: '6px', padding: '3px', border: '1px solid #e2e8f0' }} />
+                                            <td style={{ padding: '15px' }}>
+                                                <img src={sale.img} alt="Product" style={{ width: '45px', height: '45px', objectFit: 'contain', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '3px' }} />
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                            {filteredSales.length === 0 && !loading && (
+                                <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>No records available for this period.</div>
+                            )}
                         </div>
                     </div>
 
-                    <div>
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '13px' }}>
+                    {/* Earning Breakdown Section (Restored Arrangement) */}
+                    <div style={{ marginTop: '50px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '15px' }}>
                             {['Today', 'Last 7 Days', 'Last Week', 'Last Month', 'Last Year'].map(f => (
-                                <button key={f} className={`filter-btn ${chartFilter === f ? 'active' : ''}`} onClick={() => setChartFilter(f)}>{f}</button>
+                                <button 
+                                    key={f} 
+                                    onClick={() => setChartFilter(f)}
+                                    style={{
+                                        padding: '8px 16px',
+                                        borderRadius: '6px',
+                                        fontSize: '12px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        background: chartFilter === f ? '#0d375b' : 'white',
+                                        color: chartFilter === f ? 'white' : '#64748b',
+                                        border: '1px solid #e2e8f0',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    {f}
+                                </button>
                             ))}
                         </div>
 
-                        <div style={{ background: '#ffffff', borderRadius: '12px', padding: '30px', color: '#0f172a', textAlign: 'center', boxShadow: '0 5px 15px rgba(0, 0, 0, 0.05)', border: '1px solid #e2e8f0', position: 'relative', overflow: 'hidden' }}>
-                            <div style={{ position: 'relative', zIndex: 2 }}>
-                                <h3 style={{ fontSize: '12px', fontWeight: '700', fontStyle: 'italic', marginBottom: '5px' }}>Earning Breakdown</h3>
-                                <p style={{ fontSize: '8px', color: '#64748b', marginBottom: '25px' }}>Period: {chartFilter}</p>
-                                <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '30px' }}>
-                                    <DonutChart percent={75} value="LKR 6,400" label="Design Revenue" />
-                                    <DonutChart percent={25} value="LKR 2,000" label="Customization" />
-                                    <DonutChart percent={100} value="LKR 8,400" label="Total Net Earnings" />
-                                </div>
+                        <div style={{ 
+                            background: '#ffffff', 
+                            borderRadius: '20px', 
+                            padding: '40px', 
+                            textAlign: 'center', 
+                            boxShadow: '0 5px 25px rgba(0, 0, 0, 0.05)', 
+                            border: '1px solid #e2e8f0' 
+                        }}>
+                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '5px' }}>Earning Breakdown</h3>
+                            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '40px' }}>Period: {chartFilter}</p>
+                            
+                            <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '60px' }}>
+                                <DonutChart percent={75} value={`LKR ${summary?.totalEarned.toLocaleString()}`} label="Design Revenue" color1="#2563eb" color2="#60a5fa" />
+                                <DonutChart percent={25} value={`LKR ${(summary?.totalEarned ? summary.totalEarned * 0.25 : 0).toLocaleString()}`} label="Customization" color1="#2563eb" color2="#60a5fa" />
+                                <DonutChart percent={100} value={`LKR ${summary?.totalEarned.toLocaleString()}`} label="Total Net Earnings" color1="#1e40af" color2="#3b82f6" />
                             </div>
                         </div>
                     </div>
                 </div>
                 <Footer />
             </div>
+
+            <style>{`
+                /* Chart hover effect handled via SVG scaling if needed, but keeping it simple for now */
+                svg { transition: all 0.3s ease; }
+                svg:hover { transform: rotate(-90deg) scale(1.03); }
+            `}</style>
         </div>
     );
 };
 
-// ... (Keep StatCard and DonutChart sub-components exactly as they were)
-const StatCard = ({ title, value, icon }: { title: string, value: string, icon: string }) => (
+const StatCard = ({ title, value, icon, color }: { title: string, value: string, icon: string, color: string }) => (
     <div style={{
-        background: '#ffffff', padding: '13px', borderRadius: '8px', textAlign: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.03)', color: '#0f172a', border: '1px solid #e2e8f0',
-        position: 'relative', overflow: 'hidden', transition: 'all 0.3s ease'
-    }}
-        onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 5px 13px rgba(37, 99, 235, 0.1)'; e.currentTarget.style.borderColor = '#bfdbfe'; }}
-        onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
-    >
-        <div style={{ width: '28px', height: '28px', background: '#eff6ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', margin: '0 auto 8px', color: '#2563eb' }}>{icon}</div>
-        <div style={{ fontSize: '7px', fontWeight: '700', textTransform: 'uppercase', color: '#64748b', letterSpacing: '1px' }}>{title}</div>
-        <div style={{ fontSize: '12px', fontWeight: '800', marginTop: '4px', color: '#0f172a' }}>{value}</div>
+        background: '#ffffff', padding: '20px', borderRadius: '12px', textAlign: 'center',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.03)', color: '#0f172a', border: '1px solid #e2e8f0',
+        transition: 'all 0.3s ease'
+    }}>
+        <div style={{ width: '40px', height: '40px', background: `${color}10`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', margin: '0 auto 12px', color: color }}>{icon}</div>
+        <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#64748b', letterSpacing: '1px' }}>{title}</div>
+        <div style={{ fontSize: '18px', fontWeight: '800', marginTop: '6px', color: '#0f172a' }}>{value}</div>
     </div>
 );
 
-const DonutChart = ({ percent, value, label }: { percent: number, value: string, label: string }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div className="donut-chart" style={{ background: `conic-gradient(#2563eb ${percent}%, #eff6ff 0)` }}>
-            <div className="donut-inner">
-                <div style={{ fontSize: '12px', fontWeight: '800', color: '#0f172a', fontStyle: 'italic' }}>{value}</div>
-                <div style={{ fontSize: '8px', color: '#64748b', marginTop: '3px' }}>{percent}%</div>
+const DonutChart = ({ percent, value, label, color1 = "#2563eb", color2 = "#38bdf8" }: { percent: number, value: string, label: string, color1?: string, color2?: string }) => {
+    const radius = 60;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (percent / 100) * circumference;
+    const uniqueId = `grad-${label.replace(/\s+/g, '-').toLowerCase()}`;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+            <div style={{ position: 'relative', width: '150px', height: '150px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <svg width="150" height="150" viewBox="0 0 150 150" style={{ transform: 'rotate(-90deg)', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.05))' }}>
+                    <defs>
+                        <linearGradient id={uniqueId} x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor={color1} />
+                            <stop offset="100%" stopColor={color2} />
+                        </linearGradient>
+                    </defs>
+                    {/* Background Circle */}
+                    <circle 
+                        cx="75" cy="75" r={radius} 
+                        fill="transparent" 
+                        stroke="#eff6ff" 
+                        strokeWidth="12" 
+                    />
+                    {/* Progress Circle */}
+                    <circle 
+                        cx="75" cy="75" r={radius} 
+                        fill="transparent" 
+                        stroke={`url(#${uniqueId})`} 
+                        strokeWidth="12" 
+                        strokeDasharray={circumference} 
+                        strokeDashoffset={offset} 
+                        strokeLinecap="round"
+                        style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                    />
+                </svg>
+                <div style={{ position: 'absolute', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.5px' }}>{value}</div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600', marginTop: '2px' }}>{percent}%</div>
+                </div>
             </div>
+            <div style={{ 
+                marginTop: '20px', 
+                background: 'white', 
+                padding: '6px 20px', 
+                borderRadius: '30px', 
+                fontSize: '12px', 
+                fontWeight: '700', 
+                color: '#475569', 
+                border: '1px solid #f1f5f9',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
+                letterSpacing: '0.3px'
+            }}>{label}</div>
         </div>
-        <div style={{ marginTop: '13px', background: '#f8fafc', padding: '5px 13px', borderRadius: '15px', fontSize: '7px', fontWeight: '600', fontStyle: 'italic', letterSpacing: '0.3px', color: '#334155', border: '1px solid #e2e8f0' }}>{label}</div>
-    </div>
-);
+    );
+};
 
 export default MySales;
