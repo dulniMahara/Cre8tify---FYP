@@ -147,13 +147,16 @@ const MenCollection = () => {
                 
                 // Map backend products to match the UI format
                 const mapped = data.map((p: any) => ({
-                    ...p, // 🟢 IMPORTANT: Keep all design data (frontDesign, etc.)
+                    ...p, 
                     id: p._id,
                     title: p.title,
                     price: p.price,
-                    likes: Math.floor(Math.random() * 50), // Fallback for likes
+                    likes: Math.floor(Math.random() * 50),
                     sales: p.salesCount || 0,
-                    img: p.mockupImages[0] || '/img/men1.png',
+                    description: typeof p.description === 'string' ? p.description.replace(/&nbsp;/g, ' ') : '',
+                    img: (p.mockupImages && p.mockupImages.length > 0) ? (p.mockupImages[0].startsWith('/uploads') ? `http://localhost:5000${p.mockupImages[0]}` : p.mockupImages[0]) : '/img/men1.png',
+                    frontDesign: p.frontDesign ? (p.frontDesign.startsWith('/uploads') ? `http://localhost:5000${p.frontDesign}` : p.frontDesign) : '',
+                    backDesign: p.backDesign ? (p.backDesign.startsWith('/uploads') ? `http://localhost:5000${p.backDesign}` : p.backDesign) : '',
                     scale: 1.0,
                     fit: 'Designer Edition',
                     isDesignerProduct: true,
@@ -193,7 +196,7 @@ const MenCollection = () => {
         // 🟢 COMBINE ORIGINAL MOCK DATA + REAL DESIGNER PRODUCTS
         let products = [...backendProducts, ...originalProducts];
         
-        if (filterBy !== 'All') products = products.filter(p => p.fit === filterBy);
+        if (filterBy !== 'All') products = products.filter(p => p.fit === filterBy || p.isDesignerProduct);
         if (sortBy === 'Price: Low to High') products.sort((a, b) => a.price - b.price);
         else if (sortBy === 'Price: High to Low') products.sort((a, b) => b.price - a.price);
         else if (sortBy === 'Best Selling') products.sort((a, b) => b.sales - a.sales);
@@ -259,26 +262,26 @@ const MenCollection = () => {
                                 return (
                                     <div key={item.id} className="product-card" style={{ background: 'white', padding: '8px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', width: '100%', position: 'relative' }}>
                                         <div onClick={handleNavigate} style={{ background: '#f8fafc', borderRadius: '9px', display: 'flex', justifyContent: 'center', marginBottom: '8px', height: '210px', alignItems: 'center', overflow: 'hidden', cursor: 'pointer', position: 'relative', padding: item.isDesignerProduct ? '0' : '8px' }}>
-                                            {item.isDesignerProduct ? (
+                                            {item.isDesignerProduct && item.frontDesign ? (
                                                 <MockupPreview 
-                                                    mockupSrc="/img/womenfront-mockup.png"
-                                                    maskSrc="/img/womenfront-mockup.png"
+                                                    mockupSrc="/img/menfront -mockup.png"
+                                                    maskSrc="/img/menfront -mockup.png"
                                                     maskSize="contain"
                                                     maskPosition="center"
                                                     tshirtColor={item.tshirtColor || '#ffffff'}
                                                     printArea={item.frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 }}
                                                     designSrc={item.frontDesign}
-                                                    overallScale={1.5}
+                                                    overallScale={1.7}
                                                 />
                                             ) : (
-                                                <img src={item.img} alt={item.title} style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain', filter: 'drop-shadow(0 8px 13px rgba(0,0,0,0.08))', transform: `scale(${item.scale || 1})` }} />
+                                                <img src={item.img} alt={item.title} style={{ maxWidth: item.isDesignerProduct ? '100%' : '85%', maxHeight: item.isDesignerProduct ? '100%' : '85%', objectFit: 'contain', filter: item.isDesignerProduct ? 'none' : 'drop-shadow(0 8px 13px rgba(0,0,0,0.08))', transform: `scale(${item.scale || 1})` }} />
                                             )}
                                         </div>
 
                                         <div style={{ padding: '0 5px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '3px' }}>
                                                 <div style={{ flex: 1 }}>
-                                                    <div style={{ fontSize: '6px', fontStyle: 'italic', color: '#94a3b8' }}>Artisa LK</div>
+                                                    <div style={{ fontSize: '6px', fontStyle: 'italic', color: '#94a3b8' }}>{item.designer?.shopName || 'Artisa LK'}</div>
                                                     <h3 onClick={handleNavigate} style={{ fontSize: '13px', fontWeight: '800', margin: '0', color: '#1e293b', lineHeight: '1.2', cursor: 'pointer' }}>{item.title}</h3>
                                                 </div>
                                                 <span onClick={handleNavigate} style={{ fontSize: '6px', color: '#64748b', fontStyle: 'italic', textDecoration: 'underline', cursor: 'pointer' }}>View Details</span>

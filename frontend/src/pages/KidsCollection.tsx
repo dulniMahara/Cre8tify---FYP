@@ -159,13 +159,16 @@ const KidsCollection = () => {
                 
                 // Map backend products to match the UI format
                 const mapped = data.map((p: any) => ({
-                    ...p, // 🟢 Keep all design data
+                    ...p, 
                     id: p._id,
                     title: p.title,
                     price: p.price,
                     likes: Math.floor(Math.random() * 50),
                     sales: p.salesCount || 0,
-                    img: p.mockupImages[0] || '/img/kids1.png',
+                    description: typeof p.description === 'string' ? p.description.replace(/&nbsp;/g, ' ') : '',
+                    img: (p.mockupImages && p.mockupImages.length > 0) ? (p.mockupImages[0].startsWith('/uploads') ? `http://localhost:5000${p.mockupImages[0]}` : p.mockupImages[0]) : '/img/kids1.png',
+                    frontDesign: p.frontDesign ? (p.frontDesign.startsWith('/uploads') ? `http://localhost:5000${p.frontDesign}` : p.frontDesign) : '',
+                    backDesign: p.backDesign ? (p.backDesign.startsWith('/uploads') ? `http://localhost:5000${p.backDesign}` : p.backDesign) : '',
                     scale: 1.0,
                     fit: 'Kids Designer',
                     isDesignerProduct: true,
@@ -208,8 +211,8 @@ const KidsCollection = () => {
     };
 
     const getFiltered = (gender: string) => {
-        let items = originalProducts.filter(p => p.gender === gender);
-        if (filterBy !== 'All Ages') items = items.filter(p => p.age === filterBy);
+        let items = [...originalProducts, ...backendProducts].filter(p => !p.gender || p.gender === gender);
+        if (filterBy !== 'All Ages') items = items.filter(p => p.age === filterBy || p.isDesignerProduct);
         return items;
     };
 
@@ -351,22 +354,23 @@ const ProductCard = ({ item, likedProducts, toggleLike, color, onAddToCart, cart
     return (
         <div className="product-card" style={{ ...productCardMain, cursor: 'pointer' }} onClick={handleProductClick}>
             <div style={{ ...productImgBox, position: 'relative', padding: item.isDesignerProduct ? '0' : '8px', height: '210px' }}>
-                {item.isDesignerProduct ? (
+                {item.isDesignerProduct && item.frontDesign ? (
                     <MockupPreview 
-                        mockupSrc="/img/womenfront-mockup.png"
-                        maskSrc="/img/womenfront-mockup.png"
+                        mockupSrc="/img/dummymodels/child_front.png"
+                        maskSrc="/img/dummymodels/child_front.png"
                         maskSize="contain"
                         maskPosition="center"
                         tshirtColor={item.tshirtColor || '#ffffff'}
                         printArea={item.frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 }}
                         designSrc={item.frontDesign}
-                        overallScale={1.5}
+                        overallScale={1.7}
                     />
                 ) : (
-                    <img src={item.img} alt="" style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain', transform: `scale(${item.scale || 1})`, filter: 'drop-shadow(0 5px 8px rgba(0,0,0,0.05))' }} />
+                    <img src={item.img} alt="" style={{ maxWidth: item.isDesignerProduct ? '100%' : '85%', maxHeight: item.isDesignerProduct ? '100%' : '85%', objectFit: 'contain', filter: item.isDesignerProduct ? 'none' : 'drop-shadow(0 5px 8px rgba(0,0,0,0.05))', transform: `scale(${item.scale || 1})` }} />
                 )}
             </div>
             <div style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '5px', background: `${color}15`, color: color, fontSize: '6px', fontWeight: '800', marginBottom: '5px', textTransform: 'uppercase' }}>{item.material || 'Kids Designer'}</div>
+            <div style={{ fontSize: '6px', fontStyle: 'italic', color: '#94a3b8' }}>{item.designer?.shopName || 'Artisa LK'}</div>
             <h3 style={{ fontSize: '12px', fontWeight: '800', margin: '0 0 3px 0', color: '#1e293b' }}>{item.title}</h3>
             <div style={{ fontSize: '6px', color: '#94a3b8', marginBottom: '6px' }}>{item.age || 'All Ages'}</div>
             

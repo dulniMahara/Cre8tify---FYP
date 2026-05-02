@@ -11,6 +11,12 @@ const cutoutRoutes = require('./routes/cutoutRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 
 const app = express();
+// 1.5 Request Logger 🟢
+app.use((req, res, next) => {
+    console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.path}`);
+    next();
+});
+
 
 // 2. CORS MUST BE FIRST - This solves the "Silent Failure" 🟢
 app.use(cors({
@@ -55,7 +61,6 @@ app.listen(port, () => {
     console.log(`🚀 Server is running on port: ${port}`);
 });
 
-const { removeBackground } = require('@imgly/background-removal-node');
 const multer = require('multer');
 
 // Use memory storage for the AI cutout so we don't save temp files to disk
@@ -69,7 +74,9 @@ app.post('/api/cutout', uploadMemory.single('image'), async (req, res) => {
             return res.status(400).send('No image uploaded');
         }
 
+        const { removeBackground } = require('@imgly/background-removal-node');
         console.log("AI starting background removal...");
+
 
         // 1. Process the image buffer with the AI library
         // Note: The first time this runs, it will download the AI model (~80MB)
@@ -92,3 +99,4 @@ app.post('/api/cutout', uploadMemory.single('image'), async (req, res) => {
 
 
 //app.get('/test-ping', (req, res) => res.json({ status: 'ok' }));
+// trigger restart

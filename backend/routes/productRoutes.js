@@ -8,12 +8,12 @@ const {
     getPendingProducts,
     updateProductStatus,
     handleVirtualTryOn,
-    deleteProduct
+    deleteProduct,
+    getProductById
 } = require('../controllers/productController');
 
 // Public Routes
 router.get('/', getProducts);
-
 // Designer Routes
 router.post('/', protect, createProduct);
 router.get('/my-designs', protect, getDesignerProducts);
@@ -26,5 +26,8 @@ router.post('/virtual-try-on', handleVirtualTryOn);
 router.get('/admin/pending', protect, getPendingProducts);
 router.put('/:id/status', protect, updateProductStatus);
 router.delete('/:id', protect, deleteProduct);
+
+// Dynamic Routes must go last
+router.get('/:id', getProductById);
 
 module.exports = router;

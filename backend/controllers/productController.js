@@ -1,5 +1,6 @@
 const Product = require('../models/productModel');
 const { HfInference } = require("@huggingface/inference");
+const saveBase64ToFile = require('../utils/base64ToFile');
 
 // Initialize Hugging Face with your token from .env
 const hf = new HfInference(process.env.HF_TOKEN);
@@ -52,6 +53,34 @@ const createProduct = async (req, res) => {
     } = req.body;
 
     try {
+        // 🚀 Convert massive Base64 strings to Local Files
+        if (mockupImages && Array.isArray(mockupImages)) {
+            for (let i = 0; i < mockupImages.length; i++) {
+                if (mockupImages[i] && mockupImages[i].startsWith('data:image')) {
+                    mockupImages[i] = saveBase64ToFile(mockupImages[i], 'products');
+                }
+            }
+        }
+
+        let savedFrontDesign = frontDesign;
+        let savedBackDesign = backDesign;
+        let savedNeckDesign = neckDesign;
+        let savedFoldedDesign = foldedDesign;
+
+        if (savedFrontDesign && savedFrontDesign.startsWith('data:image')) savedFrontDesign = saveBase64ToFile(savedFrontDesign, 'products');
+        if (savedBackDesign && savedBackDesign.startsWith('data:image')) savedBackDesign = saveBase64ToFile(savedBackDesign, 'products');
+        if (savedNeckDesign && savedNeckDesign.startsWith('data:image')) savedNeckDesign = saveBase64ToFile(savedNeckDesign, 'products');
+        if (savedFoldedDesign && savedFoldedDesign.startsWith('data:image')) savedFoldedDesign = saveBase64ToFile(savedFoldedDesign, 'products');
+
+        if (canvasState && canvasState.imageLayers && Array.isArray(canvasState.imageLayers)) {
+            for (let i = 0; i < canvasState.imageLayers.length; i++) {
+                const layer = canvasState.imageLayers[i];
+                if (layer && layer.src && layer.src.startsWith('data:image')) {
+                    layer.src = saveBase64ToFile(layer.src, 'canvas_layers');
+                }
+            }
+        }
+
         const product = new Product({
             designer: req.user._id,
             title,
@@ -69,10 +98,10 @@ const createProduct = async (req, res) => {
             isApproved: false,
 
             // 🟢 Design Data
-            frontDesign, frontPrintArea, frontPrintAreaPx,
-            backDesign, backPrintArea, backPrintAreaPx,
-            neckDesign, neckPrintArea, neckPrintAreaPx,
-            foldedDesign, foldedPrintArea, foldedPrintAreaPx
+            frontDesign: savedFrontDesign, frontPrintArea, frontPrintAreaPx,
+            backDesign: savedBackDesign, backPrintArea, backPrintAreaPx,
+            neckDesign: savedNeckDesign, neckPrintArea, neckPrintAreaPx,
+            foldedDesign: savedFoldedDesign, foldedPrintArea, foldedPrintAreaPx
         });
 
         const createdProduct = await product.save();
@@ -90,10 +119,16 @@ const getProducts = async (req, res) => {
         let query = { status: 'Approved' };
 
         if (category && category !== 'All') {
-            query.category = { $regex: new RegExp(`^${category}$`, 'i') };
+            // 🚀 IMPROVEMENT: If 'men' or 'women' is requested, also include 'unisex' items
+            if (['men', 'women'].includes(category.toLowerCase())) {
+                query.category = { $in: [new RegExp(`^${category}$`, 'i'), /unisex/i] };
+            } else {
+                query.category = { $regex: new RegExp(`^${category}$`, 'i') };
+            }
         }
 
         const products = await Product.find(query)
+            .select({ canvasState: 0, backDesign: 0, neckDesign: 0, foldedDesign: 0, mockupImages: { $slice: 1 } })
             .populate('designer', 'name shopName bio profileImage')
             .sort({ createdAt: -1 });
 
@@ -104,11 +139,24 @@ const getProducts = async (req, res) => {
     }
 };
 
+// @desc    Get a single product by ID
+// @route   GET /api/products/:id
+const getProductById = async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id)
+            .populate('designer', 'name shopName bio profileImage');
+        if (!product) return res.status(404).json({ message: "Product not found" });
+        res.status(200).json(product);
+    } catch (error) {
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+};
+
 // @desc    Get all designs for the logged-in designer
 const getDesignerProducts = async (req, res) => {
     try {
         const products = await Product.find({ designer: req.user._id })
-            .select('title price mockupImages status markup salesCount updatedAt')
+            .select({ canvasState: 0, mockupImages: { $slice: 1 } })
             .populate('designer', 'name shopName bio profileImage')
             .sort({ createdAt: -1 });
         res.status(200).json(products);
@@ -126,6 +174,7 @@ const getPendingProducts = async (req, res) => {
         const products = await Product.find({
             status: { $regex: /^pending$/i }
         })
+            .select({ canvasState: 0, mockupImages: { $slice: 1 } })
             .populate({
                 path: 'designer',
                 select: 'name email shopName'
@@ -207,6 +256,7 @@ const deleteProduct = async (req, res) => {
 module.exports = {
     createProduct,
     getProducts,
+    getProductById,
     getDesignerProducts,
     getPendingProducts,
     updateProductStatus,

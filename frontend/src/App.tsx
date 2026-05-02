@@ -1,6 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { CartProvider } from './context/CartContext';
+
+
 
 // Import Pages
 import Home from "./pages/Home"; // 🟢 This is your restored Landing Page
@@ -37,10 +39,19 @@ import AdminLogin from './pages/AdminLogin';
 import SandboxPayment from './pages/SandboxPayment';
 import CustomerRequests from './pages/CustomerRequests';
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
+
 function App() {
   return (
     <CartProvider>
       <Router>
+        <ScrollToTop />
         <Routes>
           {/* 🟢 PUBLIC ROUTES (Linked from Landing Page) */}
           <Route path="/" element={<Home />} />

@@ -7,8 +7,11 @@ const AdminLogin = () => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // 🟢 The auto-redirect was removed to ensure the login form is always shown
+    // as requested by the user. If an admin is already logged in, they can
+    // still use the form or manually go to the dashboard.
+    /*
     useEffect(() => {
-        // 🟢 Check for existing admin session in isolated storage
         const checkAdmin = async () => {
             const { getUserInfo } = await import('../utils/auth');
             const adminUser = getUserInfo('admin');
@@ -16,6 +19,7 @@ const AdminLogin = () => {
         };
         checkAdmin();
     }, [navigate]);
+    */
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

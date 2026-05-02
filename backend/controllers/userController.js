@@ -71,6 +71,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (user && (await bcrypt.compare(password, user.password))) {
+    /*
     // Record security log
     user.securityLogs.push({
       event: 'Login',
@@ -82,6 +83,8 @@ const loginUser = asyncHandler(async (req, res) => {
       user.securityLogs.shift();
     }
     await user.save();
+    */
+
 
     res.status(200).json({
       _id: user._id,

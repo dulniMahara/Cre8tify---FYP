@@ -31,15 +31,19 @@ const composeGarmentImage = async (imageUrl: string, hexColor: string, designUrl
             shirtCanvas.height = img.height;
             const sCtx = shirtCanvas.getContext('2d');
             if (sCtx) {
-                // Color fill
-                sCtx.fillStyle = hexColor;
-                sCtx.fillRect(0, 0, img.width, img.height);
-                // Multiply with texture
-                sCtx.globalCompositeOperation = 'multiply';
-                sCtx.drawImage(img, 0, 0);
-                // Mask to shirt shape
-                sCtx.globalCompositeOperation = 'destination-in';
-                sCtx.drawImage(img, 0, 0);
+                if (hexColor !== 'original') {
+                    // Color fill
+                    sCtx.fillStyle = hexColor;
+                    sCtx.fillRect(0, 0, img.width, img.height);
+                    // Multiply with texture
+                    sCtx.globalCompositeOperation = 'multiply';
+                    sCtx.drawImage(img, 0, 0);
+                    // Mask to shirt shape
+                    sCtx.globalCompositeOperation = 'destination-in';
+                    sCtx.drawImage(img, 0, 0);
+                } else {
+                    sCtx.drawImage(img, 0, 0);
+                }
             }
 
             // 3. Draw the colored shirt onto the main square canvas
@@ -109,6 +113,8 @@ const DummyModel = () => {
     // Angle tracking (0=Front, 1=Right Side, 2=Back, 3=Left Side (flipped))
     const [angle, setAngle] = useState(0);
     const [category, setCategory] = useState('female');
+    
+
 
     // AI Generation states
     const [isGenerating, setIsGenerating] = useState(false);
@@ -159,9 +165,10 @@ const DummyModel = () => {
             const humanFile = new File([humanBlob], 'human.png', { type: humanBlob.type });
 
             // 2. Tint the garment image and overlay design, then get the blob
+            const shouldTint = !product.isKids || product.frontDesign;
             const garmBlob = await composeGarmentImage(
                 product.baseImages[0], 
-                selectedColor, 
+                shouldTint ? selectedColor : 'transparent', 
                 product.frontDesign, 
                 product.frontPrintArea
             );
@@ -230,24 +237,28 @@ const DummyModel = () => {
                                 ))}
                             </div>
 
-                            <label style={{ fontWeight: '800', color: '#64748B', display: 'block', marginBottom: '8px', fontSize: '13px' }}>Live Color Swap</label>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                {Object.values(colorMap).map((hex) => (
-                                    <div
-                                        key={hex}
-                                        onClick={() => handleColorChange(hex)}
-                                        style={{
-                                            width: '24px',
-                                            height: '24px',
-                                            borderRadius: '50%',
-                                            background: hex,
-                                            border: selectedColor === hex ? '2.5px solid #3B82F6' : '1px solid #E2E8F0',
-                                            cursor: 'pointer',
-                                            transition: '0.2s'
-                                        }}
-                                    />
-                                ))}
-                            </div>
+                            {(!product.isKids || product.frontDesign) && (
+                                <>
+                                    <label style={{ fontWeight: '800', color: '#64748B', display: 'block', marginBottom: '8px', fontSize: '13px' }}>Live Color Swap</label>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                        {Object.values(colorMap).map((hex) => (
+                                            <div
+                                                key={hex}
+                                                onClick={() => handleColorChange(hex)}
+                                                style={{
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    borderRadius: '50%',
+                                                    background: hex,
+                                                    border: selectedColor === hex ? '2.5px solid #3B82F6' : '1.5px solid #E2E8F0',
+                                                    cursor: 'pointer',
+                                                    transition: '0.2s'
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         {/* CENTER: THE VISUALIZER */}
@@ -315,39 +326,43 @@ const DummyModel = () => {
                                 position: 'relative', overflow: 'hidden'
                             }}>
                                 {/* Dynamic Color Sync for Right Side Panel */}
-                                <div style={{
-                                    backgroundColor: selectedColor,
-                                    width: '100%', height: '100%', position: 'absolute',
-                                    WebkitMaskImage: `url(${product.baseImages[0]})`,
-                                    maskImage: `url(${product.baseImages[0]})`,
-                                    WebkitMaskSize: 'contain', maskSize: 'contain',
-                                    WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-                                    WebkitMaskPosition: 'center', maskPosition: 'center',
-                                    zIndex: 0
-                                }}>
-                                    <img 
-                                        src={product.baseImages[0]} 
-                                        style={{ 
-                                            width: '100%', height: '100%', objectFit: 'contain', 
-                                            mixBlendMode: 'multiply',
-                                            filter: 'contrast(1.0) brightness(0.95) saturate(0)'
-                                        }} 
-                                        alt="Texture" 
-                                    />
-
-                                    {/* 🚀 ADDED: Design Overlay for Right Side Panel */}
-                                    {product.frontDesign && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            ...(product.frontPrintArea || { top: '45%', left: '50%', width: '35%', height: '45%' }),
-                                            transform: 'translate(-50%, -50%)',
-                                            zIndex: 2,
-                                            pointerEvents: 'none'
-                                        }}>
-                                            <img src={product.frontDesign} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Design" />
-                                        </div>
-                                    )}
-                                </div>
+                                {(!product.isKids || product.frontDesign) ? (
+                                    <div style={{
+                                        backgroundColor: selectedColor,
+                                        width: '100%', height: '100%', position: 'absolute',
+                                        WebkitMaskImage: `url(${product.baseImages[0]})`,
+                                        maskImage: `url(${product.baseImages[0]})`,
+                                        WebkitMaskSize: 'contain', maskSize: 'contain',
+                                        WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
+                                        WebkitMaskPosition: 'center', maskPosition: 'center',
+                                        zIndex: 0
+                                    }}>
+                                        <img 
+                                            src={product.baseImages[0]} 
+                                            style={{ 
+                                                width: '100%', height: '100%', objectFit: 'contain', 
+                                                mixBlendMode: 'multiply',
+                                                filter: 'contrast(1.0) brightness(0.95) saturate(0)'
+                                            }} 
+                                            alt="Texture" 
+                                        />
+    
+                                        {/* 🚀 ADDED: Design Overlay for Right Side Panel */}
+                                        {product.frontDesign && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                ...(product.frontPrintArea || { top: '45%', left: '50%', width: '35%', height: '45%' }),
+                                                transform: 'translate(-50%, -50%)',
+                                                zIndex: 2,
+                                                pointerEvents: 'none'
+                                            }}>
+                                                <img src={product.frontDesign} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Design" />
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <img src={product.baseImages[0]} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt={product.title} />
+                                )}
                             </div>
                             <h2 style={{ fontSize: '18px', fontWeight: '900', marginBottom: '5px' }}>{product.title}</h2>
                             <p style={{ color: '#FB0606', fontWeight: '900', marginBottom: '15px', fontSize: '16px' }}>{product.price}</p>

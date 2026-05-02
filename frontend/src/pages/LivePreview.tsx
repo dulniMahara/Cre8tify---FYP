@@ -36,15 +36,19 @@ const composeGarmentImage = async (imageUrl: string, hexColor: string, designUrl
             shirtCanvas.height = img.height;
             const sCtx = shirtCanvas.getContext('2d');
             if (sCtx) {
-                // Color fill
-                sCtx.fillStyle = hexColor;
-                sCtx.fillRect(0, 0, img.width, img.height);
-                // Multiply with texture
-                sCtx.globalCompositeOperation = 'multiply';
-                sCtx.drawImage(img, 0, 0);
-                // Mask to shirt shape
-                sCtx.globalCompositeOperation = 'destination-in';
-                sCtx.drawImage(img, 0, 0);
+                if (hexColor !== 'original') {
+                    // Color fill
+                    sCtx.fillStyle = hexColor;
+                    sCtx.fillRect(0, 0, img.width, img.height);
+                    // Multiply with texture
+                    sCtx.globalCompositeOperation = 'multiply';
+                    sCtx.drawImage(img, 0, 0);
+                    // Mask to shirt shape
+                    sCtx.globalCompositeOperation = 'destination-in';
+                    sCtx.drawImage(img, 0, 0);
+                } else {
+                    sCtx.drawImage(img, 0, 0);
+                }
             }
 
             // 3. Draw the colored shirt onto the main square canvas
@@ -120,10 +124,7 @@ const LivePreview = () => {
     const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
     const [resultImage, setResultImage] = useState<string | null>(null);
 
-    // 🚀 Scroll to top when page loads
-    React.useEffect(() => {
-        window.scrollTo(0, 0);
-    }, []);
+
 
     // 🟢 FIT CONTROLS: To align the shirt onto the uploaded body
     const [shirtPos, setShirtPos] = useState({ x: 0, y: 150, scale: 0.55 });
@@ -175,9 +176,11 @@ const LivePreview = () => {
 
         try {
             // 🚀 THE FIX: Use our composition engine to bake the color and design into the file
+            // For hardcoded kids products, we don't want to tint (hexColor = 'transparent' or skip)
+            const shouldTint = !product.isKids || product.frontDesign;
             const garmBlob = await composeGarmentImage(
                 product.baseImages[0], 
-                selectedColor, 
+                shouldTint ? selectedColor : 'transparent', 
                 product.frontDesign, 
                 product.frontPrintArea
             );
@@ -263,67 +266,74 @@ const LivePreview = () => {
                                 border: '1.5px solid #E2E8F0', overflow: 'hidden', position: 'relative',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}>
-                                {/* 🟢 THE FIX: The mask uses selectedColor state to change the shirt color */}
-                                <div style={{
-                                    backgroundColor: selectedColor, // Dynamic color update
-                                    width: '100%', height: '100%', position: 'absolute',
-                                    WebkitMaskImage: `url(${product.baseImages[0]})`,
-                                    maskImage: `url(${product.baseImages[0]})`,
-                                    WebkitMaskSize: 'contain', maskSize: 'contain',
-                                    WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-                                    WebkitMaskPosition: 'center', maskPosition: 'center',
-                                    zIndex: 0
-                                }}>
-                                    <img 
-                                        src={product.baseImages[0]} 
-                                        style={{ 
-                                            width: '100%', height: '100%', objectFit: 'contain', 
-                                            mixBlendMode: 'multiply', 
-                                            filter: 'contrast(1.0) brightness(0.95) saturate(0)' 
-                                        }} 
-                                        alt="Shirt Texture" 
-                                    />
-                                    
-                                    {/* 🚀 ADDED: Design Overlay for Designer Products */}
-                                    {product.frontDesign && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            ...(product.frontPrintArea || { top: '45%', left: '50%', width: '35%', height: '45%' }),
-                                            transform: 'translate(-50%, -50%)',
-                                            zIndex: 2,
-                                            pointerEvents: 'none'
-                                        }}>
-                                            <img src={product.frontDesign} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Design" />
-                                        </div>
-                                    )}
-                                </div>
+                                {(!product.isKids || product.frontDesign) ? (
+                                    <div style={{
+                                        backgroundColor: selectedColor, // Dynamic color update
+                                        width: '100%', height: '100%', position: 'absolute',
+                                        WebkitMaskImage: `url(${product.baseImages[0]})`,
+                                        maskImage: `url(${product.baseImages[0]})`,
+                                        WebkitMaskSize: 'contain', maskSize: 'contain',
+                                        WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
+                                        WebkitMaskPosition: 'center', maskPosition: 'center',
+                                        zIndex: 0
+                                    }}>
+                                        <img 
+                                            src={product.baseImages[0]} 
+                                            style={{ 
+                                                width: '100%', height: '100%', objectFit: 'contain', 
+                                                mixBlendMode: 'multiply', 
+                                                filter: 'contrast(1.0) brightness(0.95) saturate(0)' 
+                                            }} 
+                                            alt="Shirt Texture" 
+                                        />
+                                        
+                                        {/* 🚀 ADDED: Design Overlay for Designer Products */}
+                                        {product.frontDesign && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                ...(product.frontPrintArea || { top: '45%', left: '50%', width: '35%', height: '45%' }),
+                                                transform: 'translate(-50%, -50%)',
+                                                zIndex: 2,
+                                                pointerEvents: 'none'
+                                            }}>
+                                                <img src={product.frontDesign} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Design" />
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <img src={product.baseImages[0]} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt={product.title} />
+                                )}
                             </div>
 
                             <div style={{ marginTop: '35px' }}>
                                 <h2 style={{ fontSize: '18px', fontWeight: '900', margin: '0' }}>{product.title}</h2>
                                 <p style={{ color: '#64748B', fontSize: '13px', fontStyle: 'italic', marginBottom: '20px' }}>by {product.shopName}</p>
 
-                                <h4 style={{ fontSize: '14px', fontWeight: '800', marginBottom: '12px' }}>Change Color</h4>
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(9, 1fr)',
-                                    gap: '8px',
-                                    marginBottom: '25px',
-                                    width: 'fit-content'
-                                }}>
-                                    {colorOptions.map((c) => (
-                                        <div key={c.hex} onClick={() => setSelectedColor(c.hex)} style={{ cursor: 'pointer' }}>
-                                            <div style={{
-                                                width: '22px',
-                                                height: '22px',
-                                                borderRadius: '50%',
-                                                background: c.hex,
-                                                border: selectedColor === c.hex ? '2.5px solid #3B82F6' : '1.5px solid #E2E8F0',
-                                                margin: '0 auto'
-                                            }}></div>
+                                {(!product.isKids || product.frontDesign) && (
+                                    <>
+                                        <h4 style={{ fontSize: '14px', fontWeight: '800', marginBottom: '12px' }}>Change Color</h4>
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(9, 1fr)',
+                                            gap: '8px',
+                                            marginBottom: '25px',
+                                            width: 'fit-content'
+                                        }}>
+                                            {colorOptions.map((c) => (
+                                                <div key={c.hex} onClick={() => setSelectedColor(c.hex)} style={{ cursor: 'pointer' }}>
+                                                    <div style={{
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        borderRadius: '50%',
+                                                        background: c.hex,
+                                                        border: selectedColor === c.hex ? '2.5px solid #3B82F6' : '1.5px solid #E2E8F0',
+                                                        margin: '0 auto'
+                                                    }}></div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    </>
+                                )}
 
                                 <h4 style={{ fontSize: '14px', fontWeight: '800', marginBottom: '12px' }}>Change Size</h4>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
