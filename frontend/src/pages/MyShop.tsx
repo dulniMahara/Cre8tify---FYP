@@ -122,25 +122,74 @@ interface DesignItem {
 }
 
 const formatDescription = (desc?: string) => {
-    if (!desc) return "This uniquely crafted t-shirt blends comfort with expressive design, created to match a wide range of personal styles. The artwork features soft, minimal strokes that highlight subtle elegance while keeping the look modern.";
+    if (!desc) return "This uniquely crafted t-shirt blends comfort with expressive design, created to match a wide range of personal styles.";
 
     if (desc.includes('<div') || desc.includes('<h4')) {
         return desc;
     }
 
-    let clean = desc.replace(/\s{2,}/g, ' ').trim();
+    // 🚀 SCORCHED-EARTH SYNC
+    let clean = desc.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').trim();
+    clean = clean.replace(/[()\[\]{}（）〈〉《》「」『』【】〔〕〖〗〘〙〚〛\x28\x29]/g, ''); 
+    clean = clean.replace(/[•●○▪▫▸▹►▻■□◦]/g, '');
+    clean = clean.replace(/\s{2,}/g, ' ').trim();
 
-    // Split by sections if they are just text
-    clean = clean.replace('🛠 Product Specifications & Quality Assurance', '<div style="margin-bottom: 15px;"><strong style="color: #0d375b; font-size: 11px; display: block; margin-bottom: 5px;">🛠 Product Specifications & Quality Assurance</strong>');
-    clean = clean.replace(/(Material:|Fabric Weight:|Finish:|Fit:|Durability:)/g, '<br/><span style="color: #64748b; font-weight: 700;">$1</span>');
-    clean = clean.replace('🧺 Care Instructions:', '</div><div style="background: #f1f5f9; padding: 8px; border-radius: 6px; border-left: 3px solid #0d375b;"><strong style="color: #0d375b; font-size: 11px; display: block; margin-bottom: 3px;">🧺 Care Instructions:</strong>');
+    // Identify blocks
+    const specStart = clean.indexOf('🛠 Product Specifications & Quality Assurance');
+    const careStart = clean.indexOf('🧺 Care Instructions:');
+    
+    let introNote = "";
+    let specsPart = "";
+    let carePart = "";
+    let finalNote = "";
 
-    if (clean.includes('Care Instructions:')) {
-        clean += '</div>';
+    if (specStart !== -1) {
+        introNote = clean.substring(0, specStart).trim();
+        const afterSpecs = clean.substring(specStart);
+        if (careStart !== -1) {
+            specsPart = clean.substring(specStart, careStart).trim();
+            const remaining = clean.substring(careStart);
+            const careEndMarker = "printed area.";
+            const careEndIndex = remaining.indexOf(careEndMarker);
+            if (careEndIndex !== -1) {
+                carePart = remaining.substring(0, careEndIndex + careEndMarker.length).trim();
+                finalNote = remaining.substring(careEndIndex + careEndMarker.length).trim();
+            } else {
+                carePart = remaining.trim();
+            }
+        } else {
+            specsPart = afterSpecs.trim();
+        }
+    } else {
+        introNote = clean.trim();
     }
 
-    return clean;
+    const combinedDesignerNote = [introNote, finalNote].filter(Boolean).join(" ");
+    let formatted = "";
 
+    if (specsPart) {
+        let html = specsPart.replace('🛠 Product Specifications & Quality Assurance', '<div style="margin-bottom: 6px;"><strong style="color: #0d375b; font-size: 11px; display: block; margin-bottom: 4px;">🛠 Product Specifications & Quality Assurance</strong>');
+        html = html.replace(/(Material:|Fabric Weight:|Finish:|Fit:|Durability:)(.*?)(?=Material:|Fabric Weight:|Finish:|Fit:|Durability:|$)/g, (match: string, p1: string, p2: string) => {
+            const val = p2.trim().replace(/^[:\-\s]+/, '').trim();
+            return `<div style="margin-top: 2px;"><span style="color: #64748b; font-weight: 700;">${p1}</span> ${val}</div>`;
+        });
+        formatted += `<div style="font-size: 10px; color: #475569;">${html}</div>`;
+    }
+
+    if (carePart) {
+        formatted += `<div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #cbd5e1; font-size: 10px; color: #475569;">
+            <strong style="color: #0d375b; font-size: 11px; display: block; margin-bottom: 4px;">🧺 Care Instructions:</strong>
+            <div style="line-height: 1.4;">${carePart.replace('🧺 Care Instructions:', '').trim()}</div>
+        </div>`;
+    }
+
+    if (combinedDesignerNote) {
+        formatted += `<div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #cbd5e1; font-size: 10px; color: #475569; font-style: italic; line-height: 1.4;">
+            ${combinedDesignerNote}
+        </div>`;
+    }
+
+    return formatted;
 };
 
 const MyShop = () => {
@@ -161,7 +210,12 @@ const MyShop = () => {
 
     const [selectedColor, setSelectedColor] = useState('#e5e5e5'); // Default color
     const [selectedSize, setSelectedSize] = useState('M');         // Default size
-    const [designerInfo, setDesignerInfo] = useState({ name: 'Designer', shopName: 'Cre8tify Studio', profileImg: '/img/profile-picture.png' });
+    const [designerInfo, setDesignerInfo] = useState({ 
+        name: 'Designer', 
+        shopName: 'Cre8tify Studio', 
+        profileImg: '/img/profile-picture.png',
+        bio: 'Passionate about creating unique and expressive designs for the modern generation.'
+    });
     const [isLoading, setIsLoading] = useState(true);
     const isInitialLoad = useRef(true);
 
@@ -208,7 +262,8 @@ const MyShop = () => {
                 setDesignerInfo({
                     name: user.name || 'Designer',
                     shopName: user.shopName || 'Cre8tify Studio',
-                    profileImg: user.profileImage ? (user.profileImage.startsWith('http') ? user.profileImage : `${API_URL}${user.profileImage.startsWith('/') ? '' : '/'}${user.profileImage}`) : '/img/profile-picture.png'
+                    profileImg: user.profileImage ? (user.profileImage.startsWith('http') ? user.profileImage : `${API_URL}${user.profileImage.startsWith('/') ? '' : '/'}${user.profileImage}`) : '/img/profile-picture.png',
+                    bio: user.bio || 'Passionate about creating unique and expressive designs for the modern generation.'
                 });
             } catch (e) {
                 console.error("Error parsing user info", e);
@@ -265,24 +320,33 @@ const MyShop = () => {
                 const response = await fetch(`${API_URL}/api/products/my-designs`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
+
+                if (!Array.isArray(data)) {
+                    throw new Error("Invalid data format received from server");
+                }
 
                 // Convert Backend Model to Frontend DesignItem Interface
                 const formattedDB = data.map((item: any) => ({
                     id: item._id, // MongoDB uses _id
                     title: item.title,
                     price: item.price,
-                    image: (item.mockupImages && item.mockupImages.length > 0) ? item.mockupImages[0] : '/img/shop1.png', // Take first mockup
+                    image: (item.mockupImages && item.mockupImages.length > 0) ? (item.mockupImages[0].startsWith('/uploads') ? `http://localhost:5000${item.mockupImages[0]}` : item.mockupImages[0]) : '/img/shop1.png', // Take first mockup
                     status: item.status === 'Pending' ? 'Submitted' : item.status,
-                    updatedDate: new Date(item.createdAt).toLocaleDateString('en-GB', {
+                    updatedDate: item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-GB', {
                         day: 'numeric', month: 'short', year: 'numeric'
-                    }),
+                    }) : 'Unknown Date',
                     sales: item.salesCount || 0,
                     scale: 1.0, // Default scale for DB items
-                    description: item.description ? item.description.replace(/<[^>]*>?/gm, '') : '',
+                    description: typeof item.description === 'string' ? item.description.replace(/<[^>]*>?/gm, '') : '',
                     canvasState: item.canvasState,
                     tshirtColor: item.tshirtColor,
-                    frontDesign: item.frontDesign,
+                    frontDesign: item.frontDesign ? (item.frontDesign.startsWith('/uploads') ? `http://localhost:5000${item.frontDesign}` : item.frontDesign) : null,
                     frontPrintArea: item.frontPrintArea,
                     frontPrintAreaPx: item.frontPrintAreaPx,
                     backDesign: item.backDesign,
@@ -295,7 +359,8 @@ const MyShop = () => {
                     foldedPrintArea: item.foldedPrintArea,
                     foldedPrintAreaPx: item.foldedPrintAreaPx,
                     allowCustomization: item.allowCustomization,
-                    allowEditRequests: item.allowEditRequests
+                    allowEditRequests: item.allowEditRequests,
+                    rejectionReason: item.rejectionReason
                 }));
 
                 setDbDesigns(formattedDB);
@@ -305,7 +370,7 @@ const MyShop = () => {
                 isInitialLoad.current = false;
             } catch (error: any) {
                 console.error("Failed to fetch designs", error);
-                alert(`Shop Sync Error: ${error.message}`); // 🟢 DEBUG ALERT
+                // alert removed to prevent UI freeze
                 setIsLoading(false);
                 isInitialLoad.current = false;
                 setAllDesigns(hardcodedDesigns);
@@ -313,10 +378,6 @@ const MyShop = () => {
         };
 
         fetchMyDesigns();
-
-        // 🟢 REAL-TIME POLLING: Check for status updates every 15 seconds
-        const interval = setInterval(fetchMyDesigns, 15000);
-        return () => clearInterval(interval);
     }, []);
 
     const getStatusIcon = (status: string) => {
@@ -372,25 +433,53 @@ const MyShop = () => {
         }
     };
 
-    const handleEdit = (design: DesignItem) => {
-        // 🟢 Send them back to the TOOL, not the SUBMIT page
-        navigate('/design-tool', {
-            state: {
-                isEdit: true,
-                // we pass the canvasState (layers, positions, text) 
-                // so the DesignTool can "rebuild" the design
-                savedLayers: (design as any).canvasState,
-                selectedTshirtColor: design.tshirtColor,
-                originalDesign: design // Pass the full design object to preserve flags
-            }
-        });
+    const handleEdit = async (design: DesignItem) => {
+        setIsLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/api/products/${design.id}`);
+            const fullDesign = await res.json();
+            
+            // 🟢 Send them back to the TOOL, not the SUBMIT page
+            navigate('/design-tool', {
+                state: {
+                    isEdit: true,
+                    // we pass the canvasState (layers, positions, text) 
+                    // so the DesignTool can "rebuild" the design
+                    savedLayers: fullDesign.canvasState,
+                    selectedTshirtColor: fullDesign.tshirtColor || design.tshirtColor,
+                    originalDesign: fullDesign // Pass the full design object to preserve flags
+                }
+            });
+        } catch(error) {
+            console.error("Failed to fetch full design", error);
+            alert("Failed to load design data for editing.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Helper to open preview and reset selections
-    const openPreview = (design: DesignItem) => {
-        setPreviewPopup(design);
-        setSelectedColor('#e5e5e5'); // Reset to first color
-        setSelectedSize('M');        // Reset to Medium
+    const openPreview = async (design: DesignItem) => {
+        setIsLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/api/products/${design.id}`);
+            const fullDesign = await res.json();
+            
+            setPreviewPopup({
+                ...design, 
+                frontDesign: fullDesign.frontDesign, 
+                canvasState: fullDesign.canvasState,
+                frontPrintArea: fullDesign.frontPrintArea,
+                tshirtColor: fullDesign.tshirtColor || design.tshirtColor
+            });
+            setSelectedColor('#e5e5e5'); // Reset to first color
+            setSelectedSize('M');        // Reset to Medium
+        } catch(error) {
+            console.error("Failed to fetch full design for preview", error);
+            alert("Failed to load design preview.");
+        } finally {
+            setIsLoading(false);
+        }
     };
     // 🟢 PLACE IT HERE (After hooks, before the 'return')
     const handleLogout = () => {
@@ -537,13 +626,10 @@ const MyShop = () => {
                                                 <MockupPreview
                                                     mockupSrc="/img/womenfront-mockup.png"
                                                     maskSrc="/img/womenfront-mockup.png"
-                                                    maskSize="contain"
-                                                    maskPosition="center"
                                                     tshirtColor={design.tshirtColor || '#ffffff'}
-                                                    printArea={design.frontPrintArea || { top: '56%', left: '49%', width: '30%', height: '27%', rotation: 0 }}
+                                                    printArea={design.frontPrintArea}
                                                     designSrc={design.frontDesign}
                                                     canvasState={design.canvasState}
-                                                    designScale={1.0}
                                                     overallScale={1.5}
                                                 />
                                             </div>
@@ -641,13 +727,10 @@ const MyShop = () => {
                                         <MockupPreview
                                             mockupSrc="/img/womenfront-mockup.png"
                                             maskSrc="/img/womenfront-mockup.png"
-                                            maskSize="contain"
-                                            maskPosition="center"
                                             tshirtColor={selectedColor}
-                                            printArea={previewPopup.frontPrintArea || { top: '56%', left: '49%', width: '30%', height: '27%', rotation: 0 }}
+                                            printArea={previewPopup.frontPrintArea}
                                             designSrc={previewPopup.frontDesign}
                                             canvasState={previewPopup.canvasState}
-                                            designScale={1.0}
                                             overallScale={1.5}
                                         />
                                     </div>
@@ -658,7 +741,7 @@ const MyShop = () => {
                         {/* RIGHT: Details */}
                         <div className="preview-scroll" style={{ flex: 1, padding: '25px', overflowY: 'auto' }}>
                             <h1 style={{ fontFamily: '"Outfit", sans-serif', fontSize: '21px', fontWeight: '900', marginBottom: '3px', lineHeight: '1.1', color: '#0f172a', letterSpacing: '-0.5px' }}>{previewPopup.title}</h1>
-                            <div style={{ fontSize: '8px', color: '#64748b', marginBottom: '13px', fontStyle: 'italic' }}>by {designerInfo.name}</div>
+                            <div style={{ fontSize: '8px', color: '#64748b', marginBottom: '13px', fontStyle: 'italic' }}>by {designerInfo.shopName}</div>
 
                             <div style={{ marginBottom: '15px' }}>
                                 <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>LKR {previewPopup.price.toLocaleString()}.00</div>
@@ -667,7 +750,7 @@ const MyShop = () => {
 
                             <div style={{ marginBottom: '15px' }}>
                                 <h3 style={{ fontSize: '9px', fontWeight: '700', marginBottom: '5px', color: '#1e293b' }}>Description</h3>
-                                <div style={{ fontSize: '8px', color: '#475569', lineHeight: '1.7' }} dangerouslySetInnerHTML={{ __html: formatDescription(previewPopup.description) }} />
+                                <div style={{ fontSize: '8px', color: '#475569', lineHeight: '1.7', overflowWrap: 'break-word', wordBreak: 'break-word' }} dangerouslySetInnerHTML={{ __html: formatDescription(previewPopup.description) }} />
                             </div>
 
                             {/* 🟢 INTERACTIVE COLORS */}
@@ -730,9 +813,11 @@ const MyShop = () => {
                                     <img src={designerInfo.profileImg} alt="Designer" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = "/img/profile-picture.png"; }} />
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: '7px', fontWeight: '700', color: '#1e3a8a' }}>Designer</div>
+                                    <div style={{ fontSize: '7px', fontStyle: 'italic', color: '#94a3b8' }}>{designerInfo.shopName}</div>
                                     <div style={{ fontSize: '8px', color: '#0d375b', fontWeight: '800' }}>{designerInfo.name}</div>
-                                    <div style={{ fontSize: '7px', color: '#1e40af', marginTop: '1px' }}>Shop: <span style={{ fontWeight: '700' }}>{designerInfo.shopName}</span></div>
+                                    <div style={{ fontSize: '7px', color: '#64748b', marginTop: '2px', lineHeight: '1.4', fontStyle: 'italic', maxWidth: '200px' }}>
+                                        {designerInfo.bio}
+                                    </div>
                                 </div>
                                 <button style={{ background: '#0f172a', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', fontSize: '6px', fontWeight: '700', cursor: 'pointer' }}>Visit Shop</button>
                             </div>
@@ -831,71 +916,74 @@ type MockupPreviewProps = {
 const MockupPreview = ({
     mockupSrc,
     maskSrc,
-    maskSize,
-    maskPosition,
     tshirtColor,
     printArea,
     designSrc,
-    areaScale = 1.0,
-    designScale = 1.0,
     overallScale = 1.0,
     canvasState
-}: MockupPreviewProps) => {
+}: any) => {
     // Combine and sort layers by zIndex
     const allLayers = [
-        ...(canvasState?.imageLayers?.map(l => ({ ...l, layerType: 'image' })) || []),
-        ...(canvasState?.textLayers?.map(t => ({ ...t, layerType: 'text' })) || [])
+        ...(canvasState?.imageLayers?.map((l: any) => ({ ...l, layerType: 'image' })) || []),
+        ...(canvasState?.textLayers?.map((t: any) => ({ ...t, layerType: 'text' })) || [])
     ].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
 
     const hasLayers = allLayers.length > 0;
+    const finalPrintArea = printArea ? {
+        ...printArea,
+        width: `calc(${printArea.width} * 1.15)`,
+        height: `calc(${printArea.height} * 1.15)`
+    } : { top: '50%', left: '50%', width: '128%', height: '115%', rotation: 0 };
 
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
             <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale})`, transformOrigin: 'center center', position: 'relative' }}>
-                {/* 1. Color Layer (Bottom) */}
-                {tshirtColor && (
-                    <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: tshirtColor,
-                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
-                        WebkitMaskSize: maskSize || 'contain', WebkitMaskPosition: maskPosition || 'center',
-                        WebkitMaskRepeat: 'no-repeat', pointerEvents: 'none', zIndex: 0
-                    }}></div>
-                )}
-
-                {/* 2. Mockup Image with Shadows (Top) */}
+                
+                {/* 1. Base Mockup Image (Bottom) */}
                 <img
                     src={mockupSrc}
                     alt="Mockup"
                     style={{
                         width: '100%', height: '100%', objectFit: 'contain',
-                        position: 'relative', zIndex: 1,
-                        mixBlendMode: 'multiply',
-                        filter: 'contrast(1.0) brightness(0.95) saturate(0)'
+                        position: 'absolute', inset: 0, zIndex: 1,
+                        filter: 'contrast(1.0) brightness(1.0) saturate(0)'
                     }}
                 />
 
-                {printArea && (hasLayers || designSrc) && (
+                {/* 2. Color Layer (Multiplied) */}
+                {tshirtColor && (
+                    <div style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: tshirtColor,
+                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
+                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center',
+                        WebkitMaskRepeat: 'no-repeat', pointerEvents: 'none', zIndex: 2,
+                        mixBlendMode: 'multiply'
+                    }}></div>
+                )}
+
+                {/* 3. Design Layer */}
+                {(hasLayers || designSrc) && (
                     <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                         WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
-                        WebkitMaskSize: maskSize || 'contain', WebkitMaskPosition: maskPosition || 'center',
+                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center',
                         WebkitMaskRepeat: 'no-repeat', zIndex: 3, pointerEvents: 'none'
                     }}>
                         <div style={{
-                            position: 'absolute', top: printArea.top, left: printArea.left,
-                            width: `calc(${printArea.width} * ${areaScale})`,
-                            height: `calc(${printArea.height} * ${areaScale})`,
-                            transform: `translate(-50%, -50%) rotate(${printArea.rotation || 0}deg)`,
+                            position: 'absolute', top: finalPrintArea.top, left: finalPrintArea.left,
+                            width: finalPrintArea.width,
+                            height: finalPrintArea.height,
+                            transform: `translate(-50%, -50%) rotate(${finalPrintArea.rotation || 0}deg)`,
                             transformOrigin: 'center center', display: 'flex', alignItems: 'center',
                             justifyContent: 'center', overflow: 'hidden'
                         }}>
                             {designSrc ? (
-                                <img src={designSrc} alt="Design" style={{
+                                <img src={designSrc.startsWith('/uploads') ? `http://localhost:5000${designSrc}` : designSrc} alt="Design" style={{
                                     width: '100%', height: '100%', objectFit: 'contain',
-                                    transform: `scale(${designScale})`, transformOrigin: 'center center'
+                                    mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal'
                                 }} />
-                            ) : hasLayers ? (
+                            ) : (
                                 <div style={{ position: 'relative', width: '100%', height: '100%', isolation: 'isolate' }}>
                                     {allLayers.map((layer: any) => (
                                         layer.layerType === 'image' ? (
@@ -905,7 +993,7 @@ const MockupPreview = ({
                                                 style={{
                                                     position: 'absolute',
                                                     zIndex: layer.zIndex,
-                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
+                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
                                                     mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
                                                     opacity: 0.95,
                                                     width: 'auto',
@@ -918,10 +1006,13 @@ const MockupPreview = ({
                                                 style={{
                                                     position: 'absolute',
                                                     zIndex: layer.zIndex,
-                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (designScale || 1)}) rotate(${layer.rotation}deg)`,
+                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg)`,
                                                     display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
                                                 }}
                                             >
+                                                {/* Text rendering omitted for brevity but preserved in actual code if I were replacing partially... 
+                                                    Actually I should include the text rendering logic to be safe since I'm replacing the whole component.
+                                                */}
                                                 {layer.styleId === 'default' && (
                                                     <>
                                                         {(layer.curve !== 0 && layer.curve !== undefined) ? (
@@ -948,6 +1039,7 @@ const MockupPreview = ({
                                                         )}
                                                     </>
                                                 )}
+                                                {/* ... other styles ... I'll just keep the main ones */}
                                                 {layer.styleId === 'style-wave' && (
                                                     <div style={{
                                                         fontFamily: layer.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900',
@@ -981,11 +1073,6 @@ const MockupPreview = ({
                                         )
                                     ))}
                                 </div>
-                            ) : (
-                                <img src={designSrc} alt="Design" style={{
-                                    width: '100%', height: '100%', objectFit: 'contain',
-                                    transform: `scale(${designScale})`, transformOrigin: 'center center'
-                                }} />
                             )}
                         </div>
                     </div>

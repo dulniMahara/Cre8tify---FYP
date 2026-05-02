@@ -108,9 +108,9 @@ const ProductSubmission = () => {
     // 🚀 Manually increased design dimensions and shifted position to top-right
     const submitPageFrontPrintArea = {
         ...frontPrintArea,
-        width: '110%',
-        height: '100%',
-        top: '54%',
+        width: '112%',
+        height: '108%',
+        top: '50%',
         left: '50%',
         rotation: 0
     };

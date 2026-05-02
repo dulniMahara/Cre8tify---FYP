@@ -303,7 +303,7 @@ const ProductDetail = () => {
             : (incoming?.baseImages || [frontImg, backImg]),
 
         // 🎨 Use the keys from our dictionary for the color dots
-        colors: (incoming?.frontDesign) ? Object.keys(colorNames) : (incoming?.colors || Object.keys(colorNames).slice(0, 7)),
+        colors: (incoming?.frontDesign) ? Object.keys(colorNames) : (incoming?.colors || Object.keys(colorNames)),
 
         sizes: incoming?.sizes || ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'],
         descriptionPara1: incoming?.description || "Experience the perfect blend of style...",
@@ -320,9 +320,9 @@ const ProductDetail = () => {
         shopName: Number(incoming?.id || id) <= 99 ? 'Artisa LK' : (incoming?.designer?.shopName || incoming?.shopName || 'Cre8tify Studio'),
 
         // 🟢 Designer Design Data
-        frontDesign: incoming?.frontDesign,
+        frontDesign: incoming?.frontDesign ? (incoming.frontDesign.startsWith('/uploads') ? `http://localhost:5000${incoming.frontDesign}` : incoming.frontDesign) : undefined,
         frontPrintArea: incoming?.frontPrintArea,
-        backDesign: incoming?.backDesign,
+        backDesign: incoming?.backDesign ? (incoming.backDesign.startsWith('/uploads') ? `http://localhost:5000${incoming.backDesign}` : incoming.backDesign) : undefined,
         backPrintArea: incoming?.backPrintArea,
         tshirtColor: incoming?.tshirtColor,
         baseProduct: incoming?.baseProduct,
@@ -332,15 +332,12 @@ const ProductDetail = () => {
     };
 
     // 3. Selection States
-    const [selectedColor, setSelectedColor] = useState(incoming?.selectedColor || product.tshirtColor || '#FFFFFF');
+    const [selectedColor, setSelectedColor] = useState(incoming?.selectedColor || product.tshirtColor || 'original');
     const [selectedSize, setSelectedSize] = useState('M');
     const [currentImgIndex, setCurrentImgIndex] = useState(0);
     const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
-    // 🚀 Scroll to top when product changes
-    useEffect(() => {
-        window.scrollTo(0, 0);
-    }, [id]);
+
 
     // 🚀 Fetch Base Product Info (Colors/Sizes from Admin)
     useEffect(() => {
@@ -399,7 +396,7 @@ const ProductDetail = () => {
                                         <div style={{
                                             gridArea: '1 / 1',
                                             width: '100%', height: '100%',
-                                            backgroundColor: selectedColor,
+                                            backgroundColor: selectedColor === 'original' ? 'transparent' : selectedColor,
                                             transition: 'background-color 0.3s ease',
                                             WebkitMaskImage: `url(${product.baseImages[currentImgIndex]})`,
                                             maskImage: `url(${product.baseImages[currentImgIndex]})`,
@@ -417,8 +414,8 @@ const ProductDetail = () => {
                                                 objectFit: 'contain',
                                                 position: 'relative',
                                                 zIndex: 1,
-                                                mixBlendMode: 'multiply',
-                                                filter: 'contrast(1.0) brightness(0.95) saturate(0)'
+                                                mixBlendMode: selectedColor === 'original' ? 'normal' : 'multiply',
+                                                filter: selectedColor === 'original' ? 'none' : 'contrast(1.0) brightness(0.95) saturate(0)'
                                             }}
                                         />
 
@@ -457,7 +454,7 @@ const ProductDetail = () => {
                                                                 layer.layerType === 'image' ? (
                                                                     <img
                                                                         key={layer.id}
-                                                                        src={layer.src}
+                                                                        src={layer.src.startsWith('/uploads') ? `http://localhost:5000${layer.src}` : layer.src}
                                                                         style={{
                                                                             position: 'absolute',
                                                                             zIndex: layer.zIndex,
@@ -594,12 +591,12 @@ const ProductDetail = () => {
                                                                 layer.layerType === 'image' ? (
                                                                     <img
                                                                         key={layer.id}
-                                                                        src={layer.src}
+                                                                        src={layer.src.startsWith('/uploads') ? `http://localhost:5000${layer.src}` : layer.src}
                                                                         style={{
                                                                             position: 'absolute',
                                                                             zIndex: layer.zIndex,
                                                                             transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
-                                                                            mixBlendMode: (selectedColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
+                                                                            mixBlendMode: (selectedColor !== 'original' && selectedColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
                                                                             opacity: 0.95,
                                                                             width: 'auto',
                                                                             height: 'auto'
@@ -745,21 +742,108 @@ const ProductDetail = () => {
                             </div>
 
                             {/* Description */}
-                            <div>
+                            <div className="product-description-container">
+                                {(() => {
+                                    const desc = product.descriptionPara1;
+                                    if (!desc || desc === "Experience the perfect blend of style...") {
+                                        return (
+                                            <div style={{ fontSize: '13px', color: '#475569', background: '#f1f5f9', padding: '15px', borderRadius: '12px' }}>
+                                                <div style={{ marginBottom: '10px' }}>
+                                                    <strong style={{ color: '#0d375b', fontSize: '14px', display: 'block', marginBottom: '6px' }}>🛠 Product Specifications & Quality Assurance</strong>
+                                                </div>
+                                                <div style={{ lineHeight: '1.4' }}>
+                                                    <div style={{ marginTop: '6px' }}><span style={{ color: '#64748b', fontWeight: '700' }}>Material:</span> Premium Heavyweight 100% Combed Ring-Spun Cotton.</div>
+                                                    <div style={{ marginTop: '6px' }}><span style={{ color: '#64748b', fontWeight: '700' }}>Fabric Weight:</span> 240 GSM (Grams per Square Meter) for a substantial, premium feel.</div>
+                                                    <div style={{ marginTop: '6px' }}><span style={{ color: '#64748b', fontWeight: '700' }}>Finish:</span> Bio-washed for a buttery-smooth texture and Pre-shrunk to maintain fit.</div>
+                                                    <div style={{ marginTop: '6px' }}><span style={{ color: '#64748b', fontWeight: '700' }}>Fit:</span> Contemporary Relaxed Street-Style Fit with dropped shoulders.</div>
+                                                    <div style={{ marginTop: '6px' }}><span style={{ color: '#64748b', fontWeight: '700' }}>Durability:</span> Double-needle stitched neck and hems for long-lasting wear.</div>
+                                                </div>
+                                                <div style={{ marginTop: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '10px' }}>
+                                                    <strong style={{ color: '#0d375b', fontSize: '14px', display: 'block', marginBottom: '6px' }}>🧺 Care Instructions:</strong>
+                                                    To preserve the design quality, machine wash cold inside out with similar colors. Tumble dry low or hang dry. Do not iron directly on the printed area.
+                                                </div>
+                                            </div>
+                                        );
+                                    }
 
-                                <div style={{ fontSize: '13px', color: '#475569', background: '#f1f5f9', padding: '15px', borderRadius: '12px' }}>
-                                    <h5 style={{ color: '#0d375b', margin: '0 0 10px 0', fontSize: '14px' }}>🛠 Product Specifications & Quality Assurance</h5>
-                                    <ul style={{ listStyleType: 'none', padding: 0, margin: 0, lineHeight: '1.6' }}>
-                                        <li><strong>Material:</strong> Premium Heavyweight 100% Combed Ring-Spun Cotton.</li>
-                                        <li><strong>Fabric Weight:</strong> 240 GSM for a substantial, premium feel.</li>
-                                        <li><strong>Finish:</strong> Bio-washed and Pre-shrunk to maintain fit.</li>
-                                        <li><strong>Fit:</strong> Contemporary Relaxed Street-Style Fit with dropped shoulders.</li>
-                                        <li><strong>Durability:</strong> Double-needle stitched neck and hems.</li>
-                                    </ul>
-                                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #cbd5e1' }}>
-                                        <strong>🧺 Care Instructions:</strong> Machine wash cold inside out. Tumble dry low or hang dry. Do not iron directly on print.
-                                    </div>
-                                </div>
+                                    // 🚀 ADVANCED PARSING & HIERARCHY
+                                    let clean = desc.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').trim();
+                                    
+                                    // Strip all bracket variations
+                                    clean = clean.replace(/[()\[\]{}（）〈〉《》「」『』【】〔〕〖〗〘〙〚〛\x28\x29]/g, ''); 
+                                    clean = clean.replace(/[•●○▪▫▸▹►▻■□◦]/g, '');
+                                    clean = clean.replace(/\s{2,}/g, ' ').trim();
+
+                                    // Identify the three main blocks
+                                    const specStart = clean.indexOf('🛠 Product Specifications & Quality Assurance');
+                                    const careStart = clean.indexOf('🧺 Care Instructions:');
+                                    
+                                    let introNote = "";
+                                    let specsPart = "";
+                                    let carePart = "";
+                                    let finalNote = "";
+
+                                    if (specStart !== -1) {
+                                        introNote = clean.substring(0, specStart).trim();
+                                        const afterSpecs = clean.substring(specStart);
+                                        
+                                        if (careStart !== -1) {
+                                            specsPart = clean.substring(specStart, careStart).trim();
+                                            const remaining = clean.substring(careStart);
+                                            
+                                            // The "Care Instructions" usually end with "printed area."
+                                            const careEndMarker = "printed area.";
+                                            const careEndIndex = remaining.indexOf(careEndMarker);
+                                            
+                                            if (careEndIndex !== -1) {
+                                                carePart = remaining.substring(0, careEndIndex + careEndMarker.length).trim();
+                                                finalNote = remaining.substring(careEndIndex + careEndMarker.length).trim();
+                                            } else {
+                                                carePart = remaining.trim();
+                                            }
+                                        } else {
+                                            specsPart = afterSpecs.trim();
+                                        }
+                                    } else {
+                                        introNote = clean.trim();
+                                    }
+
+                                    // Combine designer comments
+                                    const combinedDesignerNote = [introNote, finalNote].filter(Boolean).join(" ");
+
+                                    return (
+                                        <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                            {specsPart && (
+                                                <div style={{ fontSize: '13px', color: '#475569' }}>
+                                                    <div style={{ marginBottom: '6px' }}><strong style={{ color: '#0d375b', fontSize: '14px', display: 'block', marginBottom: '4px' }}>🛠 Product Specifications & Quality Assurance</strong></div>
+                                                    {(() => {
+                                                        let html = specsPart.replace('🛠 Product Specifications & Quality Assurance', '');
+                                                        html = html.replace(/(Material:|Fabric Weight:|Finish:|Fit:|Durability:)(.*?)(?=Material:|Fabric Weight:|Finish:|Fit:|Durability:|$)/g, (match: string, p1: string, p2: string) => {
+                                                            const val = p2.trim().replace(/^[:\-\s]+/, '').trim();
+                                                            return `<div style="margin-top: 4px;"><span style="color: #64748b; font-weight: 700;">${p1}</span> ${val}</div>`;
+                                                        });
+                                                        return <div dangerouslySetInnerHTML={{ __html: html }} style={{ lineHeight: '1.4' }} />;
+                                                    })()}
+                                                </div>
+                                            )}
+
+                                            {carePart && (
+                                                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #cbd5e1', fontSize: '13px', color: '#475569' }}>
+                                                    <strong style={{ color: '#0d375b', fontSize: '14px', display: 'block', marginBottom: '6px' }}>🧺 Care Instructions:</strong>
+                                                    <div style={{ lineHeight: '1.4' }}>{carePart.replace('🧺 Care Instructions:', '').trim()}</div>
+                                                </div>
+                                            )}
+
+                                            {combinedDesignerNote && (
+                                                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #cbd5e1', fontSize: '13px', color: '#475569' }}>
+                                                    <div style={{ lineHeight: '1.4', fontStyle: 'italic' }}>
+                                                        {combinedDesignerNote}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
                             {/* Color Selection (Restored) */}

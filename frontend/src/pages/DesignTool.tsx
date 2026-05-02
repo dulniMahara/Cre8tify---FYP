@@ -928,7 +928,7 @@ export default function DesignTool() {
         setMockupScale(1);
 
         // Wait for the side to switch, scale to reset, and UI to render
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 100));
         await waitForPaint();
 
         const workspaceElement = target === 'full' ? snapshotMockupRef.current : snapshotPrintRef.current;
@@ -947,7 +947,7 @@ export default function DesignTool() {
                 useCORS: true,
                 allowTaint: true,
                 backgroundColor: null,
-                scale: 2,
+                scale: target === 'full' ? 1 : 2,
                 logging: false,
                 width: workspaceElement.offsetWidth,
                 height: workspaceElement.offsetHeight,
