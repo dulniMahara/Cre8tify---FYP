@@ -4,8 +4,11 @@ import Sidebar from '../components/Sidebar';
 import { useCart } from '../context/CartContext';
 import Footer from '../components/Footer'; 
 import Header from '../components/Header';
+import MockupPreview from '../components/MockupPreview';
 import { getUserInfo } from '../utils/auth';
 import '../styles/dashboard.css';            
+
+const API_URL = "http://localhost:5000";
 
 // 1. Static Product Data
 const productsData = [
@@ -23,6 +26,8 @@ const CustomerDashboard = () => {
     const navigate = useNavigate();
     const [greeting, setGreeting] = useState("Welcome");
     const [likedProducts, setLikedProducts] = useState<number[]>([]);
+    const [backendProducts, setBackendProducts] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     // 🛡️ Cart Context Setup
     const cartContext = useCart();
@@ -62,11 +67,51 @@ const CustomerDashboard = () => {
     };
 
     useEffect(() => {
-        window.scrollTo(0, 0); // 🟢 Always start at the top
+        window.scrollTo(0, 0); 
         const userObj = getUserInfo('customer');
         if (userObj) {
             setGreeting(`Welcome back, ${userObj.name || "Customer"}.`);
         }
+
+        const fetchApprovedProducts = async () => {
+            try {
+                // Load existing wishlist from localStorage
+                const savedLikes = localStorage.getItem('wishlist');
+                if (savedLikes) {
+                    setLikedProducts(JSON.parse(savedLikes));
+                }
+
+                const response = await fetch(`${API_URL}/api/products`);
+                const data = await response.json();
+                
+                // Only show approved products on the main dashboard
+                const approved = data.filter((p: any) => p.status === 'Approved');
+                
+                const mapped = approved.map((p: any) => ({
+                    ...p,
+                    id: p._id,
+                    title: p.title,
+                    price: p.price,
+                    likes: Math.floor(Math.random() * 50),
+                    sales: p.salesCount || 0,
+                    img: (p.mockupImages && p.mockupImages.length > 0) ? (p.mockupImages[0].startsWith('/uploads') ? `http://localhost:5000${p.mockupImages[0]}` : p.mockupImages[0]) : '/img/placeholder.png',
+                    frontDesign: p.frontDesign,
+                    isDesignerProduct: true,
+                    designer: p.designer,
+                    tshirtColor: p.tshirtColor,
+                    frontPrintArea: p.frontPrintArea,
+                    canvasState: p.canvasState,
+                    frontDesignScale: p.frontDesignScale
+                }));
+                
+                setBackendProducts(mapped);
+            } catch (error) {
+                console.error("Error fetching products:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchApprovedProducts();
     }, []);
 
     const getSmartScale = (imgName: string) => {
@@ -98,7 +143,7 @@ const CustomerDashboard = () => {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
-                        {productsData.map((item) => {
+                        {[...backendProducts, ...productsData].map((item) => {
                             // LIVE SYNC: Checks context for real-time quantity
                             const quantityInCart = cartContext?.cartItems?.find((c: any) => c.id === item.id)?.quantity || 0;
 
@@ -106,7 +151,20 @@ const CustomerDashboard = () => {
                                 <div key={item.id} className="product-card" style={cardStyle}>
                                     {item.tag && <div style={tagStyle}>{item.tag}</div>}
                                     <div style={imgWrapperStyle} onClick={() => navigate(`/product/${item.id}`, { state: { product: item } })}>
-                                        <img src={item.img} alt={item.title} style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', transform: `scale(${(item as any).scale || getSmartScale(item.img)})`, filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.12))' }} />
+                                        {item.isDesignerProduct && item.frontDesign ? (
+                                            <MockupPreview 
+                                                mockupSrc="/img/womenfront-mockup.png"
+                                                maskSrc="/img/womenfront-mockup.png"
+                                                tshirtColor={item.tshirtColor || '#ffffff'}
+                                                printArea={item.frontPrintArea || { top: '56%', left: '49%', width: '30%', height: '27%', rotation: 0 }}
+                                                designSrc={item.frontDesign}
+                                                canvasState={item.canvasState}
+                                                overallScale={1.5}
+                                                designScale={item.frontDesignScale || 1.0}
+                                            />
+                                        ) : (
+                                            <img src={item.img} alt={item.title} style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', transform: `scale(${(item as any).scale || getSmartScale(item.img)})`, filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.12))' }} />
+                                        )}
                                     </div>
                                     <div style={{ padding: '0 3px' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '5px' }}>

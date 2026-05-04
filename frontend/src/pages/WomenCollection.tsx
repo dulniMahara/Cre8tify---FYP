@@ -140,11 +140,17 @@ const WomenCollection = () => {
     useEffect(() => {
         const fetchDesignerProducts = async () => {
             try {
+                // Load existing wishlist from localStorage
+                const savedLikes = localStorage.getItem('wishlist');
+                if (savedLikes) {
+                    setLikedProducts(JSON.parse(savedLikes));
+                }
+
                 const response = await fetch('http://localhost:5000/api/products?category=women');
                 const data = await response.json();
                 
-                // Map backend products to match the UI format
-                const mapped = data.map((p: any) => ({
+                // Map backend products and ensure strict category filtering
+                const mapped = data.filter((p: any) => p.category.toLowerCase() === 'women' || p.category.toLowerCase() === 'unisex').map((p: any) => ({
                     ...p,
                     id: p._id,
                     title: p.title,

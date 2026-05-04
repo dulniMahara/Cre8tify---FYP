@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import MockupPreview from '../components/MockupPreview';
 import { useCart } from '../context/CartContext';
 
 // Import your product data to cross-reference the IDs
@@ -12,7 +13,8 @@ import { originalProducts as kidsProducts } from './KidsCollection';
 
 const Favorites: React.FC = () => {
     const navigate = useNavigate();
-    const [likedIds, setLikedIds] = useState<number[]>([]);
+    const [likedIds, setLikedIds] = useState<(number | string)[]>([]);
+    const [dbProducts, setDbProducts] = useState<any[]>([]);
     
     const cartContext = useCart();
     const addToCart = cartContext ? cartContext.addToCart : null;
@@ -23,13 +25,34 @@ const Favorites: React.FC = () => {
         if (savedLikes) {
             setLikedIds(JSON.parse(savedLikes));
         }
+
+        const fetchDbProducts = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/products');
+                const data = await res.json();
+                
+                const mapped = data.map((p: any) => ({
+                    ...p,
+                    id: p._id,
+                    img: (p.mockupImages && p.mockupImages.length > 0) 
+                        ? (p.mockupImages[0].startsWith('/uploads') ? `http://localhost:5000${p.mockupImages[0]}` : p.mockupImages[0]) 
+                        : (p.displayImage || '/img/placeholder.png'),
+                    isDesignerProduct: true
+                }));
+                
+                setDbProducts(mapped);
+            } catch (err) {
+                console.error("Error fetching favorites products:", err);
+            }
+        };
+        fetchDbProducts();
     }, []);
 
     // 2. Combine all products and find the matches
-    const allProducts = [...menProducts, ...womenProducts, ...kidsProducts];
+    const allProducts = [...menProducts, ...womenProducts, ...kidsProducts, ...dbProducts];
     const favoriteProducts = allProducts.filter(p => likedIds.includes(p.id));
 
-    const removeFavorite = (id: number) => {
+    const removeFavorite = (id: number | string) => {
         const updated = likedIds.filter(favId => favId !== id);
         setLikedIds(updated);
         localStorage.setItem('wishlist', JSON.stringify(updated));
@@ -50,13 +73,32 @@ const Favorites: React.FC = () => {
         <div className="dashboard-container" style={{ display: 'flex', minHeight: '100vh', background: 'white' }}>
             <Sidebar variant="customer" />
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-                <Header mode="search" />
+                <Header mode="title" title="MY FAVORITES" />
                 
                 <div className="content-wrapper" style={contentWrapperStyle}>
-                    {/* TITLE MOVED UP */}
-                    <div style={titleSectionStyle}>
-                        <h1 style={titleStyle}>My Favorites</h1>
-                        <p style={subtitleStyle}>Designs you have saved for later.</p>
+                    {/* Favorites Content Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '25px', borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
+                        <div>
+                            <p style={subtitleStyle}>Designs you have saved for later.</p>
+                            <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: '800', color: '#0d375b', background: '#f0f9ff', padding: '4px 12px', borderRadius: '15px' }}>
+                                    {favoriteProducts.length} Items Saved
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>Sort by:</span>
+                            <select style={{ 
+                                padding: '8px 15px', borderRadius: '10px', border: '1px solid #e2e8f0', 
+                                fontSize: '12px', fontWeight: '600', color: '#0d375b', outline: 'none', cursor: 'pointer' 
+                            }}>
+                                <option>Recently Liked</option>
+                                <option>Last 7 Days</option>
+                                <option>Last 30 Days</option>
+                                <option>Price: Low to High</option>
+                            </select>
+                        </div>
                     </div>
 
                     {favoriteProducts.length > 0 ? (
@@ -65,11 +107,24 @@ const Favorites: React.FC = () => {
                                 <div key={item.id} className="product-card" style={favCardStyle}>
    
                                     <div style={imgBoxStyle} onClick={() => navigate(`/product/${item.id}`)}>
-                                        <img 
-                                            src={item.img} 
-                                            alt={item.title} 
-                                            style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain', filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.1))' }} 
-                                        />
+                                        {item.isDesignerProduct ? (
+                                            <MockupPreview 
+                                                mockupSrc="/img/womenfront-mockup.png"
+                                                maskSrc="/img/womenfront-mockup.png"
+                                                tshirtColor={item.tshirtColor || '#ffffff'}
+                                                printArea={item.frontPrintArea || { top: '56%', left: '49%', width: '30%', height: '27%', rotation: 0 }}
+                                                designSrc={item.frontDesign}
+                                                canvasState={item.canvasState}
+                                                overallScale={1.5}
+                                                designScale={item.frontDesignScale || 1.0}
+                                            />
+                                        ) : (
+                                            <img 
+                                                src={item.img} 
+                                                alt={item.title} 
+                                                style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain', filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.1))' }} 
+                                            />
+                                        )}
                                     </div>
                                     
                                     <div style={{ padding: '15px' }}>
@@ -127,7 +182,7 @@ const Favorites: React.FC = () => {
                 /* Adjusted padding-top to bring the title UP */
                 .content-wrapper {
                     margin-top: 0 !important;
-                    padding-top: 15px !important;  /* Lower number = Higher position */
+                    padding-top: 40px !important;  /* Balanced spacing */
                 }
             `}</style>
         </div>
@@ -143,20 +198,6 @@ const contentWrapperStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     width: '100%'
-};
-
-const titleSectionStyle: React.CSSProperties = {
-    marginBottom: '30px',
-    textAlign: 'left'
-};
-
-const titleStyle: React.CSSProperties = {
-    fontSize: '28px',
-    fontWeight: '900',
-    color: '#0d375b',
-    margin: 0,
-    fontFamily: '"Instrument Serif", serif',
-    fontStyle: 'italic'
 };
 
 const subtitleStyle: React.CSSProperties = {

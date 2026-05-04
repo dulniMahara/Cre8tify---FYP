@@ -142,11 +142,17 @@ const MenCollection = () => {
     useEffect(() => {
         const fetchDesignerProducts = async () => {
             try {
+                // Load existing wishlist from localStorage
+                const savedLikes = localStorage.getItem('wishlist');
+                if (savedLikes) {
+                    setLikedProducts(JSON.parse(savedLikes));
+                }
+
                 const response = await fetch('http://localhost:5000/api/products?category=men');
                 const data = await response.json();
                 
-                // Map backend products to match the UI format
-                const mapped = data.map((p: any) => ({
+                // Map backend products and ensure strict category filtering
+                const mapped = data.filter((p: any) => p.category.toLowerCase() === 'men' || p.category.toLowerCase() === 'unisex').map((p: any) => ({
                     ...p, 
                     id: p._id,
                     title: p.title,
@@ -264,14 +270,15 @@ const MenCollection = () => {
                                         <div onClick={handleNavigate} style={{ background: '#f8fafc', borderRadius: '9px', display: 'flex', justifyContent: 'center', marginBottom: '8px', height: '210px', alignItems: 'center', overflow: 'hidden', cursor: 'pointer', position: 'relative', padding: item.isDesignerProduct ? '0' : '8px' }}>
                                             {item.isDesignerProduct && item.frontDesign ? (
                                                 <MockupPreview 
-                                                    mockupSrc="/img/menfront -mockup.png"
-                                                    maskSrc="/img/menfront -mockup.png"
+                                                    mockupSrc="/img/womenfront-mockup.png"
+                                                    maskSrc="/img/womenfront-mockup.png"
                                                     maskSize="contain"
                                                     maskPosition="center"
                                                     tshirtColor={item.tshirtColor || '#ffffff'}
-                                                    printArea={item.frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 }}
+                                                    printArea={item.frontPrintArea || { top: '56%', left: '49%', width: '30%', height: '27%', rotation: 0 }}
                                                     designSrc={item.frontDesign}
-                                                    overallScale={1.7}
+                                                    overallScale={1.5}
+                                                    designScale={item.frontDesignScale || 1.0}
                                                 />
                                             ) : (
                                                 <img src={item.img} alt={item.title} style={{ maxWidth: item.isDesignerProduct ? '100%' : '85%', maxHeight: item.isDesignerProduct ? '100%' : '85%', objectFit: 'contain', filter: item.isDesignerProduct ? 'none' : 'drop-shadow(0 8px 13px rgba(0,0,0,0.08))', transform: `scale(${item.scale || 1})` }} />

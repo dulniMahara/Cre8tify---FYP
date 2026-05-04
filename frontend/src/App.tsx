@@ -38,6 +38,7 @@ import Favorites from './pages/Favorites';
 import AdminLogin from './pages/AdminLogin';
 import SandboxPayment from './pages/SandboxPayment';
 import CustomerRequests from './pages/CustomerRequests';
+import MyCustomDesigns from './pages/MyCustomDesigns';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -90,6 +91,7 @@ function App() {
           <Route path="/customer-profile" element={<CustomerProfile />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/customer-requests" element={<CustomerRequests />} />
+          <Route path="/my-custom-designs" element={<MyCustomDesigns />} />
 
           {/* 🟢 ADMIN DASHBOARD ROUTES (Only accessible to admins) */}
           <Route path="/admin-dashboard/*" element={<AdminDashboard />} />
