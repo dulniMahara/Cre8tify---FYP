@@ -14,12 +14,18 @@ const getFinancialSummary = async (req, res) => {
 
         orders.forEach(order => {
             totalRevenue += order.totalPrice;
-            order.orderItems.forEach(item => {
-                // Platform profit = serviceFee * qty
-                platformProfit += (item.serviceFee || 0) * item.qty;
-                // Designer earnings = markup * qty
-                totalDesignerEarnings += (item.markup || 0) * item.qty;
-            });
+            
+            // Prefer order-level pre-calculated values
+            if (order.platformProfit !== undefined && order.designerEarnings !== undefined) {
+                platformProfit += order.platformProfit;
+                totalDesignerEarnings += order.designerEarnings;
+            } else {
+                // Fallback for legacy orders
+                order.orderItems.forEach(item => {
+                    platformProfit += (item.serviceFee || 0) * item.qty;
+                    totalDesignerEarnings += (item.markup || 0) * item.qty;
+                });
+            }
         });
 
         // Get total amount already paid to designers
@@ -202,10 +208,69 @@ const getDesignerSales = async (req, res) => {
     }
 };
 
+const getDesignerFinancialDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const designer = await User.findById(id).select('name email');
+        if (!designer) return res.status(404).json({ message: 'Designer not found' });
+
+        const orders = await Order.find({ 
+            isPaid: true, 
+            isRefunded: false,
+            'orderItems.product': { $exists: true } 
+        }).populate({
+            path: 'orderItems.product',
+            select: 'title designer'
+        });
+
+        const history = [];
+        let totalEarned = 0;
+
+        orders.forEach(order => {
+            order.orderItems.forEach(item => {
+                if (item.product && item.product.designer && item.product.designer._id.toString() === id) {
+                    const earned = (item.markup || 0) * item.qty;
+                    totalEarned += earned;
+                    history.push({
+                        type: 'sale',
+                        date: order.createdAt,
+                        orderId: order._id,
+                        amount: earned,
+                        description: `Sale of ${item.product.title || 'Product'}`
+                    });
+                }
+            });
+        });
+
+        const payouts = await Payout.find({ designer: id });
+        payouts.forEach(p => {
+            history.push({
+                type: 'payout',
+                date: p.paidAt,
+                amount: -p.amount,
+                description: p.note || 'Bank Transfer Payout'
+            });
+        });
+
+        res.json({
+            designer,
+            history: history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+            summary: {
+                totalEarned,
+                alreadyPaid: payouts.reduce((sum, p) => sum + p.amount, 0),
+                balance: totalEarned - payouts.reduce((sum, p) => sum + p.amount, 0)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getFinancialSummary,
     getDesignerPayouts,
     processPayout,
     refundOrder,
-    getDesignerSales
+    getDesignerSales,
+    getDesignerFinancialDetails
 };

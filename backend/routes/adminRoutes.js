@@ -3,7 +3,7 @@ const router = express.Router();
 const { protect, authorizeRole } = require('../middleware/authMiddleware');
 const adminController = require('../controllers/adminController');
 const { getOrders, updateOrderStatus } = require('../controllers/orderController');
-const { getFinancialSummary, getDesignerPayouts, processPayout, refundOrder } = require('../controllers/financialController');
+const { getFinancialSummary, getDesignerPayouts, processPayout, refundOrder, getDesignerFinancialDetails } = require('../controllers/financialController');
 
 // All routes below are protected and restricted to the 'admin' role
 router.use(protect, authorizeRole('admin')); 
@@ -16,6 +16,7 @@ router.post('/orders/:id/refund', refundOrder);
 // === FINANCIAL ROUTES ===
 router.get('/financial/summary', getFinancialSummary);
 router.get('/financial/designers', getDesignerPayouts);
+router.get('/financial/designers/:id', getDesignerFinancialDetails);
 router.post('/financial/payout', processPayout);
 
 // === DESIGN MANAGEMENT ROUTES ===
@@ -31,5 +32,9 @@ router.put('/users/:id/reset-password', adminController.resetUserPassword);
 
 // === ANALYTICS ROUTES ===
 router.get('/analytics', adminController.getAdminAnalytics);
+
+// === SETTINGS ROUTES ===
+router.get('/settings', adminController.getSettings);
+router.put('/settings/:key', adminController.updateSetting);
 
 module.exports = router;

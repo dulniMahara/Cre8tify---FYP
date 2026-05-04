@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Design = require('../models/Design');
 const Order = require('../models/orderModel');
 const Product = require('../models/productModel');
+const Settings = require('../models/Settings');
 
 // === DESIGN MANAGEMENT FUNCTIONS ===
 
@@ -215,10 +216,17 @@ const getAdminAnalytics = asyncHandler(async (req, res) => {
 
   paidOrders.forEach(order => {
       totalRevenue += order.totalPrice;
-      order.orderItems.forEach(item => {
-          platformProfit += (item.serviceFee || 0) * item.qty;
-          totalDesignerEarnings += (item.markup || 0) * item.qty;
-      });
+      
+      if (order.platformProfit !== undefined && order.designerEarnings !== undefined) {
+          platformProfit += order.platformProfit;
+          totalDesignerEarnings += order.designerEarnings;
+      } else {
+          // Fallback
+          order.orderItems.forEach(item => {
+              platformProfit += (item.serviceFee || 0) * item.qty;
+              totalDesignerEarnings += (item.markup || 0) * item.qty;
+          });
+      }
   });
 
   const totalUsers = await User.countDocuments({ role: { $ne: 'admin' } });
@@ -249,6 +257,39 @@ const getAdminAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get platform settings
+// @route   GET /api/admin/settings
+// @access  Private/Admin
+const getSettings = asyncHandler(async (req, res) => {
+    const settings = await Settings.find({});
+    res.status(200).json(settings);
+});
+
+// @desc    Update a platform setting
+// @route   PUT /api/admin/settings/:key
+// @access  Private/Admin
+const updateSetting = asyncHandler(async (req, res) => {
+    const { key } = req.params;
+    const { value, description } = req.body;
+
+    let setting = await Settings.findOne({ key });
+    if (setting) {
+        setting.value = value;
+        if (description) setting.description = description;
+        setting.updatedBy = req.user.name;
+        await setting.save();
+    } else {
+        setting = await Settings.create({
+            key,
+            value,
+            description,
+            updatedBy: req.user.name
+        });
+    }
+
+    res.status(200).json(setting);
+});
+
 module.exports = {
   getSubmittedDesigns,
   updateDesignStatus,
@@ -257,5 +298,7 @@ module.exports = {
   approveDesigner,
   updateUserStatus,
   resetUserPassword,
-  getAdminAnalytics
+  getAdminAnalytics,
+  getSettings,
+  updateSetting
 };
