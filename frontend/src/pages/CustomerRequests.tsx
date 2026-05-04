@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
+import MockupPreview from '../components/MockupPreview';
 import '../styles/dashboard.css';
 
 interface RequestItem {
@@ -17,6 +18,13 @@ interface RequestItem {
     color?: string;
     size?: string;
     price?: number;
+    frontDesign?: string;
+    frontPrintArea?: any;
+    frontDesignScale?: number;
+    canvasState?: {
+        imageLayers: any[];
+        textLayers: any[];
+    };
 }
 
 const CustomerRequests = () => {
@@ -32,8 +40,7 @@ const CustomerRequests = () => {
 
             const response = await fetch(`http://localhost:5000/api/requests/customer/${userInfo._id}`);
             const data = await response.json();
-            
-            // Map MongoDB _id to id for frontend compatibility
+
             const mappedData = data.map((req: any) => ({
                 ...req,
                 id: req._id,
@@ -66,11 +73,10 @@ const CustomerRequests = () => {
             <Sidebar variant="customer" />
 
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc' }}>
-                <Header showCart={true} mode="title" title="" />
+                <Header showCart={true} mode="title" title="MY EDIT REQUESTS" />
 
                 <div className="content-wrapper animate-fade" style={{ padding: '20px', flex: 1, maxWidth: '800px', margin: '0 auto', width: '100%' }}>
                     <div style={{ marginBottom: '25px' }}>
-                        <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#0d375b', margin: '0 0 5px 0' }}>My Edit Requests 📝</h2>
                         <p style={{ color: '#64748b', fontSize: '13px' }}>Track and manage your custom design requests sent to designers.</p>
                     </div>
 
@@ -115,30 +121,23 @@ const CustomerRequests = () => {
                                         </button>
                                     </div>
                                     <div style={{ width: '80px', height: '80px', background: '#f8fafc', borderRadius: '12px', padding: '5px', position: 'relative', overflow: 'hidden' }}>
-                                        {/* Dynamic T-shirt Preview for List Item */}
-                                        <div style={{
-                                            width: '100%', height: '100%',
-                                            backgroundColor: req.color || '#ffffff',
-                                            WebkitMaskImage: `url(${req.productImage})`,
-                                            maskImage: `url(${req.productImage})`,
-                                            WebkitMaskSize: 'contain', maskSize: 'contain',
-                                            WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-                                            WebkitMaskPosition: 'center', maskPosition: 'center',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                        }}>
-                                            <img src={req.productImage} style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} alt="Product" />
-
-                                            {(req as any).frontDesign && (
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    ...((req as any).frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%' }),
-                                                    transform: 'translate(-50%, -50%)',
-                                                    zIndex: 999, pointerEvents: 'none'
-                                                }}>
-                                                    <img src={(req as any).frontDesign} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="" />
-                                                </div>
-                                            )}
-                                        </div>
+                                        {(() => {
+                                            const isBase64 = req.productImage?.startsWith('data:image');
+                                            const maskUrl = isBase64 ? '/img/womenfront-mockup.png' : req.productImage;
+                                            
+                                            return (
+                                                <MockupPreview
+                                                    mockupSrc={maskUrl}
+                                                    maskSrc={maskUrl}
+                                                    tshirtColor={req.color || '#ffffff'}
+                                                    canvasState={req.canvasState}
+                                                    designSrc={req.frontDesign}
+                                                    printArea={req.frontPrintArea}
+                                                    designScale={req.frontDesignScale || 1.0}
+                                                    overallScale={1.5}
+                                                />
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             );
@@ -154,41 +153,32 @@ const CustomerRequests = () => {
                 <Footer />
             </div>
 
-            {/* DETAIL MODAL */}
             {selectedRequest && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-                    <div style={{ background: 'white', padding: '30px', borderRadius: '24px', width: '500px', maxWidth: '90%', position: 'relative' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
+                    <div style={{ background: 'white', padding: '30px', borderRadius: '24px', width: '500px', maxWidth: '100%', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
                         <button onClick={() => setSelectedRequest(null)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>×</button>
 
                         <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#0d375b', marginBottom: '20px' }}>Request Details</h2>
 
                         <div style={{ display: 'flex', gap: '20px', marginBottom: '25px', background: '#f8fafc', padding: '15px', borderRadius: '15px' }}>
-                            <div style={{ flex: 1.5, position: 'relative', overflow: 'hidden', background: 'white', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '220px' }}>
-                                {/* High-Fidelity Modal Preview */}
-                                <div style={{
-                                    width: '100%', height: '100%',
-                                    backgroundColor: selectedRequest.color || '#ffffff',
-                                    WebkitMaskImage: `url(${selectedRequest.productImage})`,
-                                    maskImage: `url(${selectedRequest.productImage})`,
-                                    WebkitMaskSize: 'contain', maskSize: 'contain',
-                                    WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-                                    WebkitMaskPosition: 'center', maskPosition: 'center',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    transform: (selectedRequest as any).frontDesign ? 'scale(1.7)' : 'scale(1)'
-                                }}>
-                                    <img src={selectedRequest.productImage} style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} alt="Product" />
+                            <div style={{ flex: 1.5, position: 'relative', overflow: 'hidden', background: 'white', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '130px', maxHeight: '130px' }}>
+                                {(() => {
+                                    const isBase64 = selectedRequest.productImage?.startsWith('data:image');
+                                    const maskUrl = isBase64 ? '/img/womenfront-mockup.png' : selectedRequest.productImage;
 
-                                    {(selectedRequest as any).frontDesign && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            ...((selectedRequest as any).frontPrintArea || { top: '50%', left: '51%', width: '30%', height: '27%' }),
-                                            transform: 'translate(-50%, -50%) scale(0.85)',
-                                            zIndex: 999, pointerEvents: 'none'
-                                        }}>
-                                            <img src={(selectedRequest as any).frontDesign} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="" />
-                                        </div>
-                                    )}
-                                </div>
+                                    return (
+                                        <MockupPreview
+                                            mockupSrc={maskUrl}
+                                            maskSrc={maskUrl}
+                                            tshirtColor={selectedRequest.color || '#ffffff'}
+                                            canvasState={selectedRequest.canvasState}
+                                            designSrc={selectedRequest.frontDesign}
+                                            printArea={selectedRequest.frontPrintArea}
+                                            designScale={selectedRequest.frontDesignScale || 1.0}
+                                            overallScale={1.1}
+                                        />
+                                    );
+                                })()}
                             </div>
                             <div>
                                 <h4 style={{ margin: '0 0 5px 0', fontSize: '16px' }}>{selectedRequest.productName}</h4>
@@ -221,7 +211,6 @@ const CustomerRequests = () => {
                                     </p>
                                     <button
                                         onClick={() => {
-                                            // Handle checkout logic here - e.g., add to cart and navigate
                                             alert("Proceeding to checkout with your custom design...");
                                             navigate('/checkout', { state: { customProduct: selectedRequest } });
                                         }}

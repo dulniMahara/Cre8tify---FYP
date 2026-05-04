@@ -88,8 +88,10 @@ const RequestEdit = () => {
                 color: currentColor,
                 referenceImage: base64File,
                 status: 'Pending',
+                size: selectedSize,
                 frontDesign: product?.frontDesign,
-                frontPrintArea: product?.frontPrintArea ? JSON.stringify(product.frontPrintArea) : null
+                frontPrintArea: product?.frontPrintArea, // Send as object
+                canvasState: product?.canvasState || { imageLayers: [], textLayers: [] } // Pass the original layers
             };
 
             const response = await fetch('http://localhost:5000/api/requests', {
