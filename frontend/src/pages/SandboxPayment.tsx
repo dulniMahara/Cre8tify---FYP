@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { getToken } from '../utils/auth';
+import MockupPreview from '../components/MockupPreview';
 
 const SandboxPayment = () => {
     const location = useLocation();
@@ -28,9 +30,7 @@ const SandboxPayment = () => {
         // Simulate a network delay for "processing"
         setTimeout(async () => {
             try {
-                const userInfoRaw = localStorage.getItem('userInfo');
-                const userInfo = userInfoRaw ? JSON.parse(userInfoRaw) : null;
-                const activeToken = userInfo?.token || localStorage.getItem('token');
+                const activeToken = getToken('customer');
 
                 if (!activeToken) {
                     alert("Session expired. Please log in again.");
@@ -41,31 +41,52 @@ const SandboxPayment = () => {
                 // 🚀 Prepare the actual order data for the database
                 const finalOrderData = {
                     orderItems: incomingData.items.map((item: any) => {
-                        const itemPrice = parseFloat(item.price.toString().replace(/[^\d.]/g, ''));
+                        const itemPrice = parseFloat(String(item.price || 0).replace(/[^\d.]/g, '')) || 0;
                         const markup = item.markup || item.designerCharge || 0;
                         const serviceFee = item.serviceFee || item.serviceCharge || 100;
-                        const basePrice = item.basePrice || (itemPrice - markup - serviceFee);
+
+                        // Strip base64 images — they are too large for the order payload
+                        let imageUrl = item.image || '/img/womenfront-mockup.png';
+                        if (imageUrl.startsWith('data:image')) {
+                            imageUrl = '/img/womenfront-mockup.png';
+                        }
+                        if (imageUrl.startsWith('/uploads')) {
+                            imageUrl = `http://localhost:5000${imageUrl}`;
+                        }
 
                         return {
                             name: item.title || item.name || "Custom Design",
-                            qty: item.quantity,
-                            image: item.image,
+                            qty: item.quantity || 1,
+                            image: imageUrl,
                             price: itemPrice,
-                            basePrice: basePrice,
+                            basePrice: item.basePrice || (itemPrice - markup - serviceFee - (item.isCustom ? 300 : 0)),
                             markup: markup,
                             serviceFee: serviceFee,
-                            size: item.size,
-                            color: item.color,
-                            product: item._id || item.id
+                            isCustom: item.isCustom || false,
+                            customizationFee: item.isCustom ? 300 : 0,
+                            size: item.size || 'M',
+                            color: item.color || '#ffffff',
+                            tshirtColor: item.tshirtColor,
+                            frontDesign: item.frontDesign,
+                            frontPrintArea: item.frontPrintArea,
+                            canvasState: item.canvasState,
+                            frontDesignScale: item.frontDesignScale,
+                            baseImages: item.baseImages,
+                            // Only pass product if it's a valid MongoDB ObjectId (24-char hex)
+                            product: /^[a-f\d]{24}$/i.test(String(item._id || item.id || ''))
+                                ? (item._id || item.id)
+                                : undefined
                         };
                     }),
                     totalPrice: incomingData.total,
-                    shippingAddress: incomingData.customer.address,
+                    shippingAddress: incomingData.customer?.address || '',
                     paymentMethod: 'sandbox',
-                    isPaid: true, // Sandbox counts as paid!
+                    isPaid: true,
                     paidAt: new Date(),
                     status: 'Processing'
                 };
+
+                console.log("[SandboxPayment] Submitting order:", JSON.stringify(finalOrderData).substring(0, 300));
 
                 const config = {
                     headers: {
@@ -80,17 +101,19 @@ const SandboxPayment = () => {
                     navigate('/order-success', {
                         state: {
                             orderId: data._id.substring(data._id.length - 8).toUpperCase(),
-                            address: incomingData.customer.address,
-                            customerName: incomingData.customer.name,
-                            phone: incomingData.customer.phone,
+                            address: incomingData.customer?.address,
+                            customerName: incomingData.customer?.name,
+                            phone: incomingData.customer?.phone,
                             createdAt: data.createdAt,
                             method: 'sandbox'
                         }
                     });
                 }
             } catch (error: any) {
-                console.error("Sandbox Payment Error:", error.response?.data || error.message);
-                alert("Payment processing failed. Please try again.");
+                const errMsg = error.response?.data?.message || error.response?.data || error.message;
+                const errStatus = error.response?.status;
+                console.error(`[SandboxPayment] FAILED — Status: ${errStatus} | Error:`, errMsg);
+                alert(`Payment failed (${errStatus || 'network error'}): ${errMsg || 'Unknown error'}. Check browser console.`);
                 setStep(1);
             }
         }, 3000);
@@ -109,7 +132,7 @@ const SandboxPayment = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <span style={secureText}>Secure Sandbox Payment</span>
                         </div>
-                        <img src="/img/visa_master.png" alt="Cards" style={{ height: '30px' }} onError={(e) => e.currentTarget.style.display='none'} />
+                        <img src="/img/visa_master.png" alt="Cards" style={{ height: '30px' }} onError={(e) => e.currentTarget.style.display = 'none'} />
                     </div>
 
                     {step === 1 && (
@@ -121,10 +144,10 @@ const SandboxPayment = () => {
 
                             <div style={formGroup}>
                                 <label style={inputLabel}>Card Number</label>
-                                <input 
-                                    style={inputField} 
-                                    placeholder="Enter 16-digit card number" 
-                                    maxLength={16} 
+                                <input
+                                    style={inputField}
+                                    placeholder="Enter 16-digit card number"
+                                    maxLength={16}
                                     autoComplete="off"
                                     value={cardNumber}
                                     onChange={(e) => setCardNumber(e.target.value)}
@@ -134,10 +157,10 @@ const SandboxPayment = () => {
                             <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
                                 <div style={{ flex: 1 }}>
                                     <label style={inputLabel}>Expiry Date</label>
-                                    <input 
-                                        style={inputField} 
-                                        placeholder="MM/YY" 
-                                        maxLength={5} 
+                                    <input
+                                        style={inputField}
+                                        placeholder="MM/YY"
+                                        maxLength={5}
                                         autoComplete="off"
                                         value={expiry}
                                         onChange={(e) => setExpiry(e.target.value)}
@@ -145,11 +168,11 @@ const SandboxPayment = () => {
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <label style={inputLabel}>CVV</label>
-                                    <input 
-                                        style={inputField} 
-                                        type="password" 
-                                        placeholder="CVV" 
-                                        maxLength={3} 
+                                    <input
+                                        style={inputField}
+                                        type="password"
+                                        placeholder="CVV"
+                                        maxLength={3}
                                         autoComplete="new-password"
                                         value={cvv}
                                         onChange={(e) => setCvv(e.target.value)}
@@ -166,11 +189,11 @@ const SandboxPayment = () => {
                         <div className="animate-fade-in" style={{ textAlign: 'center' }}>
                             <h2 style={stepTitle}>Verification Required</h2>
                             <p style={stepDesc}>A dummy OTP has been sent to your registered phone number. Please enter it below to authorize the transaction.</p>
-                            
+
                             <div style={{ margin: '30px 0' }}>
-                                <input 
-                                    style={otpInput} 
-                                    maxLength={6} 
+                                <input
+                                    style={otpInput}
+                                    maxLength={6}
                                     placeholder="0 0 0 0 0 0"
                                     value={otp}
                                     onChange={(e) => setOtp(e.target.value)}
@@ -187,7 +210,7 @@ const SandboxPayment = () => {
                             <div className="spinner" style={spinner}></div>
                             <h2 style={processingTitle}>Processing Payment...</h2>
                             <p style={processingDesc}>Please do not close this window or refresh the page. We are securely communicating with the bank.</p>
-                            
+
                             <style>{`
                                 @keyframes spin {
                                     0% { transform: rotate(0deg); }
@@ -219,7 +242,22 @@ const SandboxPayment = () => {
                         {incomingData?.items.map((item: any, idx: number) => (
                             <div key={idx} style={summaryRow}>
                                 <div style={{ display: 'flex', gap: '12px' }}>
-                                    <img src={item.image} style={thumb} alt="" />
+                                    <div style={{ ...thumb, overflow: 'hidden', position: 'relative' }}>
+                                        {item.frontDesign || item.canvasState ? (
+                                            <MockupPreview
+                                                mockupSrc={(item.baseImages && item.baseImages[0]) || item.image}
+                                                maskSrc={(item.baseImages && item.baseImages[0]) || item.image}
+                                                tshirtColor={item.tshirtColor || '#ffffff'}
+                                                printArea={item.frontPrintArea}
+                                                designSrc={item.frontDesign}
+                                                canvasState={item.canvasState}
+                                                designScale={item.frontDesignScale || 1.0}
+                                                overallScale={1.5}
+                                            />
+                                        ) : (
+                                            <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.1)' }} alt="" />
+                                        )}
+                                    </div>
                                     <div>
                                         <div style={itemTitle}>{item.title}</div>
                                         <div style={itemMeta}>Qty: {item.quantity} | {item.size}</div>
@@ -228,9 +266,9 @@ const SandboxPayment = () => {
                                 <div style={itemPrice}>LKR {parseFloat(item.price).toLocaleString()}</div>
                             </div>
                         ))}
-                        
+
                         <div style={divider}></div>
-                        
+
                         <div style={totalRow}>
                             <span>Total Amount</span>
                             <span>LKR {incomingData?.total.toLocaleString()}.00</span>
@@ -238,7 +276,7 @@ const SandboxPayment = () => {
                     </div>
                 </div>
             </div>
-            
+
             <Footer />
         </div>
     );

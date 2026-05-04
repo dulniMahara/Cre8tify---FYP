@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import MockupPreview from '../components/MockupPreview';
 import Footer from '../components/Footer';
 import '../styles/dashboard.css';
 import { originalProducts as menProducts } from './MenCollection';
@@ -328,7 +329,8 @@ const ProductDetail = () => {
         baseProduct: incoming?.baseProduct,
         allowCustomization: incoming?.allowCustomization ?? true,
         allowEditRequests: incoming?.allowEditRequests ?? true,
-        canvasState: incoming?.canvasState
+        canvasState: incoming?.canvasState,
+        frontDesignScale: incoming?.frontDesignScale
     };
 
     // 3. Selection States
@@ -384,8 +386,6 @@ const ProductDetail = () => {
                                 {/* 🚀 LOGIC: Use Mask/Color Layer for Designer Products (including Kids) or Men/Women Base Products */}
                                 {(!product.isKids || product.frontDesign) ? (
                                     <div style={{
-                                        display: 'grid',
-                                        placeItems: 'center',
                                         width: product.frontDesign ? '115%' : (isWomenOrDashboard ? '75%' : '75%'),
                                         height: product.frontDesign ? '115%' : (isWomenOrDashboard ? '75%' : '75%'),
                                         position: 'relative',
@@ -393,163 +393,16 @@ const ProductDetail = () => {
                                             ? (isWomenOrDashboard ? 'translateY(-20px) scale(1.1)' : 'translateY(-30px) scale(1.1)')
                                             : (isWomenOrDashboard ? 'translateY(-40px)' : 'translateY(-50px)')
                                     }}>
-                                        <div style={{
-                                            gridArea: '1 / 1',
-                                            width: '100%', height: '100%',
-                                            backgroundColor: selectedColor === 'original' ? 'transparent' : selectedColor,
-                                            transition: 'background-color 0.3s ease',
-                                            WebkitMaskImage: `url(${product.baseImages[currentImgIndex]})`,
-                                            maskImage: `url(${product.baseImages[currentImgIndex]})`,
-                                            WebkitMaskSize: 'contain', maskSize: 'contain',
-                                            WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-                                            WebkitMaskPosition: 'center', maskPosition: 'center',
-                                            zIndex: 0
-                                        }} />
-                                        <img
-                                            src={product.baseImages[currentImgIndex]}
-                                            alt=""
-                                            style={{
-                                                gridArea: '1 / 1',
-                                                width: '100%', height: '100%',
-                                                objectFit: 'contain',
-                                                position: 'relative',
-                                                zIndex: 1,
-                                                mixBlendMode: selectedColor === 'original' ? 'normal' : 'multiply',
-                                                filter: selectedColor === 'original' ? 'none' : 'contrast(1.0) brightness(0.95) saturate(0)'
-                                            }}
+                                        <MockupPreview
+                                            mockupSrc={product.baseImages[currentImgIndex]}
+                                            maskSrc={product.baseImages[currentImgIndex]}
+                                            tshirtColor={selectedColor === 'original' ? '#ffffff' : selectedColor}
+                                            printArea={currentImgIndex === 0 ? product.frontPrintArea : product.backPrintArea}
+                                            designSrc={currentImgIndex === 0 ? product.frontDesign : product.backDesign}
+                                            canvasState={product.canvasState}
+                                            overallScale={1.0}
+                                            designScale={product.frontDesignScale || 1.0}
                                         />
-
-                                        {/* 🎨 DESIGN OVERLAY LAYER (For Designer Products) */}
-                                        {((currentImgIndex === 0 && product.frontDesign) || (currentImgIndex === 1 && product.backDesign)) && (
-                                            <div style={{
-                                                gridArea: '1 / 1',
-                                                width: '100%', height: '100%',
-                                                position: 'relative',
-                                                zIndex: 2,
-                                                pointerEvents: 'none',
-                                                WebkitMaskImage: `url(${product.baseImages[currentImgIndex]})`,
-                                                maskImage: `url(${product.baseImages[currentImgIndex]})`,
-                                                WebkitMaskSize: 'contain',
-                                                WebkitMaskPosition: 'center',
-                                                WebkitMaskRepeat: 'no-repeat'
-                                            }}>
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    top: currentImgIndex === 0 ? (product.frontPrintArea?.top || '50%') : (product.backPrintArea?.top || '50%'),
-                                                    left: currentImgIndex === 0 ? (product.frontPrintArea?.left || '51%') : (product.backPrintArea?.left || '51%'),
-                                                    width: currentImgIndex === 0 ? (product.frontPrintArea?.width || '30%') : (product.backPrintArea?.width || '30%'),
-                                                    height: currentImgIndex === 0 ? (product.frontPrintArea?.height || '27%') : (product.backPrintArea?.height || '27%'),
-                                                    transform: `translate(-50%, -50%) rotate(${currentImgIndex === 0 ? (product.frontPrintArea?.rotation || 0) : (product.backPrintArea?.rotation || 0)}deg)`,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    overflow: 'hidden'
-                                                }}>
-                                                    {product.canvasState ? (
-                                                        <div style={{ position: 'relative', width: '100%', height: '100%', isolation: 'isolate' }}>
-                                                            {[
-                                                                ...(product.canvasState.imageLayers?.map((l: any) => ({ ...l, layerType: 'image' })) || []),
-                                                                ...(product.canvasState.textLayers?.map((t: any) => ({ ...t, layerType: 'text' })) || [])
-                                                            ].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)).map((layer: any) => (
-                                                                layer.layerType === 'image' ? (
-                                                                    <img
-                                                                        key={layer.id}
-                                                                        src={layer.src.startsWith('/uploads') ? `http://localhost:5000${layer.src}` : layer.src}
-                                                                        style={{
-                                                                            position: 'absolute',
-                                                                            zIndex: layer.zIndex,
-                                                                            transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
-                                                                            mixBlendMode: (selectedColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
-                                                                            opacity: 0.95,
-                                                                            width: 'auto',
-                                                                            height: 'auto'
-                                                                        }}
-                                                                    />
-                                                                ) : (
-                                                                    <div
-                                                                        key={layer.id}
-                                                                        style={{
-                                                                            position: 'absolute',
-                                                                            zIndex: layer.zIndex,
-                                                                            transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg)`,
-                                                                            display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
-                                                                        }}
-                                                                    >
-                                                                        {layer.styleId === 'default' && (
-                                                                            <>
-                                                                                {(layer.curve !== 0 && layer.curve !== undefined) ? (
-                                                                                    <CurvedText
-                                                                                        id={layer.id}
-                                                                                        text={layer.text}
-                                                                                        fontFamily={layer.font}
-                                                                                        color={layer.color}
-                                                                                        curve={layer.curve ?? 0}
-                                                                                        letterSpacing={layer.letterSpacing || 0}
-                                                                                    />
-                                                                                ) : (
-                                                                                    <div style={{
-                                                                                        fontFamily: layer.font,
-                                                                                        color: layer.color,
-                                                                                        fontSize: '24px',
-                                                                                        fontWeight: 'bold',
-                                                                                        whiteSpace: 'nowrap',
-                                                                                        letterSpacing: `${layer.letterSpacing || 0}px`,
-                                                                                        textShadow: '0px 1px 3px rgba(0,0,0,0.3)'
-                                                                                    }}>
-                                                                                        {layer.text}
-                                                                                    </div>
-                                                                                )}
-                                                                            </>
-                                                                        )}
-                                                                        {layer.styleId === 'style-wave' && (
-                                                                            <div style={{
-                                                                                fontFamily: layer.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900',
-                                                                                textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b',
-                                                                                transform: 'skewX(-10deg)', fontStyle: 'italic',
-                                                                                letterSpacing: `${layer.letterSpacing || 0}px`
-                                                                            }}>
-                                                                                {layer.text}
-                                                                            </div>
-                                                                        )}
-                                                                        {layer.styleId === 'style-stack' && (
-                                                                            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${layer.letterSpacing || 0}px` }}>
-                                                                                {[1, 2, 3].map((i) => (
-                                                                                    <span key={i} style={{ fontFamily: layer.font, color: i === 2 ? layer.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${layer.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{layer.text}</span>
-                                                                                ))}
-                                                                            </div>
-                                                                        )}
-                                                                        {layer.styleId === 'style-fish' && (
-                                                                            <div style={{ fontFamily: layer.font, color: layer.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(layer.letterSpacing || 0) - 1}px` }}>
-                                                                                {layer.text}
-                                                                            </div>
-                                                                        )}
-                                                                        {!['default', 'style-wave', 'style-stack', 'style-fish'].includes(layer.styleId || '') && (
-                                                                            <CurvedText
-                                                                                id={layer.id} text={layer.text} styleId={layer.styleId} fontFamily={layer.font} color={layer.color}
-                                                                                curve={layer.styleId === 'style-circle' ? (layer.curve ?? 120) : (layer.curve ?? 0)}
-                                                                                letterSpacing={layer.letterSpacing || 0}
-                                                                            />
-                                                                        )}
-                                                                    </div>
-                                                                )
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <img
-                                                            src={currentImgIndex === 0 ? product.frontDesign : product.backDesign}
-                                                            alt="Design"
-                                                            style={{
-                                                                width: '100%',
-                                                                height: '100%',
-                                                                objectFit: 'contain',
-                                                                transform: 'scale(1.0)',
-                                                                transformOrigin: 'center center'
-                                                            }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                 ) : (
                                     /* 🚀 Kids Section (Handles Designer Products too) */
@@ -592,6 +445,7 @@ const ProductDetail = () => {
                                                                     <img
                                                                         key={layer.id}
                                                                         src={layer.src.startsWith('/uploads') ? `http://localhost:5000${layer.src}` : layer.src}
+                                                                        alt={`Design layer ${layer.id}`}
                                                                         style={{
                                                                             position: 'absolute',
                                                                             zIndex: layer.zIndex,
@@ -736,9 +590,9 @@ const ProductDetail = () => {
 
                             {/* Price Breakdown */}
                             <div style={{ fontSize: '15px', color: '#94A3B8', lineHeight: '1.6', background: '#f8fafc', padding: '15px', borderRadius: '18px' }}>
-                                Base T-shirt: <span style={{ color: '#475569', fontWeight: '600' }}>- LKR {product.basePrice.toLocaleString()}.00</span><br />
-                                Designer charge: <span style={{ color: '#475569', fontWeight: '600' }}>- LKR {product.designerCharge.toLocaleString()}.00</span><br />
-                                Service charge: <span style={{ color: '#475569', fontWeight: '600' }}>- LKR {product.serviceCharge.toLocaleString()}.00</span>
+                                Base T-shirt: <span style={{ color: '#475569', fontWeight: '600' }}>- LKR {(product.basePrice || 1200).toLocaleString()}.00</span><br />
+                                Designer charge: <span style={{ color: '#475569', fontWeight: '600' }}>- LKR {((product as any).designerCharge || (product as any).markup || 0).toLocaleString()}.00</span><br />
+                                Service charge: <span style={{ color: '#475569', fontWeight: '600' }}>- LKR {(product.serviceCharge || 100).toLocaleString()}.00</span>
                             </div>
 
                             {/* Description */}
@@ -902,7 +756,14 @@ const ProductDetail = () => {
                                                 <ActionButton
                                                     text="Customize Design"
                                                     disabled={!product.allowCustomization}
-                                                    onClick={() => navigate('/design-tool', { state: { product: latestProduct } })}
+                                                    onClick={() => navigate('/design-tool', { 
+                                                        state: { 
+                                                            product: latestProduct,
+                                                            isCustomization: true,
+                                                            selectedColor,
+                                                            selectedSize
+                                                        } 
+                                                    })}
                                                 />
                                             </div>
                                             <div style={{ flex: 1 }}>
@@ -1054,17 +915,33 @@ const ProductDetail = () => {
                             {/* 👕 OPTION 1: PHYSICAL T-SHIRT (Updates the Cart with Size/Color) */}
                             <div
                                 onClick={() => {
+                                    const itemPrice = typeof product.price === 'string' 
+                                        ? parseFloat(product.price.replace(/[^\d.]/g, '')) 
+                                        : product.price;
+
                                     const updatedProduct = {
                                         ...product,
                                         id: product.id,
                                         title: product.title,
-                                        price: product.price,
-                                        image: product.baseImages[0],
+                                        price: itemPrice,
+                                        basePrice: product.basePrice || 1200,
+                                        markup: (product as any).designerCharge || (product as any).markup || 0,
+                                        serviceFee: product.serviceCharge || 100,
+                                        image: (product.baseImages && product.baseImages[0]) || product.img || product.displayImage,
                                         type: 'physical',
                                         color: colorNames[selectedColor] || 'Custom Color',
+                                        tshirtColor: selectedColor === 'original' ? '#ffffff' : selectedColor, // 🚀 Pass the hex!
                                         size: selectedSize,
                                         quantity: 1,
-                                        selected: true
+                                        selected: true,
+                                        // 🎨 Include Design Data for Cart Mockup
+                                        frontDesign: product.frontDesign,
+                                        frontPrintArea: product.frontPrintArea,
+                                        backDesign: product.backDesign,
+                                        backPrintArea: product.backPrintArea,
+                                        canvasState: product.canvasState,
+                                        frontDesignScale: product.frontDesignScale,
+                                        baseImages: product.baseImages
                                     };
                                     addToCart(updatedProduct); // 🚀 This saves it!
                                     setShowPurchaseModal(false);
@@ -1108,4 +985,4 @@ const ProductDetail = () => {
     );
 };
 
-export default ProductDetail;
+export default ProductDetail;

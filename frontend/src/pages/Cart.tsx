@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext'; // 🚀 Import the global hook
 import Header from '../components/Header'; 
 import Footer from '../components/Footer';
+import MockupPreview from '../components/MockupPreview';
 
 const Cart = () => {
     const navigate = useNavigate();
@@ -25,8 +26,7 @@ const Cart = () => {
     const selectedItems = cartItems.filter((item: any) => item.selected);
     const subtotal = selectedItems.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
     const deliveryFee = selectedItems.some((item: any) => item.type === 'physical') ? 300 : 0;
-    const serviceCharge = selectedItems.length > 0 ? 100 : 0;
-    const total = subtotal + deliveryFee + serviceCharge;
+    const total = subtotal + deliveryFee;
 
     const animationStyle = `
         @keyframes fadeInUp {
@@ -84,25 +84,36 @@ const Cart = () => {
                                         <input type="checkbox" checked={item.selected} onChange={() => toggleSelect(item.id)} style={customCheck} />
                                     </div>
                                     <div style={productCell}>
-                                        <img 
-                                            src={
-                                                // 1. Try the full path if it exists
-                                                (item.image || item.img) ? (
-                                                    // If the path already starts with /img/, use it. 
-                                                    // If not, add /img/ to the start.
-                                                    (item.image || item.img).startsWith('/img/') 
-                                                        ? (item.image || item.img) 
-                                                        : `/img/${item.image || item.img}`
-                                                ) : "/img/placeholder.png"
-                                            } 
-                                            style={productThumb} 
-                                            alt={item.title} 
-                                            onError={(e) => {
-                                                // Absolute fallback to show which filename is failing
-                                                console.error("Failed to load image for:", item.title);
-                                                e.currentTarget.src = "https://via.placeholder.com/150?text=Fix+Path";
-                                            }}
-                                        />
+                                    <div style={{ ...productThumb, overflow: 'hidden', position: 'relative' }}>
+                                        {item.frontDesign || item.canvasState ? (
+                                            <MockupPreview
+                                                mockupSrc={(item.baseImages && item.baseImages[0]) || item.image}
+                                                maskSrc={(item.baseImages && item.baseImages[0]) || item.image}
+                                                tshirtColor={item.tshirtColor || '#ffffff'}
+                                                printArea={item.frontPrintArea}
+                                                designSrc={item.frontDesign}
+                                                canvasState={item.canvasState}
+                                                designScale={item.frontDesignScale || 1.0}
+                                                overallScale={1.5} // 🚀 Increased T-shirt size slightly
+                                            />
+                                        ) : (
+                                            <img 
+                                                src={
+                                                    (item.image || item.img) ? (
+                                                        (item.image || item.img).startsWith('/img/') 
+                                                            ? (item.image || item.img) 
+                                                            : `/img/${item.image || item.img}`
+                                                    ) : "/img/placeholder.png"
+                                                } 
+                                                style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.1)' }} 
+                                                alt={item.title} 
+                                                onError={(e) => {
+                                                    console.error("Failed to load image for:", item.title);
+                                                    e.currentTarget.src = "https://via.placeholder.com/150?text=Fix+Path";
+                                                }}
+                                            />
+                                        )}
+                                    </div>
                                         
                                         <div style={productInfo}>
                                             <h3 style={itemTitle}>{item.title}</h3>
@@ -238,7 +249,6 @@ const Cart = () => {
                         <div style={summaryCalculationBox}>
                             <div style={summaryLine}><span>Subtotal ({selectedItems.length} items)</span> <span>LKR {subtotal.toLocaleString()}.00</span></div>
                             <div style={summaryLine}><span>Delivery Fee</span> <span>LKR {deliveryFee.toLocaleString()}.00</span></div>
-                            <div style={summaryLine}><span>Service Charge</span> <span>LKR {serviceCharge.toLocaleString()}.00</span></div>
                             <div style={totalLine}><span>Grand Total</span> <span>LKR {total.toLocaleString()}.00</span></div>
                             <button 
                                 style={proceedBtn} 

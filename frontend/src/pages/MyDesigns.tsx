@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
+import MockupPreview from '../components/MockupPreview';
 import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000";
@@ -19,6 +20,11 @@ interface DesignItem {
     frontDesign?: string;
     frontPrintArea?: any;
     tshirtColor?: string;
+    canvasState?: {
+        imageLayers: any[];
+        textLayers: any[];
+    };
+    frontDesignScale?: number;
 }
 
 const MyDesigns = () => {
@@ -70,6 +76,8 @@ const MyDesigns = () => {
                         backDesign: item.backDesign,
                         backPrintArea: item.backPrintArea,
                         tshirtColor: item.tshirtColor,
+                        canvasState: item.canvasState,
+                        frontDesignScale: item.frontDesignScale,
                         allowCustomization: item.allowCustomization,
                         allowEditRequests: item.allowEditRequests,
                         baseProduct: item.baseProduct,
@@ -179,12 +187,12 @@ const MyDesigns = () => {
                                             <MockupPreview
                                                 mockupSrc="/img/womenfront-mockup.png"
                                                 maskSrc="/img/womenfront-mockup.png"
-                                                maskSize="contain"
-                                                maskPosition="center"
                                                 tshirtColor={item.tshirtColor || '#ffffff'}
                                                 printArea={item.frontPrintArea || { top: '56%', left: '49%', width: '30%', height: '27%', rotation: 0 }}
                                                 designSrc={item.frontDesign}
+                                                canvasState={item.canvasState}
                                                 overallScale={1.5}
+                                                designScale={item.frontDesignScale || 1.0}
                                             />
                                         )}
                                     </div>
@@ -230,126 +238,3 @@ const MyDesigns = () => {
 };
 
 export default MyDesigns;
-
-// --- 🟢 SHARED MOCKUP PREVIEW COMPONENT (Synced from MyShop) ---
-const MockupPreview = ({
-    mockupSrc,
-    maskSrc,
-    tshirtColor,
-    printArea,
-    designSrc,
-    overallScale = 1.0,
-    canvasState
-}: any) => {
-    // Combine and sort layers by zIndex
-    const allLayers = [
-        ...(canvasState?.imageLayers?.map((l: any) => ({ ...l, layerType: 'image' })) || []),
-        ...(canvasState?.textLayers?.map((t: any) => ({ ...t, layerType: 'text' })) || [])
-    ].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-
-    const hasLayers = allLayers.length > 0;
-    
-    // Increased size for display
-    const finalPrintArea = printArea ? {
-        ...printArea,
-        width: `calc(${printArea.width} * 1.15)`,
-        height: `calc(${printArea.height} * ${printArea.height.includes('%') ? '1.15' : '1.15'})`
-    } : { top: '50%', left: '50%', width: '128%', height: '115%', rotation: 0 };
-
-    return (
-        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-            <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale})`, transformOrigin: 'center center', position: 'relative' }}>
-                
-                {/* 1. Base Mockup Image (Bottom) */}
-                <img
-                    src={mockupSrc}
-                    alt="Mockup"
-                    style={{
-                        width: '100%', height: '100%', objectFit: 'contain',
-                        position: 'absolute', inset: 0, zIndex: 1,
-                        filter: 'contrast(1.0) brightness(1.0) saturate(0)'
-                    }}
-                />
-
-                {/* 2. Color Layer (Multiplied) */}
-                {tshirtColor && (
-                    <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: tshirtColor,
-                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
-                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center',
-                        WebkitMaskRepeat: 'no-repeat', pointerEvents: 'none', zIndex: 2,
-                        mixBlendMode: 'multiply'
-                    }}></div>
-                )}
-
-                {/* 3. Design Layer */}
-                {(hasLayers || designSrc) && (
-                    <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
-                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center',
-                        WebkitMaskRepeat: 'no-repeat', zIndex: 3, pointerEvents: 'none'
-                    }}>
-                        <div style={{
-                            position: 'absolute', top: finalPrintArea.top, left: finalPrintArea.left,
-                            width: finalPrintArea.width,
-                            height: finalPrintArea.height,
-                            transform: `translate(-50%, -50%) rotate(${finalPrintArea.rotation || 0}deg)`,
-                            transformOrigin: 'center center', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', overflow: 'hidden'
-                        }}>
-                            {designSrc ? (
-                                <img src={designSrc.startsWith('/uploads') ? `http://localhost:5000${designSrc}` : designSrc} alt="Design" style={{
-                                    width: '100%', height: '100%', objectFit: 'contain',
-                                    mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal'
-                                }} />
-                            ) : (
-                                <div style={{ position: 'relative', width: '100%', height: '100%', isolation: 'isolate' }}>
-                                    {allLayers.map((layer: any) => (
-                                        layer.layerType === 'image' ? (
-                                            <img
-                                                key={layer.id}
-                                                src={layer.src.startsWith('/uploads') ? `http://localhost:5000${layer.src}` : layer.src}
-                                                style={{
-                                                    position: 'absolute',
-                                                    zIndex: layer.zIndex,
-                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
-                                                    mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
-                                                    opacity: 0.95,
-                                                    width: 'auto',
-                                                    height: 'auto'
-                                                }}
-                                            />
-                                        ) : (
-                                            <div
-                                                key={layer.id}
-                                                style={{
-                                                    position: 'absolute',
-                                                    zIndex: layer.zIndex,
-                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg)`,
-                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
-                                                }}
-                                            >
-                                                <div style={{
-                                                    fontFamily: layer.font,
-                                                    color: layer.color,
-                                                    fontSize: '24px',
-                                                    fontWeight: 'bold',
-                                                    whiteSpace: 'nowrap',
-                                                    letterSpacing: `${layer.letterSpacing || 0}px`
-                                                }}>
-                                                    {layer.text}
-                                                </div>
-                                            </div>
-                                        )
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};

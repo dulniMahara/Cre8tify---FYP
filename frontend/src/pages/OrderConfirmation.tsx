@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import MockupPreview from '../components/MockupPreview';
 
 const OrderConfirmation = () => {
     const location = useLocation();
@@ -25,8 +26,27 @@ const OrderConfirmation = () => {
     const userInfoRaw = localStorage.getItem('userInfo');
     const userInfo = userInfoRaw ? JSON.parse(userInfoRaw) : null;
 
-    const { selectedItems = [] } = location.state || {};
-    const [items, setItems] = useState<any[]>(selectedItems);
+    const { selectedItems = [], customProduct } = location.state || {};
+    
+    // Initialize items: either from cart (selectedItems) or from an approved customization
+    const initialItems = selectedItems.length > 0 ? selectedItems : (customProduct ? [{
+        _id: customProduct._id,
+        id: customProduct._id,
+        title: customProduct.productName || "Custom Design",
+        price: customProduct.price || 1800, // Use price from request or default
+        image: customProduct.frontDesign, 
+        size: customProduct.size || 'M',
+        color: customProduct.color || 'White',
+        quantity: 1,
+        type: 'physical',
+        isCustom: true,
+        basePrice: 1200,
+        markup: customProduct.designerMarkup || customProduct.markup || (Math.max(0, parseFloat(customProduct.price) - 1200 - 100 - 300)),
+        serviceFee: 100,
+        customizationFee: 300
+    }] : []);
+
+    const [items, setItems] = useState<any[]>(initialItems);
 
     const [customer, setCustomer] = useState({ 
         name: userInfo?.name || "Sachini Sabdhana", 
@@ -44,7 +64,6 @@ const OrderConfirmation = () => {
     const [total, setTotal] = useState(0);
     
     const baseDeliveryFee = items.some((i: any) => i.type === 'physical') ? 300 : 0;
-    const baseServiceCharge = items.length > 0 ? 100 : 0;
 
     useEffect(() => {
         const newSubtotal = items.reduce((acc: number, item: any) => {
@@ -53,8 +72,8 @@ const OrderConfirmation = () => {
             return acc + (price * qty);
         }, 0);
         setSubtotal(newSubtotal);
-        setTotal(newSubtotal + baseDeliveryFee + baseServiceCharge);
-    }, [items, baseDeliveryFee, baseServiceCharge]);
+        setTotal(newSubtotal + baseDeliveryFee);
+    }, [items, baseDeliveryFee]);
 
     const updateQty = (id: string, delta: number) => {
         setItems(prev => prev.map(item => 
@@ -104,6 +123,12 @@ const OrderConfirmation = () => {
                     price: parseFloat(item.price),
                     size: item.size,
                     color: item.color,
+                    tshirtColor: item.tshirtColor,
+                    frontDesign: item.frontDesign,
+                    frontPrintArea: item.frontPrintArea,
+                    canvasState: item.canvasState,
+                    frontDesignScale: item.frontDesignScale,
+                    baseImages: item.baseImages,
                     product: item._id || item.id 
                 })),
                 totalPrice: total,
@@ -181,7 +206,22 @@ const OrderConfirmation = () => {
                         <div style={itemsList}>
                             {items.map((item: any) => (
                                 <div key={item.id} style={itemRow}>
-                                    <img src={item.image} alt="" style={itemThumb} />
+                                    <div style={{ ...itemThumb, overflow: 'hidden', position: 'relative' }}>
+                                        {item.frontDesign || item.canvasState ? (
+                                            <MockupPreview
+                                                mockupSrc={(item.baseImages && item.baseImages[0]) || item.image}
+                                                maskSrc={(item.baseImages && item.baseImages[0]) || item.image}
+                                                tshirtColor={item.tshirtColor || '#ffffff'}
+                                                printArea={item.frontPrintArea}
+                                                designSrc={item.frontDesign}
+                                                canvasState={item.canvasState}
+                                                designScale={item.frontDesignScale || 1.0}
+                                                overallScale={1.5}
+                                            />
+                                        ) : (
+                                            <img src={item.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.1)' }} />
+                                        )}
+                                    </div>
                                     <div style={itemDetails}>
                                         <h4 style={itemLabel}>{item.title}</h4>
                                         <p style={itemSubText}>Size: {item.size} | Color: {item.color}</p>
@@ -252,7 +292,6 @@ const OrderConfirmation = () => {
                         <div style={summaryRows}>
                             <div style={summaryRow}><span>Subtotal</span><span>LKR {formatPrice(subtotal)}</span></div>
                             <div style={summaryRow}><span>Delivery Fee</span><span>LKR {formatPrice(baseDeliveryFee)}</span></div>
-                            <div style={summaryRow}><span>Service Charge</span><span>LKR {formatPrice(baseServiceCharge)}</span></div>
                             <div style={totalRow}>
                                 <span>Grand Total</span>
                                 <span>LKR {formatPrice(total)}</span>

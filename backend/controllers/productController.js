@@ -128,7 +128,7 @@ const getProducts = async (req, res) => {
         }
 
         const products = await Product.find(query)
-            .select({ canvasState: 0, backDesign: 0, neckDesign: 0, foldedDesign: 0, mockupImages: { $slice: 1 } })
+            .select({ backDesign: 0, neckDesign: 0, foldedDesign: 0, mockupImages: { $slice: 1 } })
             .populate('designer', 'name shopName bio profileImage')
             .sort({ createdAt: -1 });
 
@@ -156,7 +156,7 @@ const getProductById = async (req, res) => {
 const getDesignerProducts = async (req, res) => {
     try {
         const products = await Product.find({ designer: req.user._id })
-            .select({ canvasState: 0, mockupImages: { $slice: 1 } })
+            .select({ mockupImages: { $slice: 1 } })
             .populate('designer', 'name shopName bio profileImage')
             .sort({ createdAt: -1 });
         res.status(200).json(products);
@@ -174,7 +174,7 @@ const getPendingProducts = async (req, res) => {
         const products = await Product.find({
             status: { $regex: /^pending$/i }
         })
-            .select({ canvasState: 0, mockupImages: { $slice: 1 } })
+            .select({ mockupImages: { $slice: 1 } })
             .populate({
                 path: 'designer',
                 select: 'name email shopName'
