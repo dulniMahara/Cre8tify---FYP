@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 // 🟢 Helper Function: Simplified to return only strings
 const formatTrackDate = (date: Date, daysToAdd: number = 0, mode: 'FULL' | 'DATE_ONLY' = 'FULL') => {
@@ -26,21 +27,54 @@ const formatTrackDate = (date: Date, daysToAdd: number = 0, mode: 'FULL' | 'DATE
 const TrackOrder = () => {
     const location = useLocation();
     const navigate = useNavigate();
-
-    useEffect(() => {
-        window.scrollTo(0, 0);
-    }, []);
+    const [fetchedOrder, setFetchedOrder] = React.useState<any>(null);
+    const [loading, setLoading] = React.useState(false);
 
     // 🟢 Extract data from navigation state
     const rawState = (location.state as any) || {};
     let { 
-        address = "Address not found", 
-        customerName = "Guest User",
-        orderId = "CR8-XXXXX",
-        createdAt = new Date().toISOString(),
-        status = "Processing", 
-        fromMyOrders = false 
+        address = fetchedOrder?.shippingAddress || "Address not found", 
+        customerName = fetchedOrder?.user?.name || "Guest User",
+        orderId = rawState.orderId || "CR8-XXXXX",
+        createdAt = fetchedOrder?.createdAt || rawState.createdAt || new Date().toISOString(),
+        status = fetchedOrder?.status || rawState.status || "Processing", 
+        fromMyOrders = rawState.fromMyOrders || false 
     } = rawState;
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+        
+        // 🟢 Fetch order details if we only have an ID (e.g. from notification)
+        if (rawState.orderId && (!rawState.createdAt || !rawState.status)) {
+            const fetchOrder = async () => {
+                setLoading(true);
+                try {
+                    const userInfoRaw = localStorage.getItem('userInfo');
+                    const userInfo = userInfoRaw ? JSON.parse(userInfoRaw) : null;
+                    const token = userInfo?.token;
+                    
+                    const response = await fetch(`http://localhost:5000/api/orders/${rawState.orderId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        setFetchedOrder(data);
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch order tracking info", err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchOrder();
+        }
+    }, [rawState.orderId]);
+
+    if (loading) return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f4f7f9' }}>
+            <h2 style={{ color: '#0d375b', fontWeight: 900 }}>Loading Tracking Info...</h2>
+        </div>
+    );
 
     // 🟢 Shorten ID if it's a long MongoDB ID
     if (orderId && orderId.length > 15) {
@@ -57,6 +91,9 @@ const TrackOrder = () => {
     // 🟢 Logic to determine how many ticks to show
     const isOldOrder = (new Date().getTime() - baseDate.getTime()) > (24 * 60 * 60 * 1000); // Older than 24h
     const isDelivered = status === 'Delivered';
+    const isPrinting = status === 'Printing';
+    const isProcessing = status === 'Processing';
+    const isCancelled = status === 'Cancelled' || status === 'Refunded';
 
     const steps = [
         { 
@@ -68,13 +105,19 @@ const TrackOrder = () => {
         { 
             title: "Processing", 
             date: formatTrackDate(baseDate, 1), 
-            status: isDelivered || isOldOrder ? "complete" : "pending", 
-            desc: "Item packed at Colombo Hub." 
+            status: (isDelivered || isPrinting || isOldOrder) ? "complete" : (isProcessing ? "active" : "pending"), 
+            desc: "Item verified and prepared." 
+        },
+        { 
+            title: "Printing", 
+            date: formatTrackDate(baseDate, 1), 
+            status: isDelivered ? "complete" : (isPrinting ? "active" : (isOldOrder ? "complete" : "pending")), 
+            desc: "Your design is being printed." 
         },
         { 
             title: "Dispatched", 
             date: formatTrackDate(baseDate, 2), 
-            status: isDelivered ? "complete" : (isOldOrder ? "active" : "pending"), 
+            status: isDelivered ? "complete" : (isOldOrder && !isPrinting && !isProcessing ? "active" : "pending"), 
             desc: "Handled by Cre8tify Logistics." 
         },
         { 
@@ -90,6 +133,31 @@ const TrackOrder = () => {
             desc: isDelivered ? "Enjoy your purchase!" : "Expected soon" 
         },
     ];
+
+    if (isCancelled) {
+        return (
+            <div style={pageWrapper}>
+                <div className="header-nudge-wrapper">
+                    <Header mode="title" title="TRACK ORDER" />
+                </div>
+                <div style={contentContainer}>
+                    <div style={{ ...whiteContentBox, textAlign: 'center', padding: '60px 20px' }}>
+                        <div style={{ fontSize: '50px', marginBottom: '20px' }}>🚫</div>
+                        <h1 style={{ ...mainTitle, fontSize: '28px' }}>Order {status}</h1>
+                        <p style={{ color: '#666', marginTop: '10px' }}>This order (# {orderId}) has been {status.toLowerCase()}.</p>
+                        <p style={{ color: '#666' }}>If you have any questions, please contact our support team.</p>
+                        <button 
+                            style={{ ...helpBtn, alignSelf: 'center', marginTop: '30px' }} 
+                            onClick={() => navigate('/customer-dashboard')}
+                        >
+                            Back to Dashboard
+                        </button>
+                    </div>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
 
     return (
         <div style={pageWrapper}>

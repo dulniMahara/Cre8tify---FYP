@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { getUserInfo, getToken } from '../utils/auth';
+import MockupPreview from '../components/MockupPreview';
 import '../styles/dashboard.css';
 
 const API_URL = "http://localhost:5000";
@@ -140,6 +141,9 @@ const MarketplaceOperations = () => {
     const [approvals, setApprovals] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
     const [orders, setOrders] = useState<any[]>([]);
+    const [requests, setRequests] = useState<any[]>([]);
+    const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
+    const [showOrderDetailsModal, setShowOrderDetailsModal] = useState(false);
 
     // Order Filtering & Search
     const [searchQuery, setSearchQuery] = useState('');
@@ -178,6 +182,15 @@ const MarketplaceOperations = () => {
     const [payoutForm, setPayoutForm] = useState({ designerId: '', name: '', amount: '', method: 'Bank Transfer', note: '' });
     const [allOrders, setAllOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [settings, setSettings] = useState<any[]>([]);
+    const [selectedDesignerHistory, setSelectedDesignerHistory] = useState<any>(null);
+    const [showDesignerHistoryModal, setShowDesignerHistoryModal] = useState(false);
+
+    // Helper to get a dynamic setting with a fallback
+    const getSettingValue = (key: string, fallback: any) => {
+        const s = settings.find(st => st.key === key);
+        return s ? s.value : fallback;
+    };
 
     const activeTabRef = React.useRef(activeTab);
     const handleTabChange = (tab: string) => {
@@ -197,7 +210,10 @@ const MarketplaceOperations = () => {
                     fetchData('Approvals'),
                     fetchData('Categories'),
                     fetchData('Orders'),
-                    fetchData('Payouts')
+                    fetchData('Payouts'),
+                    fetchData('Requests'),
+                    fetchData('Customizations'),
+                    fetchData('Settings')
                 ]);
             } catch (err) {
                 console.error("[Admin] Parallel fetch error:", err);
@@ -234,6 +250,9 @@ const MarketplaceOperations = () => {
             if (tab === 'Approvals') endpoint = '/api/products/admin/pending';
             else if (tab === 'Categories') endpoint = '/api/base-products';
             else if (tab === 'Orders') endpoint = '/api/admin/orders';
+            else if (tab === 'Requests') endpoint = '/api/requests?type=fulfillment';
+            else if (tab === 'Customizations') endpoint = '/api/requests?type=customization';
+            else if (tab === 'Settings') endpoint = '/api/admin/settings';
 
             if (!endpoint) return;
 
@@ -248,7 +267,6 @@ const MarketplaceOperations = () => {
 
             const result = await res.json();
             const validatedData = Array.isArray(result) ? result : [];
-            console.log(`[AdminFetch] ${tab} loaded: ${validatedData.length} items`);
 
             if (tab === 'Approvals') setApprovals(validatedData);
             else if (tab === 'Categories') setCategories(validatedData);
@@ -256,6 +274,9 @@ const MarketplaceOperations = () => {
                 setOrders(validatedData);
                 setAllOrders(validatedData);
             }
+            else if (tab === 'Requests') setRequests(validatedData);
+            else if (tab === 'Customizations') setRequests(validatedData);
+            else if (tab === 'Settings') setSettings(validatedData);
         } catch (err) {
             console.error(`[FetchData] Error fetching ${tab}:`, err);
         }
@@ -281,15 +302,39 @@ const MarketplaceOperations = () => {
 
     // Sub-tab: Orders Actions
     const updateOrderStatus = async (id: string, status: string) => {
+        console.log(`[Admin] Updating order ${id} to status: ${status}`);
         const token = getToken('admin');
+        
+        // Optimistic UI Update
+        const previousOrders = [...allOrders];
+        setAllOrders(prev => prev.map(o => o._id === id ? { ...o, status } : o));
+        
         try {
-            await fetch(`${API_URL}/api/admin/orders/${id}/status`, {
+            const res = await fetch(`${API_URL}/api/admin/orders/${id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ status })
             });
+            
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.error("[Admin] Update failed:", errorData);
+                throw new Error(errorData.message || "Failed to update");
+            }
+            
+            console.log(`[Admin] Order ${id} updated successfully.`);
             fetchData('Orders');
-        } catch (err) { alert("Failed to update order"); }
+        } catch (err: any) { 
+            console.error("[Admin] Error updating order:", err);
+            setAllOrders(previousOrders); // Rollback
+            
+            // Extract the most specific error message possible
+            let msg = err.message;
+            if (err.response && err.response.data && err.response.data.error) {
+                msg = err.response.data.error;
+            }
+            alert("Failed to update order: " + msg); 
+        }
     };
 
     const handleRefund = async (id: string) => {
@@ -415,12 +460,16 @@ const MarketplaceOperations = () => {
     const renderCategories = () => {
         const groups = ['Women', 'Men', 'Kids'];
 
+
+
         return (
             <div>
 
                 {groups.map(group => {
                     const groupData = categories.filter((item: any) => (item.category || 'Unisex') === group);
                     if (groupData.length === 0) return null;
+
+
                     return (
                         <div key={group} style={{ marginBottom: '50px', textAlign: 'center' }}>
                             <h2 style={{ fontSize: '18px', color: '#38bdf8', borderBottom: '2px solid rgba(255,255,255,0.05)', paddingBottom: '10px', marginBottom: '30px', display: 'inline-block', minWidth: '350px' }}>{group}'s Collection</h2>
@@ -462,13 +511,12 @@ const MarketplaceOperations = () => {
     };
 
     const renderOrders = () => {
-        const statuses = ['All', 'Processing', 'Printing', 'Shipped', 'Delivered', 'Cancelled'];
+        const statuses = ['All', 'Processing', 'Printing', 'Delivered', 'Cancelled'];
 
         const getStatusColor = (status: string) => {
             switch (status) {
                 case 'Pending': return { bg: '#fef3c7', text: '#92400e' };
                 case 'Printing': return { bg: '#dbeafe', text: '#1e40af' };
-                case 'Shipped': return { bg: '#f3e8ff', text: '#6b21a8' };
                 case 'Delivered': return { bg: '#dcfce7', text: '#166534' };
                 case 'Cancelled': return { bg: '#fee2e2', text: '#991b1b' };
                 default: return { bg: '#f1f5f9', text: '#475569' };
@@ -483,6 +531,8 @@ const MarketplaceOperations = () => {
                 (order.user?.email?.toLowerCase() || '').includes(searchQuery.toLowerCase());
             return matchesStatus && matchesSearch;
         });
+
+
 
         return (
             <div>
@@ -542,17 +592,58 @@ const MarketplaceOperations = () => {
                         <tbody>
                             {filteredOrders.map((order: any) => {
                                 if (!order) return null;
+
+
                                 return (
                                     <tr key={order._id} style={tdRowStyle}>
                                         <td style={{ ...tdStyle, fontWeight: 'bold', color: '#38bdf8', paddingLeft: '30px' }}>
                                             #CR8-{order._id?.substring(order._id.length - 6).toUpperCase() || '?????'}
                                         </td>
                                         <td style={tdStyle}>
-                                            <div style={{ width: '50px', height: '50px', background: '#1e293b', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                                <img
-                                                    src={(order.orderItems?.[0]?.product?.mockupImages && order.orderItems[0].product.mockupImages.length > 0) ? (order.orderItems[0].product.mockupImages[0].startsWith('/uploads') ? `http://localhost:5000${order.orderItems[0].product.mockupImages[0]}` : order.orderItems[0].product.mockupImages[0]) : (order.orderItems?.[0]?.image || '/img/womenfront-mockup.png')}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0.9)' }} alt=""
-                                                />
+                                            <div style={{ width: '50px', height: '50px', background: '#1e293b', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
+                                                {order.orderItems?.[0]?.frontDesign || order.orderItems?.[0]?.canvasState ? (
+                                                    <MockupPreview
+                                                        mockupSrc={(() => {
+                                                            const img = (order.orderItems[0].baseImages && order.orderItems[0].baseImages[0]) || order.orderItems[0].image;
+                                                            if (!img) return "/img/placeholder.png";
+                                                            if (img.startsWith('http') || img.startsWith('data:')) return img;
+                                                            if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
+                                                            if (img.startsWith('uploads')) return `http://localhost:5000/${img}`;
+                                                            if (img.startsWith('/')) return img;
+                                                            return `/img/${img}`;
+                                                        })()}
+                                                        maskSrc={(() => {
+                                                            const img = (order.orderItems[0].baseImages && order.orderItems[0].baseImages[0]) || order.orderItems[0].image;
+                                                            if (!img) return "/img/placeholder.png";
+                                                            if (img.startsWith('http') || img.startsWith('data:')) return img;
+                                                            if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
+                                                            if (img.startsWith('uploads')) return `http://localhost:5000/${img}`;
+                                                            if (img.startsWith('/')) return img;
+                                                            return `/img/${img}`;
+                                                        })()}
+                                                        tshirtColor={order.orderItems[0].tshirtColor || '#ffffff'}
+                                                        printArea={order.orderItems[0].frontPrintArea}
+                                                        designSrc={order.orderItems[0].frontDesign}
+                                                        canvasState={order.orderItems[0].canvasState}
+                                                        designScale={order.orderItems[0].frontDesignScale || 1.0}
+                                                        overallScale={1.5}
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src={(() => {
+                                                            const img = (order.orderItems?.[0]?.product?.mockupImages && order.orderItems[0].product.mockupImages.length > 0) 
+                                                                ? order.orderItems[0].product.mockupImages[0] 
+                                                                : (order.orderItems?.[0]?.image || '/img/womenfront-mockup.png');
+                                                            if (!img) return "/img/placeholder.png";
+                                                            if (img.startsWith('http') || img.startsWith('data:')) return img;
+                                                            if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
+                                                            if (img.startsWith('uploads')) return `http://localhost:5000/${img}`;
+                                                            if (img.startsWith('/')) return img;
+                                                            return `/img/${img}`;
+                                                        })()}
+                                                        style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0.9)' }} alt=""
+                                                    />
+                                                )}
                                             </div>
                                         </td>
                                         <td style={tdStyle}>
@@ -591,7 +682,7 @@ const MarketplaceOperations = () => {
                                                 onChange={(e) => updateOrderStatus(order._id, e.target.value)}
                                                 style={{ padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '11px', fontWeight: 'bold' }}
                                             >
-                                                {['Processing', 'Printing', 'Shipped', 'Delivered', 'Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
+                                                {['Processing', 'Printing', 'Delivered', 'Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
                                             </select>
                                             {order.isPaid && !order.isRefunded && (
                                                 <button
@@ -601,6 +692,12 @@ const MarketplaceOperations = () => {
                                                     Refund
                                                 </button>
                                             )}
+                                            <button
+                                                onClick={() => { setSelectedOrderDetails(order); setShowOrderDetailsModal(true); }}
+                                                style={{ marginLeft: '10px', padding: '6px 12px', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                                            >
+                                                Details
+                                            </button>
                                         </td>
                                     </tr>
                                 );
@@ -615,12 +712,79 @@ const MarketplaceOperations = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Order Details Modal */}
+                {showOrderDetailsModal && selectedOrderDetails && (
+                    <div style={modalOverlayStyle}>
+                        <div style={{ ...modalContentStyle, maxWidth: '600px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <h2 style={{ fontSize: '20px', color: '#38bdf8', margin: 0 }}>Order Financial Breakdown</h2>
+                                <button onClick={() => setShowOrderDetailsModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+                            </div>
+                            
+                            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                    <div>
+                                        <div style={labelStyle}>Order ID</div>
+                                        <div style={{ fontWeight: 'bold', color: 'white' }}>#CR8-{selectedOrderDetails._id.substring(selectedOrderDetails._id.length - 8).toUpperCase()}</div>
+                                    </div>
+                                    <div>
+                                        <div style={labelStyle}>Customer</div>
+                                        <div style={{ fontWeight: 'bold', color: 'white' }}>{selectedOrderDetails.user?.name}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {selectedOrderDetails.orderItems?.map((item: any, idx: number) => (
+                                    <div key={idx} style={{ padding: '10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                                            <span style={{ fontWeight: 'bold' }}>{item.name} (x{item.qty})</span>
+                                            <span style={{ color: '#fbbf24' }}>LKR {(item.price * item.qty).toLocaleString()}</span>
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '11px', color: '#94a3b8', marginTop: '5px' }}>
+                                            <div>Base: LKR {(item.basePrice || 1200).toLocaleString()}</div>
+                                            <div>Markup: LKR {(item.markup || 0).toLocaleString()}</div>
+                                            <div>Service Fee: LKR {(item.serviceFee || 100).toLocaleString()}</div>
+                                            {item.isCustom && (
+                                                <div style={{ color: '#fbbf24', fontWeight: 'bold' }}>Customization: LKR {(item.customizationFee || 300).toLocaleString()}</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div style={{ marginTop: '20px', borderTop: '2px dashed rgba(255,255,255,0.1)', paddingTop: '15px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                                    <span style={{ color: '#94a3b8' }}>Delivery Fee</span>
+                                    <span>LKR {(selectedOrderDetails.shippingFee || 300).toLocaleString()}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '18px', fontWeight: '900', color: '#fbbf24' }}>
+                                    <span>Grand Total</span>
+                                    <span>LKR {(selectedOrderDetails.totalPrice).toLocaleString()}</span>
+                                </div>
+
+                                <div style={{ background: 'rgba(34, 197, 94, 0.1)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#22c55e', fontWeight: 'bold' }}>
+                                        <span>Platform Profit</span>
+                                        <span>LKR {(selectedOrderDetails.platformProfit || 0).toLocaleString()}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', color: '#38bdf8', fontSize: '12px' }}>
+                                        <span>Designer Payouts</span>
+                                        <span>LKR {(selectedOrderDetails.designerEarnings || 0).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
 
 
-    const renderPayouts = () => (
+    const renderPayouts = () => {
+        return (
         <div style={{ padding: '0 20px', textAlign: 'left' }}>
             {/* Revenue Summary Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '50px' }}>
@@ -693,26 +857,52 @@ const MarketplaceOperations = () => {
                                 <td style={tdStyle}>LKR {d.alreadyPaid.toLocaleString()}.00</td>
                                 <td style={{ ...tdStyle, color: d.balance > 0 ? '#f43f5e' : '#10b981', fontWeight: '700' }}>LKR {d.balance.toLocaleString()}.00</td>
                                 <td style={tdStyle}>
-                                    <button
-                                        disabled={d.balance <= 0}
-                                        onClick={() => {
-                                            setPayoutForm({ ...payoutForm, designerId: d.id, name: d.name, amount: d.balance.toString() });
-                                            setShowPayoutModal(true);
-                                        }}
-                                        style={{
-                                            padding: '8px 16px',
-                                            background: d.balance > 0 ? '#38bdf8' : 'rgba(148, 163, 184, 0.1)',
-                                            color: d.balance > 0 ? 'white' : '#64748b',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: d.balance > 0 ? 'pointer' : 'not-allowed',
-                                            fontWeight: '700',
-                                            fontSize: '11px',
-                                            transition: 'all 0.2s'
-                                        }}
-                                    >
-                                        Process Payout
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            disabled={d.balance <= 0}
+                                            onClick={() => {
+                                                setPayoutForm({ ...payoutForm, designerId: d.id, name: d.name, amount: d.balance.toString() });
+                                                setShowPayoutModal(true);
+                                            }}
+                                            style={{
+                                                padding: '8px 16px',
+                                                background: d.balance > 0 ? '#38bdf8' : 'rgba(148, 163, 184, 0.1)',
+                                                color: d.balance > 0 ? 'white' : '#64748b',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: d.balance > 0 ? 'pointer' : 'not-allowed',
+                                                fontWeight: '700',
+                                                fontSize: '11px',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            Process Payout
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                const token = getToken('admin');
+                                                const res = await fetch(`${API_URL}/api/admin/financial/designers/${d.id}`, {
+                                                    headers: { 'Authorization': `Bearer ${token}` }
+                                                });
+                                                if (res.ok) {
+                                                    setSelectedDesignerHistory(await res.json());
+                                                    setShowDesignerHistoryModal(true);
+                                                }
+                                            }}
+                                            style={{
+                                                padding: '8px 16px',
+                                                background: 'rgba(255,255,255,0.05)',
+                                                color: 'white',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontWeight: '700',
+                                                fontSize: '11px'
+                                            }}
+                                        >
+                                            View History
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -720,6 +910,66 @@ const MarketplaceOperations = () => {
                 </table>
                 {designerPayouts.length === 0 && <p style={{ padding: '40px', color: '#64748b', textAlign: 'center' }}>No designer records available.</p>}
             </div>
+
+            {/* Designer History Modal */}
+            {showDesignerHistoryModal && selectedDesignerHistory && (
+                <div style={modalOverlayStyle}>
+                    <div style={{ ...modalContentStyle, maxWidth: '700px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h2 style={{ fontSize: '20px', color: '#38bdf8', margin: 0 }}>Transaction History: {selectedDesignerHistory.designer?.name}</h2>
+                            <button onClick={() => setShowDesignerHistoryModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', marginBottom: '25px' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
+                                <div style={labelStyle}>Total Earned</div>
+                                <div style={{ fontSize: '18px', fontWeight: 'bold' }}>LKR {selectedDesignerHistory.summary?.totalEarned.toLocaleString()}</div>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
+                                <div style={labelStyle}>Already Paid</div>
+                                <div style={{ fontSize: '18px', fontWeight: 'bold' }}>LKR {selectedDesignerHistory.summary?.alreadyPaid.toLocaleString()}</div>
+                            </div>
+                            <div style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
+                                <div style={{ ...labelStyle, color: '#38bdf8' }}>Current Balance</div>
+                                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8' }}>LKR {selectedDesignerHistory.summary?.balance.toLocaleString()}</div>
+                            </div>
+                        </div>
+
+                        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                            <table style={tableStyle}>
+                                <thead>
+                                    <tr style={thStyle}>
+                                        <th style={{ padding: '10px' }}>Date</th>
+                                        <th style={{ padding: '10px' }}>Type</th>
+                                        <th style={{ padding: '10px' }}>Description</th>
+                                        <th style={{ padding: '10px', textAlign: 'right' }}>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {selectedDesignerHistory.history?.map((h: any, idx: number) => (
+                                        <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <td style={{ ...tdStyle, padding: '10px', fontSize: '12px' }}>{new Date(h.date).toLocaleDateString()}</td>
+                                            <td style={{ ...tdStyle, padding: '10px' }}>
+                                                <span style={{
+                                                    padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
+                                                    background: h.type === 'sale' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                                                    color: h.type === 'sale' ? '#22c55e' : '#f43f5e'
+                                                }}>
+                                                    {h.type.toUpperCase()}
+                                                </span>
+                                            </td>
+                                            <td style={{ ...tdStyle, padding: '10px', fontSize: '12px' }}>{h.description}</td>
+                                            <td style={{ ...tdStyle, padding: '10px', textAlign: 'right', fontWeight: 'bold', color: h.amount > 0 ? '#22c55e' : '#f43f5e' }}>
+                                                {h.amount > 0 ? '+' : ''}{h.amount.toLocaleString()}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <h3 style={{ marginTop: '60px', marginBottom: '25px', color: 'white', fontWeight: '700', fontSize: '20px' }}>Recent Transaction History</h3>
             <div style={tableCardStyle}>
@@ -766,7 +1016,165 @@ const MarketplaceOperations = () => {
                 {allOrders.length === 0 && <p style={{ padding: '40px', color: '#64748b', textAlign: 'center' }}>No transactions recorded.</p>}
             </div>
         </div>
-    );
+        );
+    };
+
+    const renderRequests = () => {
+
+
+        return (
+            <div style={{ padding: '0 0 50px 0' }}>
+                <h3 style={{ marginBottom: '25px', color: 'white', fontWeight: '700', fontSize: '20px', textAlign: 'left' }}>Design Collaboration Requests</h3>
+                <div style={tableCardStyle}>
+                    <table style={tableStyle}>
+                        <thead>
+                            <tr style={thStyle}>
+                                <th style={{ padding: '15px 20px' }}>Date</th>
+                                <th style={{ padding: '15px 20px' }}>Product</th>
+                                <th style={{ padding: '15px 20px' }}>Customer</th>
+                                <th style={{ padding: '15px 20px' }}>Designer</th>
+                                <th style={{ padding: '15px 20px' }}>Status</th>
+                                <th style={{ padding: '15px 20px' }}>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {requests.map((req: any) => (
+                                <tr key={req._id} style={tdRowStyle}>
+                                    <td style={{ ...tdStyle, padding: '16px 20px', fontSize: '12px' }}>
+                                        {req.submittedOn}
+                                    </td>
+                                    <td style={{ ...tdStyle, fontWeight: '700', color: '#38bdf8' }}>
+                                        {req.productName}
+                                    </td>
+                                    <td style={tdStyle}>
+                                        <div style={{ fontWeight: '500', color: '#f1f5f9' }}>{req.customer}</div>
+                                    </td>
+                                    <td style={tdStyle}>
+                                        <div style={{ fontWeight: '500', color: '#94a3b8' }}>{req.designerName || 'Not Assigned'}</div>
+                                    </td>
+                                    <td style={tdStyle}>
+                                        <span style={{
+                                            padding: '4px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '10px',
+                                            fontWeight: '800',
+                                            background: req.status === 'Completed' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(56, 189, 248, 0.1)',
+                                            color: req.status === 'Completed' ? '#22c55e' : '#38bdf8',
+                                            border: req.status === 'Completed' ? '1px solid rgba(34, 197, 94, 0.2)' : '1px solid rgba(56, 189, 248, 0.2)'
+                                        }}>
+                                            {req.status.toUpperCase()}
+                                        </span>
+                                    </td>
+                                    <td style={{ ...tdStyle, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {req.message}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {requests.length === 0 && <p style={{ padding: '40px', color: '#64748b', textAlign: 'center' }}>No design requests found.</p>}
+                </div>
+            </div>
+        );
+    };
+
+    const renderCustomizations = () => {
+        const pendingCustomizations = requests.filter(r => r.requestType === 'customization' && r.status === 'Pending');
+
+        return (
+            <div style={{ padding: '0 0 50px 0' }}>
+                <h3 style={{ marginBottom: '25px', color: 'white', fontWeight: '700', fontSize: '20px', textAlign: 'left' }}>User Customization Approvals </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                    {pendingCustomizations.map((req: any) => {
+                        // REVENUE SPLIT CALCULATION (Now Dynamic)
+                        const baseDesignerCharge = getSettingValue('base_designer_charge', 500);
+                        const designerBonus = getSettingValue('customization_bonus', 100);
+                        const platformFee = getSettingValue('platform_customization_fee', 300);
+                        const baseProductCost = getSettingValue('base_product_cost', 1000);
+
+                        const designerPayout = baseDesignerCharge + designerBonus;
+                        const totalPrice = designerPayout + platformFee + baseProductCost;
+
+                        return (
+                            <div key={req._id} style={cardStyle}>
+                                <div style={{ ...imageContainerStyle, height: '180px' }}>
+                                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                                        <MockupPreview
+                                            mockupSrc="/img/womenfront-mockup.png"
+                                            maskSrc="/img/womenfront-mockup.png"
+                                            tshirtColor={req.color || '#ffffff'}
+                                            printArea={req.frontPrintArea ? {
+                                                ...req.frontPrintArea,
+                                                left: `calc(${req.frontPrintArea.left} - 1%)`
+                                            } : undefined}
+                                            designSrc={req.frontDesign}
+                                            canvasState={req.canvasState}
+                                            overallScale={1.0}
+                                        />
+                                    </div>
+                                </div>
+                                <div style={{ padding: '20px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                        <h3 style={{ margin: 0, fontSize: '16px', color: 'white' }}>{req.productName}</h3>
+                                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>ID: {req._id.substring(req._id.length - 6)}</span>
+                                    </div>
+                                    <p style={{ margin: '0 0 15px 0', color: '#cbd5e1', fontSize: '13px' }}>Customer: <strong>{req.customer}</strong></p>
+
+                                    <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '12px', marginBottom: '20px' }}>
+                                        <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: 'bold', textTransform: 'uppercase' }}>Proposed Revenue Split</div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
+                                            <span style={{ color: '#cbd5e1' }}>Designer Payout (+100 Bonus)</span>
+                                            <span style={{ color: '#22c55e', fontWeight: 'bold' }}>LKR {designerPayout}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
+                                            <span style={{ color: '#cbd5e1' }}>Platform Fee</span>
+                                            <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>LKR {platformFee}</span>
+                                        </div>
+                                        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '8px', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold' }}>
+                                            <span style={{ color: 'white' }}>Estimated Customer Price</span>
+                                            <span style={{ color: '#fbbf24' }}>LKR {totalPrice}</span>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <button
+                                            onClick={async () => {
+                                                const token = getToken('admin');
+                                                const res = await fetch(`${API_URL}/api/requests/${req._id}`, {
+                                                    method: 'PUT',
+                                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                                    body: JSON.stringify({ status: 'Completed', approvedBy: 'Admin', price: totalPrice })
+                                                });
+                                                if (res.ok) { alert("Customization Approved!"); fetchData('Customizations'); }
+                                            }}
+                                            style={approveBtnStyle}
+                                        >
+                                            Approve Design
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                const token = getToken('admin');
+                                                const res = await fetch(`${API_URL}/api/requests/${req._id}`, {
+                                                    method: 'PUT',
+                                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                                    body: JSON.stringify({ status: 'Rejected' })
+                                                });
+                                                if (res.ok) { alert("Customization Rejected"); fetchData('Customizations'); }
+                                            }}
+                                            style={rejectBtnStyle}
+                                        >
+                                            Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {pendingCustomizations.length === 0 && <p style={{ color: '#64748b', fontSize: '14px' }}>No pending user customizations.</p>}
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#020617' }}>
@@ -774,7 +1182,7 @@ const MarketplaceOperations = () => {
             <div style={{ padding: '25px', maxWidth: '1200px', margin: '0 auto', flex: 1, width: '100%', textAlign: 'center' }}>
                 <div style={{ display: 'flex', gap: '15px', marginBottom: '40px', justifyContent: 'center', position: 'relative' }}>
                     <div style={{ display: 'flex', gap: '12px' }}>
-                        {['Categories', 'Approvals', 'Orders', 'Payouts'].map(tab => (
+                        {['Categories', 'Approvals', 'Requests', 'Customizations', 'Orders', 'Payouts'].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => handleTabChange(tab)}
@@ -802,6 +1210,8 @@ const MarketplaceOperations = () => {
 
                 {activeTab === 'Approvals' && renderApprovals()}
                 {activeTab === 'Categories' && renderCategories()}
+                {activeTab === 'Requests' && renderRequests()}
+                {activeTab === 'Customizations' && renderCustomizations()}
                 {activeTab === 'Orders' && renderOrders()}
                 {activeTab === 'Payouts' && renderPayouts()}
 
@@ -809,6 +1219,8 @@ const MarketplaceOperations = () => {
                     const adminSession = getUserInfo('admin');
                     const globalSession = JSON.parse(localStorage.getItem('userInfo') || '{}');
                     if (!adminSession && globalSession.role && globalSession.role !== 'admin') {
+
+
                         return (
                             <div style={{ marginTop: '50px', padding: '30px', background: '#fff1f2', borderRadius: '12px', border: '1px solid #fda4af', textAlign: 'center' }}>
                                 <h3 style={{ color: '#be123c', margin: '0 0 10px 0' }}>Admin Authorization Required</h3>
@@ -1074,6 +1486,8 @@ const UserManagement = () => {
     };
 
     // USER AMANAGEMENT //
+
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#020617' }}>
             <BackHeader title="User Management" />
@@ -1302,6 +1716,8 @@ const AnalyticsInsights = () => {
     const trending = analytics?.trendingProducts || [];
     const financials = analytics?.financials || { totalRevenue: 0, platformProfit: 0, totalOrders: 0, totalUsers: 0 };
 
+
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#020617', color: '#f1f5f9' }}>
             <BackHeader title="Analytics & Insights" />
@@ -1386,6 +1802,8 @@ const AnalyticsInsights = () => {
                                 salesData.map((day: any, i: number) => {
                                     const maxRev = Math.max(...salesData.map((d: any) => d.totalRevenue), 1);
                                     const height = (day.totalRevenue / maxRev) * 200;
+
+
                                     return (
                                         <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                                             <div
@@ -1443,6 +1861,8 @@ const AnalyticsInsights = () => {
                             userGrowth.map((day: any, i: number) => {
                                 const maxUsers = Math.max(...userGrowth.map((d: any) => d.newUsers), 1);
                                 const height = (day.newUsers / maxUsers) * 120;
+
+
                                 return (
                                     <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                         <div
@@ -1560,6 +1980,8 @@ const sectionDividerStyle = {
 // MAIN ADMIN HUB DASHBOARD
 // -------------------------------------------------------------
 const HubCard = ({ title, imgSrc, desc, onClick }: any) => {
+
+
     return (
         <div
             onClick={onClick}
@@ -1596,6 +2018,8 @@ const HubCard = ({ title, imgSrc, desc, onClick }: any) => {
 
 const AdminHub = () => {
     const navigate = useNavigate();
+
+
     return (
         <div style={{
             background: 'linear-gradient(135deg, #020617 0%, #0f172a 100%)',
@@ -1644,130 +2068,10 @@ const AdminHub = () => {
     );
 };
 
-// --- MOCKUP PREVIEW COMPONENT (Synced from MyDesigns) ---
-const MockupPreview = ({
-    mockupSrc,
-    maskSrc,
-    tshirtColor,
-    printArea,
-    designSrc,
-    overallScale = 1.0,
-    canvasState
-}: any) => {
-    // Combine and sort layers by zIndex
-    const allLayers = [
-        ...(canvasState?.imageLayers?.map((l: any) => ({ ...l, layerType: 'image' })) || []),
-        ...(canvasState?.textLayers?.map((t: any) => ({ ...t, layerType: 'text' })) || [])
-    ].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-
-    const hasLayers = allLayers.length > 0;
-    const finalPrintArea = printArea ? {
-        ...printArea,
-        width: `calc(${printArea.width} * 1.15)`,
-        height: `calc(${printArea.height} * 1.15)`
-    } : { top: '50%', left: '50%', width: '128%', height: '115%', rotation: 0 };
-
-    return (
-        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-            <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale})`, transformOrigin: 'center center', position: 'relative' }}>
-                
-                {/* 1. Base Mockup Image (Bottom) */}
-                <img
-                    src={mockupSrc}
-                    alt="Mockup"
-                    style={{
-                        width: '100%', height: '100%', objectFit: 'contain',
-                        position: 'absolute', inset: 0, zIndex: 1,
-                        filter: 'contrast(1.0) brightness(1.0) saturate(0)'
-                    }}
-                />
-
-                {/* 2. Color Layer (Multiplied) */}
-                {tshirtColor && (
-                    <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: tshirtColor,
-                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
-                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center',
-                        WebkitMaskRepeat: 'no-repeat', pointerEvents: 'none', zIndex: 2,
-                        mixBlendMode: 'multiply'
-                    }}></div>
-                )}
-
-                {/* 3. Design Layer */}
-                {(hasLayers || designSrc) && (
-                    <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
-                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center',
-                        WebkitMaskRepeat: 'no-repeat', zIndex: 3, pointerEvents: 'none'
-                    }}>
-                        <div style={{
-                            position: 'absolute', top: finalPrintArea.top, left: finalPrintArea.left,
-                            width: finalPrintArea.width,
-                            height: finalPrintArea.height,
-                            transform: `translate(-50%, -50%) rotate(${finalPrintArea.rotation || 0}deg)`,
-                            transformOrigin: 'center center', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', overflow: 'hidden'
-                        }}>
-                            {designSrc ? (
-                                <img src={designSrc.startsWith('/uploads') ? `http://localhost:5000${designSrc}` : designSrc} alt="Design" style={{
-                                    width: '100%', height: '100%', objectFit: 'contain',
-                                    mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal'
-                                }} />
-                            ) : (
-                                <div style={{ position: 'relative', width: '100%', height: '100%', isolation: 'isolate' }}>
-                                    {allLayers.map((layer: any) => (
-                                        layer.layerType === 'image' ? (
-                                            <img
-                                                key={layer.id}
-                                                src={layer.src.startsWith('/uploads') ? `http://localhost:5000${layer.src}` : layer.src}
-                                                style={{
-                                                    position: 'absolute',
-                                                    zIndex: layer.zIndex,
-                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
-                                                    mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
-                                                    opacity: 0.95,
-                                                    width: 'auto',
-                                                    height: 'auto'
-                                                }}
-                                            />
-                                        ) : (
-                                            <div
-                                                key={layer.id}
-                                                style={{
-                                                    position: 'absolute',
-                                                    zIndex: layer.zIndex,
-                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg)`,
-                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
-                                                }}
-                                            >
-                                                {/* Text rendering simplified for admin view if needed, but keeping basic support */}
-                                                <div style={{
-                                                    fontFamily: layer.font,
-                                                    color: layer.color,
-                                                    fontSize: '24px',
-                                                    fontWeight: 'bold',
-                                                    whiteSpace: 'nowrap',
-                                                    letterSpacing: `${layer.letterSpacing || 0}px`
-                                                }}>
-                                                    {layer.text}
-                                                </div>
-                                            </div>
-                                        )
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
 // Routing Shell
 const AdminDashboard = () => {
+
+
     return (
         <Routes>
             <Route path="/" element={<AdminHub />} />

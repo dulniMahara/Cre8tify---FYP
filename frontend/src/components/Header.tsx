@@ -193,7 +193,7 @@ const Header: React.FC<HeaderProps> = ({
                                                         } else if (n.type === 'order_received') {
                                                             navigate('/my-sales');
                                                         } else if (n.type === 'status_update') {
-                                                            navigate('/my-shop');
+                                                            navigate('/track-order', { state: { orderId: n.orderId, fromNotification: true } });
                                                         }
                                                     }}
                                                 >

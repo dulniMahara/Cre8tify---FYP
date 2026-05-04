@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar'; 
 import Footer from '../components/Footer'; 
 import Header from '../components/Header'; 
+import MockupPreview from '../components/MockupPreview';
 import '../styles/dashboard.css'; 
 
 const MyOrders = () => {
@@ -44,12 +45,6 @@ const MyOrders = () => {
                 let orderList = [];
                 if (data && data.length > 0) {
                     orderList = data;
-                } else {
-                    // 🔵 FALLBACK DATA: Two Daisy Dream orders
-                    orderList = [
-                        { _id: 'CR8-4300D', createdAt: '2026-04-24T10:30:00Z', status: 'Processing', totalPrice: 4300, orderItems: [{ name: 'Daisy Dream', image: '/img/girlteen1.png' }] },
-                        { _id: 'CR8-7000D', createdAt: '2026-04-02T14:15:00Z', status: 'Delivered', totalPrice: 7000, orderItems: [{ name: 'Daisy Dream', image: '/img/girlteen1.png' }] },
-                    ];
                 }
 
                 // 🟢 NEWEST FIRST: Sort by createdAt descending
@@ -92,59 +87,122 @@ const MyOrders = () => {
                 </div>
 
                 {/* 📦 TABLE SECTION - Lowered for spacing */}
-                <main style={{ padding: '100px 40px 60px 40px', flex: 1 }}>
+                <main style={{ padding: '80px 40px 60px 40px', flex: 1 }}>
                     
                     <div style={styles.tableCard}>
-                        <table style={styles.orderTable}>
-                            <thead style={styles.thead}>
-                                <tr>
-                                    <th style={styles.th}>Item Details</th>
-                                    <th style={styles.th}>Order Date</th>
-                                    <th style={styles.th}>Delivery Date</th>
-                                    <th style={styles.th}>Status</th>
-                                    <th style={styles.th}>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {orders.map((order) => (
-                                    <tr key={order._id} style={styles.tr}>
-                                        <td style={styles.td}>
-                                            <div style={{ display: 'flex', gap: '30px', alignItems: 'center' }}>
-                                                <img src={order.orderItems[0].image} style={styles.shirtImg} alt="shirt" />
-                                                <div>
-                                                    <div style={styles.itemName}>{order.orderItems[0].name}</div>
-                                                    <div style={styles.itemPrice}>LKR {order.totalPrice}.00</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td style={styles.tdCenter}>{new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                        <td style={styles.tdCenter}>
-                                            {(() => {
-                                                const start = new Date(order.createdAt);
-                                                const end = new Date(order.createdAt);
-                                                start.setDate(start.getDate() + 5);
-                                                end.setDate(end.getDate() + 7);
-                                                const opt = { day: '2-digit', month: 'short' };
-                                                return `${start.toLocaleDateString('en-GB', opt)} - ${end.toLocaleDateString('en-GB', opt)}`;
-                                            })()}
-                                        </td>
-                                        <td style={styles.tdCenter}>
-                                            <span style={order.status === 'Processing' ? styles.statusProcessing : styles.statusDelivered}>
-                                                ● {order.status}
-                                            </span>
-                                        </td>
-                                        <td style={styles.tdCenter}>
-                                            <button 
-                                                style={styles.trackBtn} 
-                                                onClick={() => handleTrackButtonClick(order)}
-                                            >
-                                                Track Order
-                                            </button>
-                                        </td>
+                        {orders.length > 0 ? (
+                            <table style={styles.orderTable}>
+                                <thead style={styles.thead}>
+                                    <tr>
+                                        <th style={styles.th}>Item Details</th>
+                                        <th style={styles.th}>Order Date</th>
+                                        <th style={styles.th}>Delivery Date</th>
+                                        <th style={styles.th}>Status</th>
+                                        <th style={styles.th}>Action</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {orders.map((order) => (
+                                        <tr key={order._id} style={styles.tr}>
+                                            <td style={styles.td}>
+                                                <div style={{ display: 'flex', gap: '30px', alignItems: 'center' }}>
+                                                    <div style={styles.shirtImgContainer}>
+                                                        {order.orderItems[0].frontDesign || order.orderItems[0].canvasState ? (
+                                                            <MockupPreview
+                                                                mockupSrc={(() => {
+                                                                    const img = (order.orderItems[0].baseImages && order.orderItems[0].baseImages[0]) || order.orderItems[0].image;
+                                                                    if (!img) return "/img/placeholder.png";
+                                                                    if (img.startsWith('http') || img.startsWith('data:')) return img;
+                                                                    if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
+                                                                    if (img.startsWith('uploads')) return `http://localhost:5000/${img}`;
+                                                                    if (img.startsWith('/')) return img;
+                                                                    return `/img/${img}`;
+                                                                })()}
+                                                                maskSrc={(() => {
+                                                                    const img = (order.orderItems[0].baseImages && order.orderItems[0].baseImages[0]) || order.orderItems[0].image;
+                                                                    if (!img) return "/img/placeholder.png";
+                                                                    if (img.startsWith('http') || img.startsWith('data:')) return img;
+                                                                    if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
+                                                                    if (img.startsWith('uploads')) return `http://localhost:5000/${img}`;
+                                                                    if (img.startsWith('/')) return img;
+                                                                    return `/img/${img}`;
+                                                                })()}
+                                                                tshirtColor={order.orderItems[0].tshirtColor || '#ffffff'}
+                                                                printArea={order.orderItems[0].frontPrintArea}
+                                                                designSrc={order.orderItems[0].frontDesign}
+                                                                canvasState={order.orderItems[0].canvasState}
+                                                                designScale={order.orderItems[0].frontDesignScale || 1.0}
+                                                                overallScale={1.5}
+                                                            />
+                                                        ) : (
+                                                            <img 
+                                                                src={(() => {
+                                                                    const img = order.orderItems[0].image;
+                                                                    if (!img) return "/img/placeholder.png";
+                                                                    if (img.startsWith('http') || img.startsWith('data:')) return img;
+                                                                    if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
+                                                                    if (img.startsWith('uploads')) return `http://localhost:5000/${img}`;
+                                                                    if (img.startsWith('/')) return img;
+                                                                    return `/img/${img}`;
+                                                                })()} 
+                                                                style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.1)' }} 
+                                                                alt="shirt" 
+                                                            />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <div style={styles.itemName}>{order.orderItems[0].name}</div>
+                                                        <div style={styles.itemPrice}>LKR {order.totalPrice.toLocaleString('en-US')}.00</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td style={styles.tdCenter}>{new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                            <td style={styles.tdCenter}>
+                                                {(() => {
+                                                    const start = new Date(order.createdAt);
+                                                    const end = new Date(order.createdAt);
+                                                    start.setDate(start.getDate() + 5);
+                                                    end.setDate(end.getDate() + 7);
+                                                    const opt = { day: '2-digit', month: 'short' };
+                                                    return `${start.toLocaleDateString('en-GB', opt)} - ${end.toLocaleDateString('en-GB', opt)}`;
+                                                })()}
+                                            </td>
+                                            <td style={styles.tdCenter}>
+                                                <span style={
+                                                    order.status === 'Processing' ? styles.statusProcessing : 
+                                                    order.status === 'Printing' ? styles.statusPrinting : 
+                                                    order.status === 'Delivered' ? styles.statusDelivered : 
+                                                    order.status === 'Cancelled' ? styles.statusCancelled : 
+                                                    styles.statusDefault
+                                                }>
+                                                    ● {order.status || 'Processing'}
+                                                </span>
+                                            </td>
+                                            <td style={styles.tdCenter}>
+                                                <button 
+                                                    style={styles.trackBtn} 
+                                                    onClick={() => handleTrackButtonClick(order)}
+                                                >
+                                                    Track Order
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <div style={{ padding: '60px 20px', textAlign: 'center', color: '#666' }}>
+                                <img src="/img/no-orders.png" style={{ width: '80px', opacity: 0.2, marginBottom: '20px' }} alt="no-orders" />
+                                <h3 style={{ margin: 0, fontWeight: '900', color: '#0d375b' }}>No Orders Found</h3>
+                                <p style={{ fontSize: '14px', marginTop: '10px' }}>You haven't placed any orders yet. Start designing today!</p>
+                                <button 
+                                    style={{ ...styles.trackBtn, marginTop: '20px' }}
+                                    onClick={() => navigate('/design-tool')}
+                                >
+                                    Go to Design Tool
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </main>
 
@@ -173,7 +231,7 @@ const styles = {
         boxShadow: '0 10px 30px rgba(0,0,0,0.08)', 
         overflow: 'hidden',
         margin: '0 auto', 
-        maxWidth: '1000px' 
+        maxWidth: '800px' 
     },
     orderTable: { width: '100%', borderCollapse: 'collapse' },
     thead: { backgroundColor: '#0d375b', color: '#fff' },
@@ -181,7 +239,7 @@ const styles = {
     tr: { borderBottom: '2px solid #f0f0f0' },
     td: { padding: '20px 15px', verticalAlign: 'middle', fontSize: '14px', textAlign: 'left' },
     tdCenter: { padding: '20px 15px', verticalAlign: 'middle', fontSize: '14px', textAlign: 'center' },
-    shirtImg: { width: '80px', height: '80px', borderRadius: '10px', objectFit: 'cover' },
+    shirtImgContainer: { width: '80px', height: '80px', borderRadius: '10px', overflow: 'hidden', position: 'relative', background: '#fff', border: '1px solid #f0f0f0' },
     itemName: { fontWeight: '900', fontSize: '16px', color: '#0d375b', marginBottom: '4px' },
     itemPrice: { color: '#666', fontSize: '14px', fontWeight: '700' },
     trackBtn: { 
@@ -195,7 +253,10 @@ const styles = {
         fontSize: '14px' 
     },
     statusDelivered: { color: '#27ae60', fontWeight: '900' },
-    statusProcessing: { color: '#f39c12', fontWeight: '900' }
+    statusProcessing: { color: '#f39c12', fontWeight: '900' },
+    statusPrinting: { color: '#3498db', fontWeight: '900' },
+    statusCancelled: { color: '#e74c3c', fontWeight: '900' },
+    statusDefault: { color: '#95a5a6', fontWeight: '900' }
 };
 
 export default MyOrders;
