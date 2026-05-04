@@ -59,7 +59,7 @@ Cre8tify is a high-fidelity, full-stack marketplace designed for custom T-shirt 
    ```bash
    cd backend
    npm install
-   # Create a .env file with MONGODB_URI and JWT_SECRET
+   # Create a .env file with MONGO_URI and JWT_SECRET
    npm run dev
    ```
 
