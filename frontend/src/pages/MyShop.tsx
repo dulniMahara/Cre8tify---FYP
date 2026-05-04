@@ -130,14 +130,14 @@ const formatDescription = (desc?: string) => {
 
     // 🚀 SCORCHED-EARTH SYNC
     let clean = desc.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').trim();
-    clean = clean.replace(/[()\[\]{}（）〈〉《》「」『』【】〔〕〖〗〘〙〚〛\x28\x29]/g, ''); 
+    clean = clean.replace(/[()\[\]{}（）〈〉《》「」『』【】〔〕〖〗〘〙〚〛\x28\x29]/g, '');
     clean = clean.replace(/[•●○▪▫▸▹►▻■□◦]/g, '');
     clean = clean.replace(/\s{2,}/g, ' ').trim();
 
     // Identify blocks
     const specStart = clean.indexOf('🛠 Product Specifications & Quality Assurance');
     const careStart = clean.indexOf('🧺 Care Instructions:');
-    
+
     let introNote = "";
     let specsPart = "";
     let carePart = "";
@@ -210,9 +210,9 @@ const MyShop = () => {
 
     const [selectedColor, setSelectedColor] = useState('#e5e5e5'); // Default color
     const [selectedSize, setSelectedSize] = useState('M');         // Default size
-    const [designerInfo, setDesignerInfo] = useState({ 
-        name: 'Designer', 
-        shopName: 'Cre8tify Studio', 
+    const [designerInfo, setDesignerInfo] = useState({
+        name: 'Designer',
+        shopName: 'Cre8tify Studio',
         profileImg: '/img/profile-picture.png',
         bio: 'Passionate about creating unique and expressive designs for the modern generation.'
     });
@@ -320,11 +320,11 @@ const MyShop = () => {
                 const response = await fetch(`${API_URL}/api/products/my-designs`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
 
                 if (!Array.isArray(data)) {
@@ -438,7 +438,7 @@ const MyShop = () => {
         try {
             const res = await fetch(`${API_URL}/api/products/${design.id}`);
             const fullDesign = await res.json();
-            
+
             // 🟢 Send them back to the TOOL, not the SUBMIT page
             navigate('/design-tool', {
                 state: {
@@ -450,7 +450,7 @@ const MyShop = () => {
                     originalDesign: fullDesign // Pass the full design object to preserve flags
                 }
             });
-        } catch(error) {
+        } catch (error) {
             console.error("Failed to fetch full design", error);
             alert("Failed to load design data for editing.");
         } finally {
@@ -464,17 +464,17 @@ const MyShop = () => {
         try {
             const res = await fetch(`${API_URL}/api/products/${design.id}`);
             const fullDesign = await res.json();
-            
+
             setPreviewPopup({
-                ...design, 
-                frontDesign: fullDesign.frontDesign, 
+                ...design,
+                frontDesign: fullDesign.frontDesign,
                 canvasState: fullDesign.canvasState,
                 frontPrintArea: fullDesign.frontPrintArea,
                 tshirtColor: fullDesign.tshirtColor || design.tshirtColor
             });
             setSelectedColor('#e5e5e5'); // Reset to first color
             setSelectedSize('M');        // Reset to Medium
-        } catch(error) {
+        } catch (error) {
             console.error("Failed to fetch full design for preview", error);
             alert("Failed to load design preview.");
         } finally {
@@ -938,7 +938,7 @@ const MockupPreview = ({
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
             <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale})`, transformOrigin: 'center center', position: 'relative' }}>
-                
+
                 {/* 1. Base Mockup Image (Bottom) */}
                 <img
                     src={mockupSrc}
@@ -1081,4 +1081,5 @@ const MockupPreview = ({
         </div>
     );
 };
+
 export default MyShop;

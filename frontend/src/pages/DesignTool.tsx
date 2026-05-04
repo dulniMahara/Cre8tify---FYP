@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { getUserInfo, detectRole } from '../utils/auth';
 import Footer from '../components/Footer';
 import { useLibrary } from '../hooks/useLibrary';
 import '../styles/dashboard.css';
@@ -44,6 +45,8 @@ interface ImageLayer {
     rotation: number;
     flipX: boolean;
     flipY: boolean;
+    isLocked?: boolean; // New: prevent dragging/editing for base design in fulfillment mode
+    isFulfillmentBase?: boolean; // New: ensure the base design fills the box
 }
 
 // --- HISTORY INTERFACE ---
@@ -211,6 +214,35 @@ export default function DesignTool() {
 
     // Profile Image State
     const [navProfileImg, setNavProfileImg] = useState("/img/profile-picture.png");
+    const [currentUserRole, setCurrentUserRole] = useState('designer');
+
+    useEffect(() => {
+        const syncProfile = async () => {
+            const role = detectRole();
+            setCurrentUserRole(role);
+            const userObj = getUserInfo(role);
+            
+            if (userObj) {
+                const getImageUrl = (img: string | undefined) => {
+                    if (!img || img === "/img/profile-picture.png") return "/img/profile-picture.png";
+                    if (img.startsWith('data:') || img.startsWith('http')) return img;
+                    return `${API_URL}${img.startsWith('/') ? '' : '/'}${img}`;
+                };
+
+                if (role === 'designer' || role === 'admin') {
+                    setNavProfileImg(getImageUrl(userObj.profileImage));
+                } else {
+                    setNavProfileImg(getImageUrl(userObj.image || userObj.profileImage));
+                }
+            }
+        };
+
+        syncProfile();
+        // Sync on storage changes (profile updates)
+        window.addEventListener('storage', syncProfile);
+        return () => window.removeEventListener('storage', syncProfile);
+    }, []);
+
     const printAreaRef = useRef<HTMLDivElement | null>(null);
     const mockupContainerRef = useRef<HTMLDivElement | null>(null);
     const [showCropModal, setShowCropModal] = useState(false);
@@ -223,6 +255,7 @@ export default function DesignTool() {
     const [isSaving, setIsSaving] = useState(false);
     const [mockupScale, setMockupScale] = useState(1);
     const [fulfillmentRequest, setFulfillmentRequest] = useState<any>(null);
+    const [isCustomization, setIsCustomization] = useState(false);
 
     // 🟢 HIDDEN WORKSPACE REFS (For background snapshotting)
     const snapshotMockupRef = useRef<HTMLDivElement | null>(null);
@@ -337,20 +370,51 @@ export default function DesignTool() {
 
         // 2. IF IT'S A FULFILLMENT SESSION (From Requests Page)
         if (location.state?.fulfillmentRequest) {
-            console.log("FULFILLMENT MODE: Loading customer request design...");
             const fr = location.state.fulfillmentRequest;
+            console.log("FULFILLMENT MODE: Initializing with request:", fr);
+
             setFulfillmentRequest(fr);
             setSelectedTshirtColor(fr.color || '#ffffff');
 
-            // 🚀 NEW: Load layers from canvasState if available
-            if (fr.canvasState) {
+            // 🚀 CRITICAL: Fetch the actual base product to get correct mockup/mask/printArea
+            const fetchBaseProduct = async () => {
+                try {
+                    const res = await fetch(`${API_URL}/api/base-products/${fr.productId || fr.productId}`);
+                    if (res.ok) {
+                        const pData = await res.json();
+                        setProductData(pData);
+                        console.log("Base product loaded for fulfillment:", pData);
+                    }
+                } catch (err) {
+                    console.error("Failed to load base product for fulfillment:", err);
+                }
+            };
+            fetchBaseProduct();
+
+            // Defensive parsing for canvasState if it comes as a string
+            let cState = fr.canvasState;
+            if (typeof cState === 'string') {
+                try { cState = JSON.parse(cState); } catch (e) { cState = null; }
+            }
+
+            // Load layers from canvasState if available and not empty
+            const hasLayers = (cState?.imageLayers?.length > 0) || (cState?.textLayers?.length > 0);
+            console.log("Fulfillment Layers check:", { hasLayers, cState });
+
+            if (cState && hasLayers) {
                 console.log("Loading layers from fulfillment canvasState...");
-                setImageLayers(fr.canvasState.imageLayers || []);
-                setTextLayers(fr.canvasState.textLayers || []);
+                // 🚀 IMPORTANT: Lock existing image layers so they fill the box
+                const lockedLayers = (cState.imageLayers || []).map((l: any, idx: number) => ({
+                    ...l,
+                    isLocked: idx === 0, // Lock the first layer (usually the base design)
+                    isFulfillmentBase: idx === 0 // Mark it clearly for the renderer
+                }));
+                setImageLayers(lockedLayers);
+                setTextLayers(cState.textLayers || []);
             } else if (fr.frontDesign) {
-                // Fallback: If they have an existing design image but no canvasState, load it as a single layer
+                console.log("Falling back to frontDesign image as locked layer");
                 const baseLayer: ImageLayer = {
-                    id: Date.now(),
+                    id: 9999,
                     src: fr.frontDesign,
                     x: 0,
                     y: 0,
@@ -358,9 +422,44 @@ export default function DesignTool() {
                     rotation: 0,
                     flipX: false,
                     flipY: false,
-                    zIndex: 1
+                    zIndex: 1,
+                    isLocked: true,
+                    isFulfillmentBase: true
                 };
                 setImageLayers([baseLayer]);
+            }
+            return;
+        }
+
+        // 2.5 IF IT'S A CUSTOMIZATION SESSION (From Product Detail)
+        if (location.state?.isCustomization) {
+            console.log("CUSTOMIZATION MODE: Locking base design...");
+            setIsCustomization(true);
+            const p = location.state.product;
+            if (p) {
+                setProductData(p);
+                setSelectedTshirtColor(location.state.selectedColor || '#ffffff');
+
+                // Load existing layers but lock images
+                if (p.canvasState) {
+                    const cState = typeof p.canvasState === 'string' ? JSON.parse(p.canvasState) : p.canvasState;
+                    const lockedImages = (cState.imageLayers || []).map((l: any) => ({
+                        ...l,
+                        isLocked: true,
+                        isFulfillmentBase: true // Re-use this flag for auto-scaling/locking
+                    }));
+                    setImageLayers(lockedImages);
+                    setTextLayers(cState.textLayers || []);
+                } else if (p.frontDesign) {
+                    setImageLayers([{
+                        id: 8888,
+                        src: p.frontDesign,
+                        x: 0, y: 0, scale: 1, rotation: 0,
+                        flipX: false, flipY: false, zIndex: 1,
+                        isLocked: true,
+                        isFulfillmentBase: true
+                    }]);
+                }
             }
             return;
         }
@@ -876,7 +975,9 @@ export default function DesignTool() {
 
     const waitForPaint = () => new Promise<void>(resolve => {
         requestAnimationFrame(() => {
-            requestAnimationFrame(() => resolve());
+            requestAnimationFrame(() => {
+                setTimeout(resolve, 500);
+            });
         });
     });
 
@@ -1015,7 +1116,8 @@ export default function DesignTool() {
                         body: JSON.stringify({
                             status: 'Completed',
                             frontDesign: frontDesignSnap.designSrc, // Save the NEW edited design
-                            productImage: frontFull.designSrc // Update the main preview too
+                            canvasState: { imageLayers, textLayers }, // Save individual layers
+                            frontPrintArea: MOCKUP_CONFIG.front.printArea // Save the print area config
                         })
                     });
 
@@ -1028,6 +1130,42 @@ export default function DesignTool() {
                 } catch (err) {
                     console.error("Fulfillment error:", err);
                     alert("Error sending design to customer. Please try again.");
+                }
+                return;
+            }
+
+            // 🟢 CUSTOMIZATION LOGIC: If this is a user customizing an existing design
+            if (isCustomization) {
+                try {
+                    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                    const response = await fetch(`http://localhost:5000/api/requests`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            requestType: 'customization',
+                            productId: productData.id || productData._id,
+                            productName: productData.name || productData.title,
+                            productImage: productData.image || (productData.baseImages && productData.baseImages[0]),
+                            customer: userInfo.name || 'Anonymous Customer',
+                            customerId: userInfo._id || userInfo.id,
+                            color: selectedTshirtColor,
+                            size: location.state.selectedSize,
+                            status: 'Pending',
+                            frontDesign: frontDesignSnap.designSrc,
+                            canvasState: { imageLayers, textLayers },
+                            frontPrintArea: MOCKUP_CONFIG.front.printArea
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert("Customization submitted for admin approval!");
+                        navigate('/my-custom-designs');
+                    } else {
+                        throw new Error('Failed to submit customization');
+                    }
+                } catch (err) {
+                    console.error("Customization error:", err);
+                    alert("Error submitting customization. Please try again.");
                 }
                 return;
             }
@@ -1243,7 +1381,7 @@ export default function DesignTool() {
                 }}>
                 {/* 1. Base Mockup Image */}
                 <img
-                    src={config.img}
+                    src={config.img?.startsWith?.('/uploads') ? `${API_URL}${config.img}` : config.img}
                     alt="Mockup"
                     crossOrigin="anonymous"
                     style={{
@@ -1268,8 +1406,8 @@ export default function DesignTool() {
                     backgroundColor: selectedTshirtColor,
                     display: selectedTshirtColor.toLowerCase() === '#ffffff' ? 'none' : 'block',
                     mixBlendMode: 'multiply',
-                    WebkitMaskImage: `url(${maskSrc})`,
-                    maskImage: `url(${maskSrc})`,
+                    WebkitMaskImage: `url(${maskSrc?.startsWith?.('/uploads') ? `${API_URL}${maskSrc}` : maskSrc})`,
+                    maskImage: `url(${maskSrc?.startsWith?.('/uploads') ? `${API_URL}${maskSrc}` : maskSrc})`,
                     WebkitMaskSize: 'contain',
                     maskSize: 'contain',
                     WebkitMaskPosition: 'center',
@@ -1334,20 +1472,35 @@ export default function DesignTool() {
                                 }}
                             >
                                 {/* Image Layers */}
-                                {shouldShowDesign && imageLayers.map((layer) => (
+                                {shouldShowDesign && imageLayers.map((layer, idx) => (
                                     <img
                                         key={layer.id}
-                                        src={layer.src}
+                                        src={layer.src?.startsWith?.('/uploads') ? `${API_URL}${layer.src}` : layer.src}
                                         style={{
                                             position: 'absolute',
-                                            zIndex: layer.zIndex,
-                                            transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
+                                            // 🚀 AGGRESSIVE OVERRIDE: If fulfillment or locked, force it to fill the box
+                                            ...((layer.isLocked || layer.isFulfillmentBase) ? {
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                maxWidth: 'none',
+                                                maxHeight: 'none',
+                                                objectFit: 'contain',
+                                                transform: 'none',
+                                                zIndex: layer.zIndex || 0,
+                                                display: 'block'
+                                            } : {
+                                                zIndex: layer.zIndex,
+                                                transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`
+                                            }),
                                             mixBlendMode: (isPreview && selectedTshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
                                             opacity: isPreview ? 0.92 : 1,
-                                            cursor: 'move',
-                                            border: (selectedId === layer.id && viewMode === 'edit' && !isSaving) ? '1px dashed #0d375b' : 'none'
+                                            cursor: layer.isLocked ? 'default' : 'move',
+                                            border: (!layer.isLocked && selectedId === layer.id && viewMode === 'edit' && !isSaving) ? '1px dashed #0d375b' : 'none',
+                                            pointerEvents: layer.isLocked ? 'none' : 'auto'
                                         }}
-                                        onMouseDown={(e) => handleDragStart(e, layer.id, 'image', layer.x, layer.y)}
+                                        onMouseDown={(e) => !layer.isLocked && handleDragStart(e, layer.id, 'image', layer.x, layer.y)}
                                     />
                                 ))}
 
@@ -1498,15 +1651,31 @@ export default function DesignTool() {
                         zIndex: 20
                     }}>
                         {/* Render Image Layers */}
-                        {imageLayers.map((layer) => (
-                            <img key={layer.id} src={layer.src} style={{
-                                position: 'absolute',
-                                zIndex: layer.zIndex,
-                                transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
-                                mixBlendMode: selectedTshirtColor.toLowerCase() === '#ffffff' ? 'normal' : 'multiply',
-                                opacity: 0.95
-                            }} />
-                        ))}
+                        {imageLayers.map((layer, idx) => {
+                            const isFulfillment = layer.isLocked || layer.isFulfillmentBase;
+                            return (
+                                <img key={layer.id} src={layer.src} style={{
+                                    position: 'absolute',
+                                    ...(isFulfillment ? {
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        maxWidth: 'none',
+                                        maxHeight: 'none',
+                                        objectFit: 'contain',
+                                        transform: 'none',
+                                        zIndex: layer.zIndex || 0,
+                                        display: 'block'
+                                    } : {
+                                        zIndex: layer.zIndex,
+                                        transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
+                                    }),
+                                    mixBlendMode: selectedTshirtColor.toLowerCase() === '#ffffff' ? 'normal' : 'multiply',
+                                    opacity: 0.95
+                                }} />
+                            );
+                        })}
                         {/* Render Text Layers */}
                         {textLayers.map((t) => (
                             <div key={t.id} style={{
@@ -1569,21 +1738,35 @@ export default function DesignTool() {
                 } as any}>
 
                     {/* 1. Image Layers */}
-                    {imageLayers.map((layer) => (
-                        <img
-                            key={layer.id}
-                            src={layer.src}
-                            style={{
-                                position: 'absolute',
-                                zIndex: layer.zIndex,
-                                transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
-                                transformOrigin: 'center center',
-                                maxWidth: 'none',
-                                width: '100%',
-                                height: 'auto'
-                            }}
-                        />
-                    ))}
+                    {imageLayers.map((layer, idx) => {
+                        const isFulfillment = layer.isLocked || layer.isFulfillmentBase || (fulfillmentRequest && idx === 0);
+                        return (
+                            <img
+                                key={layer.id}
+                                src={layer.src}
+                                style={{
+                                    position: 'absolute',
+                                    ...(isFulfillment ? {
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        maxWidth: 'none',
+                                        maxHeight: 'none',
+                                        objectFit: 'contain',
+                                        transform: 'none',
+                                        zIndex: 100,
+                                        display: 'block'
+                                    } : {
+                                        zIndex: layer.zIndex,
+                                        transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
+                                    }),
+                                    transformOrigin: 'center center',
+                                    maxWidth: 'none'
+                                }}
+                            />
+                        );
+                    })}
 
                     {/* 2. Text Layers */}
                     {textLayers.map((t) => (
@@ -1733,9 +1916,40 @@ export default function DesignTool() {
                     <div style={{ position: 'absolute', top: '100px', right: '71px', width: isWideView ? '850px' : '550px', height: '800px' }}>
                         <div style={{ position: 'absolute', zIndex: 20, top: config.printArea.top, left: config.printArea.left, width: config.printArea.width, height: config.printArea.height, marginLeft: `calc(-1 * ${config.printArea.width} / 2)`, marginTop: `calc(-1 * ${config.printArea.height} / 2)`, transform: `rotate(${(config.printArea as any).rotation ?? 0}deg)` }}>
                             <div ref={snapshotPrintRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
-                                {imageLayers.map((layer) => (
-                                    <img key={layer.id} src={layer.src} style={{ position: 'absolute', zIndex: layer.zIndex, transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`, transformOrigin: 'center center', width: '100%' }} />
-                                ))}
+                                {imageLayers.map((layer, idx) => {
+                                    const isFulfillment = layer.isLocked || layer.isFulfillmentBase;
+                                    let imgSrc = layer.src;
+                                    if (imgSrc.startsWith('/uploads')) {
+                                        imgSrc = `http://localhost:5000${imgSrc}`;
+                                    }
+
+                                    return (
+                                        <img
+                                            key={layer.id}
+                                            src={imgSrc}
+                                            crossOrigin="anonymous"
+                                            style={{
+                                                position: 'absolute',
+                                                ...(isFulfillment ? {
+                                                    top: 0,
+                                                    left: 0,
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    maxWidth: 'none',
+                                                    maxHeight: 'none',
+                                                    objectFit: 'contain',
+                                                    transform: 'none',
+                                                    zIndex: layer.zIndex || 0,
+                                                    display: 'block'
+                                                } : {
+                                                    zIndex: layer.zIndex,
+                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale * (config.designScale || 1)}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
+                                                }),
+                                                transformOrigin: 'center center'
+                                            }}
+                                        />
+                                    );
+                                })}
                                 {textLayers.map((t) => (
                                     <div key={t.id} style={{ position: 'absolute', zIndex: t.zIndex, transform: `translate(${t.x}px, ${t.y}px) scale(${t.scale * (config.designScale || 1)}) rotate(${t.rotation}deg)`, transformOrigin: 'center center' }}>
                                         <CurvedText id={t.id} text={t.text} fontFamily={t.font} color={t.color} curve={t.styleId === 'style-circle' ? (t.curve ?? 120) : (t.curve ?? 0)} letterSpacing={t.letterSpacing || 0} styleId={t.styleId} />
@@ -1854,7 +2068,9 @@ export default function DesignTool() {
                     <div
                         style={{ display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer' }}
                         onClick={() => {
-                            if (location.state?.isEdit) {
+                            if (fulfillmentRequest) {
+                                navigate('/requests');
+                            } else if (location.state?.isEdit) {
                                 navigate('/my-shop');
                             } else {
                                 navigate('/designer-dashboard');
@@ -1871,8 +2087,8 @@ export default function DesignTool() {
                         <img
                             src={navProfileImg}
                             alt="Profile"
-                            style={{ width: '25px', height: '25px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
-                            onClick={() => navigate('/designer-profile')}
+                            style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+                            onClick={() => navigate(currentUserRole === 'designer' || currentUserRole === 'admin' ? '/designer-profile' : '/customer-profile')}
                         />
                     </div>
                 </header>
@@ -2805,6 +3021,57 @@ export default function DesignTool() {
                 )}
 
                 <Footer />
+
+                {/* 🟢 REFERENCE IMAGE WIDGET (For Fulfillment Mode) */}
+                {fulfillmentRequest?.referenceImage && (
+                    <div style={{
+                        position: 'fixed',
+                        bottom: '40px',
+                        right: '40px',
+                        zIndex: 2000,
+                        background: 'white',
+                        padding: '12px',
+                        borderRadius: '16px',
+                        boxShadow: '0 12px 35px rgba(13, 55, 91, 0.15)',
+                        width: '200px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        border: '1px solid #e2e8f0',
+                        animation: 'slideInUp 0.5s ease-out'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reference Image</span>
+                            <button onClick={() => setFulfillmentRequest({ ...fulfillmentRequest, referenceImage: null })} style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>×</button>
+                        </div>
+                        <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                            <img src={fulfillmentRequest.referenceImage} alt="Reference" style={{ width: '100%', display: 'block', maxHeight: '200px', objectFit: 'contain' }} />
+                        </div>
+                        <a 
+                            href={fulfillmentRequest.referenceImage} 
+                            download={`ref-${fulfillmentRequest.id}.png`}
+                            style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                gap: '5px',
+                                padding: '8px', 
+                                background: '#f0f9ff', 
+                                color: '#0369a1', 
+                                borderRadius: '8px', 
+                                fontSize: '11px', 
+                                fontWeight: '800', 
+                                textDecoration: 'none',
+                                transition: '0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#e0f2fe'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = '#f0f9ff'}
+                        >
+                            <span>Download Original</span>
+                            <span style={{ fontSize: '14px' }}>↓</span>
+                        </a>
+                    </div>
+                )}
 
                 {/* 🟢 CROP MODAL (MUST BE INSIDE THE DASHBOARD CONTAINER) */}
                 {showCropModal && cropImageSrc && (
