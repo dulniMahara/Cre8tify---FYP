@@ -70,7 +70,7 @@ const CustomerDashboard = () => {
         window.scrollTo(0, 0); 
         const userObj = getUserInfo('customer');
         if (userObj) {
-            setGreeting(`Welcome back, ${userObj.name || "Customer"}.`);
+            setGreeting(`Welcome back, ${userObj.name || "Customer"}!`);
         }
 
         const fetchApprovedProducts = async () => {
@@ -123,11 +123,16 @@ const CustomerDashboard = () => {
             <Sidebar variant="customer" />
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
                 <Header mode="search" userRole="customer" />
-                <div className="content-wrapper customer-content" style={{ overflowX: 'hidden', marginTop: '0px', paddingTop: '25px' }}>
+                <div className="content-wrapper customer-content" style={{ overflowX: 'hidden', marginTop: '90px', paddingTop: '30px' }}>
                     
                     <div style={bannerStyle}>
-                        <h1 style={greetingTextStyle}>{greeting}</h1>
-                        <p style={{ fontSize: '11px', opacity: 0.9, letterSpacing: '1px', fontWeight: '300', margin: 0 }}>Wear Your Imagination.</p>
+                        <div>
+                            <h1 style={greetingTextStyle}>{greeting}</h1>
+                            <p style={{ fontSize: '13px', opacity: 0.9, margin: 0 }}>Wear Your Imagination.</p>
+                        </div>
+                        <button style={heroBtnStyle} onClick={() => window.scrollTo({ top: 600, behavior: 'smooth' })}>
+                            Browse Products
+                        </button>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '45px', marginBottom: '35px' }}>
@@ -194,7 +199,7 @@ const CustomerDashboard = () => {
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px', marginBottom: '20px' }}>
-                        <button style={exploreBtn} onClick={() => navigate('/men-collection')}>Explore More ➜</button>
+                        <button style={exploreBtn} onClick={() => navigate('/men-collection')}>Explore More</button>
                     </div>
                 </div>
                 <Footer />
@@ -215,14 +220,28 @@ const CategoryCircle = ({ title, img, position = 'center', scale = '1', onClick 
 );
 
 const bannerStyle: React.CSSProperties = { 
-    background: 'linear-gradient(135deg, #0d375b 0%, #1e40af 100%)', 
-    borderRadius: '12px', padding: '25px 35px', color: 'white', 
-    marginBottom: '35px', display: 'flex', flexDirection: 'column', 
+    background: 'linear-gradient(135deg, #0d375b 0%, #1a5f96 100%)', 
+    borderRadius: '12px', padding: '35px 45px', color: 'white', 
+    marginBottom: '35px', marginTop: '70px', display: 'flex', flexDirection: 'row', 
+    justifyContent: 'space-between', alignItems: 'center',
     boxShadow: '0 10px 20px rgba(13, 55, 91, 0.25)' 
 };
 
+const heroBtnStyle: React.CSSProperties = {
+    backgroundColor: 'white',
+    color: '#0d375b',
+    padding: '8px 15px',
+    borderRadius: '15px',
+    border: 'none',
+    fontWeight: '700',
+    fontSize: '8px',
+    cursor: 'pointer',
+    boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+    transition: 'transform 0.2s'
+};
+
 const greetingTextStyle: React.CSSProperties = { 
-    fontFamily: '"Instrument Serif", serif', fontSize: '30px', margin: '0 0 5px 0', fontStyle: 'italic', lineHeight: '1' 
+    fontFamily: "'Poppins', sans-serif", fontSize: '24px', margin: '0 0 5px 0', fontWeight: '700', lineHeight: '1' 
 };
 
 const newArrivalsStripe: React.CSSProperties = { 
@@ -246,7 +265,7 @@ const tagStyle: React.CSSProperties = {
 };
 
 const imgWrapperStyle: React.CSSProperties = { 
-    height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '13px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer'
+    height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '13px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer'
 };
 
 const detailsLink: React.CSSProperties = { 
@@ -254,7 +273,7 @@ const detailsLink: React.CSSProperties = {
 };
 
 const exploreBtn: React.CSSProperties = { 
-    padding: '9px 30px', borderRadius: '25px', background: '#93c5fd', color: '#0f172a', border: 'none', fontWeight: '700', fontSize: '10px', cursor: 'pointer', boxShadow: '0 4px 13px rgba(147, 197, 253, 0.5)'
+    padding: '11px 35px', borderRadius: '25px', background: '#0d375b', color: 'white', border: 'none', fontWeight: '700', fontSize: '12px', cursor: 'pointer', boxShadow: '0 4px 13px rgba(13, 55, 91, 0.3)'
 };
 
 export default CustomerDashboard;

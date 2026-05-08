@@ -91,10 +91,10 @@ export default function DesignerDashboard() {
       <div className="main-content">
         <Header showCart={false} userRole="designer" />
 
-        <div className="content-wrapper" style={{ marginTop: 0 }}>
+        <div className="content-wrapper">
 
           {/* HERO BANNER */}
-          <div className="hero-banner" style={{ marginTop: 0 }}>
+          <div className="hero-banner">
             <div className="hero-text">
               <h1>{userName} 🎨</h1>
               <p>Ready to create your next bestseller? Choose a base product below.</p>
