@@ -7,15 +7,15 @@ export default function Footer() {
       <div className="footer-left">
         Cre8tify • Wear Your Imaginations
       </div>
-      
+
       <div className="footer-center">
-        <span>Privacy Policy</span> | 
-        <span>Terms & Conditions</span> | 
+        <span>Privacy Policy</span> |
+        <span>Terms & Conditions</span> |
         <span>FAQ</span>
       </div>
-      
+
       <div className="footer-right">
-        © 2025 Cre8tify
+        © 2026 Cre8tify
       </div>
     </footer>
   );

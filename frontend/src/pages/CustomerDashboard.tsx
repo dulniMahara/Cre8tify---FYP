@@ -29,11 +29,11 @@ const CustomerDashboard = () => {
     const [backendProducts, setBackendProducts] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // 🛡️ Cart Context Setup
+    //  Cart Context Setup
     const cartContext = useCart();
     const addToCart = cartContext ? cartContext.addToCart : null;
 
-    // 🚀 Handle Add to Cart (Increases quantityInCart)
+    //  Handle Add to Cart (Increases quantityInCart)
     const handleAddToCart = (item: any) => {
         if (!item || !addToCart) return;
 
@@ -53,7 +53,7 @@ const CustomerDashboard = () => {
         alert(`${item.title} added! 🛒`);
     };
 
-    // 💖 Toggle Like Logic
+    // Toggle Like Logic
     const toggleLike = (id: any) => { 
         setLikedProducts((prev: any) => {
             const updated = prev.includes(id) 
@@ -67,7 +67,10 @@ const CustomerDashboard = () => {
     };
 
     useEffect(() => {
-        window.scrollTo(0, 0); 
+        const timer = setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+
         const userObj = getUserInfo('customer');
         if (userObj) {
             setGreeting(`Welcome back, ${userObj.name || "Customer"}!`);

@@ -221,7 +221,7 @@ export default function DesignTool() {
             const role = detectRole();
             setCurrentUserRole(role);
             const userObj = getUserInfo(role);
-            
+
             if (userObj) {
                 const getImageUrl = (img: string | undefined) => {
                     if (!img || img === "/img/profile-picture.png") return "/img/profile-picture.png";
@@ -3047,20 +3047,20 @@ export default function DesignTool() {
                         <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}>
                             <img src={fulfillmentRequest.referenceImage} alt="Reference" style={{ width: '100%', display: 'block', maxHeight: '200px', objectFit: 'contain' }} />
                         </div>
-                        <a 
-                            href={fulfillmentRequest.referenceImage} 
+                        <a
+                            href={fulfillmentRequest.referenceImage}
                             download={`ref-${fulfillmentRequest.id}.png`}
-                            style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                                 gap: '5px',
-                                padding: '8px', 
-                                background: '#f0f9ff', 
-                                color: '#0369a1', 
-                                borderRadius: '8px', 
-                                fontSize: '11px', 
-                                fontWeight: '800', 
+                                padding: '8px',
+                                background: '#f0f9ff',
+                                color: '#0369a1',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: '800',
                                 textDecoration: 'none',
                                 transition: '0.2s'
                             }}

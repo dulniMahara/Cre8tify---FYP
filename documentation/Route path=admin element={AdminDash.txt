@@ -96,3 +96,17 @@ width: '60%',
         top: '50%',
         left: '50%',
         rotation: 0
+
+
+next part is "Request Designer Edit.." this process is half done in the code...but due to some changes it crashes with the original design-tool of the designer side.. so basically do you have an idea of whats happening during request designer edit? 
+
+
+
+
+
+request designer edit 
+
+next moving to "request designer edit".....
+there when clicked on the button opens a form, in that form if required, customer will be uploading a sample image, so make sure that the image will be visible for designer on designer side and can download the image...
+after submitting form, youll be directed to "My Edit Requests", there the tshirt design image is missing as shown in the screenshot..
+next on designer side too "requests page, the design should be presented on the tshirt

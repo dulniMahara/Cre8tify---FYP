@@ -168,6 +168,9 @@ const TrackOrder = () => {
                     70% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(52, 152, 219, 0); }
                     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
                 }
+                header {
+                    left: 0 !important;
+                }
                 .header-nudge-wrapper header > div:first-child {
                     margin-left: 55px !important;
                 }
@@ -184,10 +187,10 @@ const TrackOrder = () => {
                         <h1 style={mainTitle}>Track Order #{orderId}</h1>
                         <div style={{
                             ...statusBadge,
-                            background: status === 'Delivered' ? '#f0fdf4' : '#e3f2fd',
-                            color: status === 'Delivered' ? '#166534' : '#0d47a1'
+                            background: status === 'Delivered' ? '#f0fdf4' : (status === 'Processing' || status === 'Awaiting Verification' ? '#fffbeb' : '#e3f2fd'),
+                            color: status === 'Delivered' ? '#166534' : (status === 'Processing' || status === 'Awaiting Verification' ? '#b45309' : '#0d47a1')
                         }}>
-                            {status === 'Delivered' ? 'Delivered' : 'In Transit'}
+                            {status === 'Delivered' ? 'Delivered' : (status === 'Printing' ? 'Printing' : (status === 'Processing' ? 'Processing' : (status === 'Awaiting Verification' ? 'Awaiting Verification' : 'In Transit')))}
                         </div>
                     </div>
                     
@@ -267,7 +270,7 @@ const TrackOrder = () => {
 // --- STYLES ---
 const pageWrapper: React.CSSProperties = { background: '#f4f7f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' };
 const headerCenterTitle: React.CSSProperties = { fontSize: '16px', fontWeight: 900, margin: 0 };
-const contentContainer: React.CSSProperties = { width: '85%', margin: '30px auto', flex: 1 };
+const contentContainer: React.CSSProperties = { width: '85%', margin: '120px auto 40px auto', flex: 1 };
 const whiteContentBox: React.CSSProperties = { background: '#fff', padding: '30px', borderRadius: '15px', boxShadow: '0 8px 20px rgba(0,0,0,0.04)' };
 const mainTitle: React.CSSProperties = { fontSize: '24px', fontWeight: 900, color: '#0d375b', margin: 0 };
 const statusBadge: React.CSSProperties = { background: '#e3f2fd', color: '#0d47a1', padding: '6px 16px', borderRadius: '25px', fontWeight: 800, fontSize: '12px' };

@@ -239,15 +239,18 @@ const Header: React.FC<HeaderProps> = ({
 // --- STYLES (Keeping your requested Industrial "MAX" tweaks) ---
 const headerStyle: React.CSSProperties = {
     background: '#0d375b',
-    padding: '22px 3%', 
+    padding: '18px 40px', // Restored more spacious padding
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
     boxSizing: 'border-box',
     zIndex: 1000,
     marginBottom: '0px',
-    position: 'relative' 
+    position: 'fixed',
+    top: 0,
+    left: '200px',
+    right: 0,
+    height: '70px' // Explicit height to match CSS
 };
 
 const backContainer: React.CSSProperties = {

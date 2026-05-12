@@ -97,7 +97,7 @@ const CurvedText = ({ text, fontFamily, color, curve, letterSpacing, id, styleId
     );
 };
 
-// 🟢 Styles for the Purchase Modal
+//  Styles for the Purchase Modal
 const modalOptionStyle: React.CSSProperties = {
     padding: '15px 20px',
     border: '1.5px solid #E2E8F0',
@@ -238,7 +238,7 @@ const ProductDetail = () => {
         if (inCart) {
             incoming = inCart;
         } else {
-            // 🚀 B) NEW: Search through EVERY collection!
+            //  B) NEW: Search through EVERY collection!
             // This combines all your "Internet T-shirts" into one searchable list
             const allShopProducts = [
                 ...(typeof menProducts !== 'undefined' ? menProducts : []),
@@ -254,14 +254,14 @@ const ProductDetail = () => {
     const [availableColors, setAvailableColors] = useState<string[]>([]);
     const [availableSizes, setAvailableSizes] = useState<string[]>([]);
 
-    // 🚀 STEP 1: Identify the Front Image (e.g., "/img/shop1.png")
+    // STEP 1: Identify the Front Image (e.g., "/img/shop1.png")
     const frontImg = incoming?.img || incoming?.image || (incoming?.baseImages ? incoming.baseImages[0] : '/img/mockups/shop1_base_front.png');
 
-    // 🚀 STEP 2: Automatically create the Back Image link
+    // STEP 2: Automatically create the Back Image link
     // This looks for the dot (like .png or .jpg) and inserts "back" before it
     const backImg = frontImg.replace(/(\.[\w\d]+)$/, 'back$1');
 
-    // 🚀 1. Define the "Dictionary" FIRST (Outside the object)
+    //  1. Define the "Dictionary" FIRST (Outside the object)
     const colorNames: any = {
         '#FFFFFF': 'White',
         '#8fa749': 'Kiwi',
@@ -283,7 +283,7 @@ const ProductDetail = () => {
         '#98FB98': 'Mint Green'
     };
 
-    // 🟢 2. THE SMART UNPACKER (Clean and error-free)
+    //  2. THE SMART UNPACKER (Clean and error-free)
     const product = {
         id: incoming?.id || id,
         title: incoming?.title || 'Custom Design',
@@ -303,7 +303,7 @@ const ProductDetail = () => {
             ? ["/img/womenfront-mockup.png", "/img/womenback-mockup.png"]
             : (incoming?.baseImages || [frontImg, backImg]),
 
-        // 🎨 Use the keys from our dictionary for the color dots
+        //  Use the keys from our dictionary for the color dots
         colors: (incoming?.frontDesign) ? Object.keys(colorNames) : (incoming?.colors || Object.keys(colorNames)),
 
         sizes: incoming?.sizes || ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'],
@@ -320,7 +320,7 @@ const ProductDetail = () => {
             : (incoming?.designer?.profileImage ? (incoming.designer.profileImage.startsWith('http') ? incoming.designer.profileImage : `http://localhost:5000${incoming.designer.profileImage.startsWith('/') ? '' : '/'}${incoming.designer.profileImage}`) : (incoming?.designerImg || '/img/profile-picture.png')),
         shopName: Number(incoming?.id || id) <= 99 ? 'Artisa LK' : (incoming?.designer?.shopName || incoming?.shopName || 'Cre8tify Studio'),
 
-        // 🟢 Designer Design Data
+        // Designer Design Data
         frontDesign: incoming?.frontDesign ? (incoming.frontDesign.startsWith('/uploads') ? `http://localhost:5000${incoming.frontDesign}` : incoming.frontDesign) : undefined,
         frontPrintArea: incoming?.frontPrintArea,
         backDesign: incoming?.backDesign ? (incoming.backDesign.startsWith('/uploads') ? `http://localhost:5000${incoming.backDesign}` : incoming.backDesign) : undefined,
@@ -339,9 +339,14 @@ const ProductDetail = () => {
     const [currentImgIndex, setCurrentImgIndex] = useState(0);
     const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
-
-    // 🚀 Fetch Base Product Info (Colors/Sizes from Admin)
+    //  Fetch Base Product Info (Colors/Sizes from Admin)
     useEffect(() => {
         if (product.baseProduct) {
             fetch(`${API_URL}/api/base-products/${encodeURIComponent(product.baseProduct)}`)
@@ -383,7 +388,7 @@ const ProductDetail = () => {
                                 overflow: 'hidden', position: 'relative', background: '#f8fafc',
                                 border: '1px solid #e2e8f0', padding: '10px'
                             }}>
-                                {/* 🚀 LOGIC: Use Mask/Color Layer for Designer Products (including Kids) or Men/Women Base Products */}
+                                {/* LOGIC: Use Mask/Color Layer for Designer Products (including Kids) or Men/Women Base Products */}
                                 {(!product.isKids || product.frontDesign) ? (
                                     <div style={{
                                         width: product.frontDesign ? '115%' : (isWomenOrDashboard ? '75%' : '75%'),
@@ -405,7 +410,7 @@ const ProductDetail = () => {
                                         />
                                     </div>
                                 ) : (
-                                    /* 🚀 Kids Section (Handles Designer Products too) */
+                                    /* Kids Section (Handles Designer Products too) */
                                     <div style={{
                                         width: product.frontDesign ? '115%' : '100%',
                                         height: product.frontDesign ? '115%' : '100%',
@@ -551,7 +556,7 @@ const ProductDetail = () => {
                                 )}
                             </div>
 
-                            {/* 🛑 DOTS: Only show for Men/Women (where back view is available) */}
+                            {/* DOTS: Only show for Men/Women (where back view is available) */}
                             {!product.isKids && (
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '25px', marginBottom: '50px' }}>
                                     <div
@@ -620,7 +625,7 @@ const ProductDetail = () => {
                                         );
                                     }
 
-                                    // 🚀 ADVANCED PARSING & HIERARCHY
+                                    //  ADVANCED PARSING & HIERARCHY
                                     let clean = desc.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').trim();
                                     
                                     // Strip all bracket variations
@@ -820,7 +825,7 @@ const ProductDetail = () => {
                         ))}
                     </div>
 
-                    {/* --- 🟢 YOU MAY ALSO LIKE (CENTERED, RESPONSIVE & CLICKABLE) --- */}
+                    {/* --- YOU MAY ALSO LIKE (CENTERED, RESPONSIVE & CLICKABLE) --- */}
                     {!isDesignerPreview && (
                         <div style={{
                             marginTop: '60px',
@@ -912,7 +917,7 @@ const ProductDetail = () => {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-                            {/* 👕 OPTION 1: PHYSICAL T-SHIRT (Updates the Cart with Size/Color) */}
+                            {/*  OPTION 1: PHYSICAL T-SHIRT (Updates the Cart with Size/Color) */}
                             <div
                                 onClick={() => {
                                     const itemPrice = typeof product.price === 'string' 
@@ -934,7 +939,7 @@ const ProductDetail = () => {
                                         size: selectedSize,
                                         quantity: 1,
                                         selected: true,
-                                        // 🎨 Include Design Data for Cart Mockup
+                                        //  Include Design Data for Cart Mockup
                                         frontDesign: product.frontDesign,
                                         frontPrintArea: product.frontPrintArea,
                                         backDesign: product.backDesign,
@@ -943,7 +948,7 @@ const ProductDetail = () => {
                                         frontDesignScale: product.frontDesignScale,
                                         baseImages: product.baseImages
                                     };
-                                    addToCart(updatedProduct); // 🚀 This saves it!
+                                    addToCart(updatedProduct); // This saves it!
                                     setShowPurchaseModal(false);
                                     navigate('/cart');
                                 }}
@@ -954,7 +959,7 @@ const ProductDetail = () => {
                                 <span style={{ fontWeight: '900', color: '#fb0606', fontSize: '16px' }}>{product.price}</span>
                             </div>
 
-                            {/* 💻 OPTION 2: DIGITAL DESIGN */}
+                            {/* OPTION 2: DIGITAL DESIGN */}
                             <div
                                 onClick={() => {
                                     const digitalProduct = {
@@ -966,7 +971,7 @@ const ProductDetail = () => {
                                         quantity: 1,
                                         selected: true
                                     };
-                                    addToCart(digitalProduct); // 🚀 This saves it!
+                                    addToCart(digitalProduct); //  This saves it!
                                     setShowPurchaseModal(false);
                                     navigate('/cart');
                                 }}

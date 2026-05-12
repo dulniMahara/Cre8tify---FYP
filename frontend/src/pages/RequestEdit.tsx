@@ -9,7 +9,7 @@ const RequestEdit = () => {
     const location = useLocation();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // 🟢 1. DATA RECOVERY
+    //  1. DATA RECOVERY
     const { product: passedProduct, selectedColor, selectedSize } = location.state || {};
 
     const [product, setProduct] = useState<any>(passedProduct || null);
@@ -17,7 +17,7 @@ const RequestEdit = () => {
     const [currentSize] = useState(selectedSize || 'M');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
-    // 🟢 FORM STATE
+    //  FORM STATE
     const [formData, setFormData] = useState({
         preferredChanges: '',
         preferredTime: '',
@@ -25,7 +25,7 @@ const RequestEdit = () => {
     });
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-    // 🚀 Scroll to top
+    //  Scroll to top
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
@@ -38,7 +38,7 @@ const RequestEdit = () => {
         }
     }, [passedProduct]);
 
-    // 🟢 HANDLERS
+    //  HANDLERS
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLSelectElement | HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -125,14 +125,15 @@ const RequestEdit = () => {
 
     return (
         <div style={pageWrapper}>
+            <style>
+                {`
+                header { left: 0 !important; }
+                `}
+            </style>
             <Header mode="title" title="" userRole="customer" />
             
             <div className="content-wrapper" style={mainContent}>
                 <div style={headerSection}>
-                    <div style={backBtn} onClick={() => navigate(-1)}>
-                        <img src="/img/back.png" alt="Back" style={{ width: '16px', marginRight: '6px', filter: 'invert(0.4)' }} />
-                        <span>Back</span>
-                    </div>
                     <h1 style={pageTitle}>Request Designer Edit</h1>
                     <p style={pageSubtitle}>Collaborate with the creator to refine this design exactly how you want it.</p>
                 </div>
@@ -290,10 +291,9 @@ const RequestEdit = () => {
 
 // --- SCALED STYLES FOR 100% ZOOM ---
 const pageWrapper: React.CSSProperties = { background: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column' };
-const mainContent: React.CSSProperties = { padding: '10px 40px 60px', flex: 1, maxWidth: '1100px', margin: '0 auto', width: '100%' };
+const mainContent: React.CSSProperties = { padding: '25px 40px 60px', flex: 1, maxWidth: '1100px', margin: '0 auto', width: '100%' };
 
 const headerSection: React.CSSProperties = { textAlign: 'center', marginBottom: '25px' };
-const backBtn: React.CSSProperties = { display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 700, color: '#64748b', fontSize: '13px', position: 'absolute', top: '25px', left: '40px' };
 const pageTitle: React.CSSProperties = { fontSize: '28px', fontWeight: 900, color: '#1e293b', margin: '0 0 6px 0' };
 const pageSubtitle: React.CSSProperties = { fontSize: '14px', color: '#64748b', margin: 0 };
 

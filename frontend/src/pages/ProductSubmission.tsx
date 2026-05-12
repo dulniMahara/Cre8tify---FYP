@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -9,33 +9,6 @@ import '../styles/dashboard.css';
 const API_URL = "http://localhost:5000";
 
 // --- INTERFACES ---
-interface TextConfig {
-    id: number;
-    text: string;
-    font: string;
-    color: string;
-    styleId?: string;
-    type?: 'arc' | 'wave' | 'circle' | 'straight' | 'upward';
-    zIndex: number;
-    x: number;
-    y: number;
-    scale: number;
-    rotation: number;
-    letterSpacing?: number;
-    curve?: number;
-}
-
-interface ImageLayer {
-    id: number;
-    src: string;
-    zIndex: number;
-    x: number;
-    y: number;
-    scale: number;
-    rotation: number;
-    flipX: boolean;
-    flipY: boolean;
-}
 
 const ProductSubmission = () => {
     const navigate = useNavigate();
@@ -64,16 +37,12 @@ const ProductSubmission = () => {
 
         // Mockups
         frontMockup = "/img/womenfront-mockup.png",
-        backMockup = "/img/womenback-mockup.png",
-        neckMockup = "/img/mockups/collar.png",
-        foldedMockup = "/img/mockups/folded.png",
-        foldedMask = "/img/mockups/foldedmask.png",
 
         // Print Areas (passed from MOCKUP_CONFIG)
-        frontPrintArea = { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 },
+        frontPrintArea: passedFrontPrintArea = { top: '50%', left: '51%', width: '30%', height: '27%', rotation: 0 },
         backPrintArea = { top: '35%', left: '50%', width: '45%', height: '22%', rotation: 0 },
-        neckPrintArea = { top: '70%', left: '60%', width: '35%', height: '25%', rotation: 0 },
-        foldedPrintArea = { top: '56%', left: '46%', width: '30%', height: '42%', rotation: 5 },
+        neckPrintArea = { top: '90%', left: '60%', width: '75%', height: '50%', rotation: -23 },
+        foldedPrintArea = { top: '66%', left: '46%', width: '60%', height: '84%', rotation: 5 },
 
         // Scaling Helpers
         frontPrintAreaPx = fallbackSnapshots.frontPrintAreaPx || null,
@@ -82,38 +51,21 @@ const ProductSubmission = () => {
         backPrintAreaPx = fallbackSnapshots.backPrintAreaPx || null,
 
         frontDesignScale = 1.0,
-        neckDesignScale = 1.3,
-        foldedDesignScale = 0.9,
-        backDesignScale = 1.0,
 
-        frontAreaScale = 1.0,
-        neckAreaScale = 1.0,
-        foldedAreaScale = 1.0,
-        backAreaScale = 1.0,
-
-        editorMockupScale = 1,
-        foldedMaskPosition = "center",
-        foldedMaskSize = "contain",
         originalDesign,
         category = 'Unisex',
         canvasState: passedCanvasState
     } = (location.state || {});
 
+    // Force move the print area box a bit downwards as requested
+    const frontPrintArea = { ...passedFrontPrintArea, top: '55%' };
+
     // Ensure canvasState is never undefined
     const canvasState = passedCanvasState || { imageLayers: [], textLayers: [] };
 
-    // 🚀 ADJUST THIS LINE to change the size of the T-shirt in the Pricing Setup box
+    // ADJUST THIS LINE to change the size of the T-shirt in the Pricing Setup box
     const pricingMockupScale = 1.5;
 
-    // 🚀 Manually increased design dimensions and shifted position to top-right
-    const submitPageFrontPrintArea = {
-        ...frontPrintArea,
-        width: '112%',
-        height: '108%',
-        top: '50%',
-        left: '50%',
-        rotation: 0
-    };
 
     const ADMIN_SPECS = `
         <div style="margin-bottom: 25px;">
@@ -201,7 +153,7 @@ const ProductSubmission = () => {
                     allowEditRequests: formData.allowEditRequests,
                     status: submissionStatus,
                     frontDesign: frontDesign,
-                    frontPrintArea: submitPageFrontPrintArea,
+                    frontPrintArea: frontPrintArea,
                     frontPrintAreaPx: frontPrintAreaPx,
                     backDesign: backDesign,
                     backPrintArea: backPrintArea,
@@ -231,7 +183,7 @@ const ProductSubmission = () => {
         }
     };
 
-    // 🟢 PREMIUM LOADING OVERLAY
+    // PREMIUM LOADING OVERLAY
     const LoadingOverlay = () => (
         <div style={{
             position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
@@ -357,8 +309,9 @@ const ProductSubmission = () => {
                                     mockupSrc={frontMockup}
                                     maskSrc={frontMockup}
                                     tshirtColor={tshirtColor}
-                                    printArea={submitPageFrontPrintArea}
-                                    designSrc={frontDesign}
+                                    printArea={frontPrintArea}
+                                    canvasState={canvasState}
+                                    designScale={frontDesignScale}
                                     overallScale={pricingMockupScale}
                                 />
                                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.9)', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: '700', color: '#0d375b', borderTop: '1px solid #eee' }}>FRONT PREVIEW</div>
@@ -457,34 +410,108 @@ const ProductSubmission = () => {
     );
 };
 
-const MockupPreview = ({ mockupSrc, maskSrc, tshirtColor, designSrc, printArea, overallScale }: any) => {
+const CurvedText = ({ text, fontFamily, color, curve, letterSpacing, id, styleId }: any) => {
+    const pathId = `path-${id}`;
+    const isFullCircle = styleId === 'style-circle';
+    const cx = 250; const cy = 250; const r = 160;
+    let pathData = "";
+
+    if (isFullCircle) {
+        pathData = `M ${cx - r}, ${cy} a ${r},${r} 0 1,1 ${r * 2},0 a ${r},${r} 0 1,1 -${r * 2},0`;
+    } else {
+        const intensity = (curve || 0) * 2.5;
+        pathData = `M 50,250 Q 250,${250 - intensity} 450,250`;
+    }
+
     return (
-        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-            <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale || 1})`, transformOrigin: 'center center', position: 'relative' }}>
-                <img src={mockupSrc} alt="Shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute' }} />
+        <svg viewBox="0 0 500 500" width="200" height="200" style={{ overflow: 'visible', display: 'block', pointerEvents: 'none' }}>
+            <defs><path id={pathId} d={pathData} fill="none" /></defs>
+            <text fill={color} style={{ fontFamily: fontFamily, fontSize: isFullCircle ? '32px' : '40px', fontWeight: 'bold', letterSpacing: `${letterSpacing}px` }}>
+                <textPath xlinkHref={`#${pathId}`} startOffset="50%" textAnchor="middle">{text}</textPath>
+            </text>
+        </svg>
+    );
+};
+
+const MockupPreview = ({ mockupSrc, maskSrc, tshirtColor, printArea, canvasState, designScale, overallScale }: any) => {
+    const imageLayers = canvasState?.imageLayers || [];
+    const textLayers = canvasState?.textLayers || [];
+
+    return (
+        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ 
+                width: '100%', 
+                aspectRatio: '550 / 800', 
+                transform: `scale(${overallScale || 1})`, 
+                transformOrigin: 'center center', 
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <img src={mockupSrc} alt="Shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', top: 0, left: 0, zIndex: 1 }} />
+                
                 {tshirtColor && (
                     <div style={{
-                        position: 'absolute', inset: 0, backgroundColor: tshirtColor, mixBlendMode: 'multiply',
+                        position: 'absolute', inset: 0, 
+                        backgroundColor: tshirtColor, 
+                        display: tshirtColor.toLowerCase() === '#ffffff' ? 'none' : 'block',
+                        mixBlendMode: 'multiply',
                         WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
                         WebkitMaskSize: 'contain', WebkitMaskPosition: 'center', WebkitMaskRepeat: 'no-repeat', zIndex: 2
                     }}></div>
                 )}
-                {printArea && designSrc && (
-                    <div style={{
-                        position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none',
-                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
-                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center', WebkitMaskRepeat: 'no-repeat',
-                    }}>
-                        <div style={{
-                            position: 'absolute', top: printArea.top, left: printArea.left,
-                            width: printArea.width, height: printArea.height,
-                            transform: `translate(-50%, -50%) rotate(${printArea.rotation || 0}deg)`,
-                            transformOrigin: 'center center', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
+
+                <div style={{
+                    position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none',
+                    WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
+                    WebkitMaskSize: 'contain', WebkitMaskPosition: 'center', WebkitMaskRepeat: 'no-repeat',
+                }}>
+                    {imageLayers.map((layer: any) => (
+                        <img key={layer.id} src={layer.src} alt="Design Layer" style={{
+                            position: 'absolute',
+                            zIndex: layer.zIndex,
+                            transform: `translate(-142px, -150px) scale(0.11) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1})`,
+                            mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
+                            opacity: 0.95, width: 'auto', height: 'auto', maxWidth: 'none'
+                        }} />
+                    ))}
+
+                    {textLayers.map((t: any) => (
+                        <div key={t.id} style={{
+                            position: 'absolute', zIndex: t.zIndex,
+                            transform: `translate(52px, 160px) scale(0.4) rotate(${t.rotation}deg)`,
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
                         }}>
-                            <img src={designSrc} alt="Design" style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal' }} />
+                            {t.styleId === 'default' ? (
+                                (t.curve !== 0 && t.curve !== undefined) ? (
+                                    <CurvedText id={t.id} text={t.text} fontFamily={t.font} color={t.color} curve={t.curve ?? 0} letterSpacing={t.letterSpacing || 0} />
+                                ) : (
+                                    <div style={{ fontFamily: t.font, color: t.color, fontSize: '24px', fontWeight: 'bold', whiteSpace: 'nowrap', letterSpacing: `${t.letterSpacing || 0}px` }}>{t.text}</div>
+                                )
+                            ) : (
+                                <>
+                                    {t.styleId === 'style-wave' && (
+                                        <div style={{ fontFamily: t.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900', textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b', transform: 'skewX(-10deg)', fontStyle: 'italic', letterSpacing: `${t.letterSpacing || 0}px` }}>{t.text}</div>
+                                    )}
+                                    {t.styleId === 'style-stack' && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${t.letterSpacing || 0}px` }}>
+                                            {[1, 2, 3].map((i) => (
+                                                <span key={i} style={{ fontFamily: t.font, color: i === 2 ? t.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${t.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{t.text}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {t.styleId === 'style-fish' && (
+                                        <div style={{ fontFamily: t.font, color: t.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(t.letterSpacing || 0) - 1}px` }}>{t.text}</div>
+                                    )}
+                                    {!['style-wave', 'style-stack', 'style-fish'].includes(t.styleId || '') && (
+                                        <CurvedText id={t.id} text={t.text} styleId={t.styleId} fontFamily={t.font} color={t.color} curve={t.styleId === 'style-circle' ? (t.curve ?? 120) : (t.curve ?? 0)} letterSpacing={t.letterSpacing || 0} />
+                                    )}
+                                </>
+                            )}
                         </div>
-                    </div>
-                )}
+                    ))}
+                </div>
             </div>
         </div>
     );

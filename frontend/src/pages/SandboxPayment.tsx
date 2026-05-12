@@ -24,6 +24,11 @@ const SandboxPayment = () => {
         window.scrollTo(0, 0);
     }, [incomingData, navigate]);
 
+    // Scroll to top whenever the payment step changes
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [step]);
+
     const handleConfirmPayment = async () => {
         setStep(3);
 
@@ -105,7 +110,8 @@ const SandboxPayment = () => {
                             customerName: incomingData.customer?.name,
                             phone: incomingData.customer?.phone,
                             createdAt: data.createdAt,
-                            method: 'sandbox'
+                            method: 'sandbox',
+                            isDigitalOnly: incomingData.isDigitalOnly
                         }
                     });
                 }
@@ -121,6 +127,11 @@ const SandboxPayment = () => {
 
     return (
         <div style={pageContainer}>
+            <style dangerouslySetInnerHTML={{ __html: `
+                header {
+                    left: 0 !important;
+                }
+            ` }} />
             <div style={{ background: '#0d375b', width: '100%' }}>
                 <Header mode="title" title="SECURE PAYMENT GATEWAY" />
             </div>
@@ -150,7 +161,7 @@ const SandboxPayment = () => {
                                     maxLength={16}
                                     autoComplete="off"
                                     value={cardNumber}
-                                    onChange={(e) => setCardNumber(e.target.value)}
+                                    onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ''))}
                                 />
                             </div>
 
@@ -163,7 +174,13 @@ const SandboxPayment = () => {
                                         maxLength={5}
                                         autoComplete="off"
                                         value={expiry}
-                                        onChange={(e) => setExpiry(e.target.value)}
+                                        onChange={(e) => {
+                                            let val = e.target.value.replace(/[^0-9/]/g, '');
+                                            if (val.length === 2 && !val.includes('/') && expiry.length !== 3) {
+                                                val += '/';
+                                            }
+                                            setExpiry(val);
+                                        }}
                                     />
                                 </div>
                                 <div style={{ flex: 1 }}>
@@ -175,12 +192,18 @@ const SandboxPayment = () => {
                                         maxLength={3}
                                         autoComplete="new-password"
                                         value={cvv}
-                                        onChange={(e) => setCvv(e.target.value)}
+                                        onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
                                     />
                                 </div>
                             </div>
 
-                            <button onClick={() => setStep(2)} style={primaryBtn}>Pay Securely</button>
+                            <button 
+                                onClick={() => setStep(2)} 
+                                style={{ ...primaryBtn, opacity: (cardNumber.length === 16 && expiry.length === 5 && cvv.length >= 3) ? 1 : 0.5 }}
+                                disabled={cardNumber.length !== 16 || expiry.length !== 5 || cvv.length < 3}
+                            >
+                                Pay Securely
+                            </button>
                             <p style={noteText}>This is a simulated transaction for testing purposes.</p>
                         </div>
                     )}
@@ -196,11 +219,17 @@ const SandboxPayment = () => {
                                     maxLength={6}
                                     placeholder="0 0 0 0 0 0"
                                     value={otp}
-                                    onChange={(e) => setOtp(e.target.value)}
+                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                                 />
                             </div>
 
-                            <button onClick={handleConfirmPayment} style={primaryBtn}>Verify & Confirm</button>
+                            <button 
+                                onClick={handleConfirmPayment} 
+                                style={{ ...primaryBtn, opacity: otp.length === 6 ? 1 : 0.5 }}
+                                disabled={otp.length !== 6}
+                            >
+                                Verify & Confirm
+                            </button>
                             <button onClick={() => setStep(1)} style={backBtn}>Back to Details</button>
                         </div>
                     )}
@@ -284,7 +313,7 @@ const SandboxPayment = () => {
 
 // --- STYLES ---
 const pageContainer: React.CSSProperties = { background: '#f4f7f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center' };
-const contentWrapper: React.CSSProperties = { width: '75%', maxWidth: '1000px', display: 'flex', gap: '30px', margin: '40px auto', flex: 1 };
+const contentWrapper: React.CSSProperties = { width: '75%', maxWidth: '1000px', display: 'flex', gap: '30px', margin: '120px auto 40px auto', flex: 1 };
 const paymentCard: React.CSSProperties = { background: 'white', padding: '40px', borderRadius: '24px', boxShadow: '0 15px 40px rgba(0,0,0,0.05)', flex: 1, height: 'fit-content' };
 const orderSummaryCard: React.CSSProperties = { background: '#fff', padding: '30px', borderRadius: '24px', boxShadow: '0 15px 40px rgba(0,0,0,0.05)', flex: 0.7, height: 'fit-content', border: '1px solid #e2e8f0' };
 

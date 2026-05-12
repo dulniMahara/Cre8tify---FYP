@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'; 
 import { useNavigate } from 'react-router-dom'; 
-import { useCart } from '../context/CartContext'; // 🚀 Import the global hook
+import { useCart } from '../context/CartContext'; // import the global hook
 import Header from '../components/Header'; 
 import Footer from '../components/Footer';
 import MockupPreview from '../components/MockupPreview';
@@ -8,12 +8,12 @@ import MockupPreview from '../components/MockupPreview';
 const Cart = () => {
     const navigate = useNavigate();
     
-    // 🚀 Scroll to top when page loads
+    // scroll to top when page loads
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
-    
-    // 🟢 Pull everything from the Global Context
+
+    //  Pull everything from the Global Context
     const { 
         cartItems, 
         toggleSelect, 
@@ -22,7 +22,7 @@ const Cart = () => {
         removeItem 
     } = useCart();
 
-    // 🟢 CALCULATIONS based on global cartItems
+    // CALCULATIONS based on global cartItems
     const selectedItems = cartItems.filter((item: any) => item.selected);
     const subtotal = selectedItems.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
     const deliveryFee = selectedItems.some((item: any) => item.type === 'physical') ? 300 : 0;
@@ -39,7 +39,7 @@ const Cart = () => {
 
     return (
         <div style={pageWrapper}>
-            {/* 🚀 This style tag injects the animation for the empty state */}
+            {/*  This style tag injects the animation for the empty state */}
             <style dangerouslySetInnerHTML={{ __html: `
                 @keyframes fadeInUp {
                     0% { opacity: 0; transform: translateY(40px); }
@@ -58,17 +58,20 @@ const Cart = () => {
                     width: 100%;
                     background-color: #0d375b; /* Ensure the blue background spans full width */
                 }
+                header {
+                    left: 0 !important;
+                }
             ` }} />
 
             {/* --- BLUE HEADER --- */}
             <div style={{ width: '100%', background: '#0d375b' }}>
-                <div style={{ paddingLeft: '0px' }}> {/* 🚀 This nudges only the Title/Back button */}
+                <div style={{ paddingLeft: '0px' }}> {/* This nudges only the Title/Back button */}
                     <Header mode="title" title="MY CART" />
                 </div>
             </div>
 
             <div style={contentContainer}>
-                {/* 🛒 PHYSICAL SECTION */}
+                {/*  PHYSICAL SECTION */}
                 {cartItems.some((i: any) => i.type === 'physical') && (
                     <div style={{ marginBottom: '60px' }}>
                         <div style={blueTableHeader}>
@@ -94,7 +97,7 @@ const Cart = () => {
                                                 designSrc={item.frontDesign}
                                                 canvasState={item.canvasState}
                                                 designScale={item.frontDesignScale || 1.0}
-                                                overallScale={1.5} // 🚀 Increased T-shirt size slightly
+                                                overallScale={1.5} // Increased T-shirt size slightly
                                             />
                                         ) : (
                                             <img 
@@ -118,7 +121,7 @@ const Cart = () => {
                                         <div style={productInfo}>
                                             <h3 style={itemTitle}>{item.title}</h3>
                                             
-                                            {/* 🎨 COLOR: Clickable if not chosen */}
+                                            {/*  COLOR: Clickable if not chosen */}
                                             <p style={itemMeta}>
                                                 Color: {' '}
                                                 <span 
@@ -140,7 +143,7 @@ const Cart = () => {
                                                     <span 
                                                         onClick={() => {
                                                             if (item.size === 'Choose Size') {
-                                                                // 🚀 This takes the user to the SPECIFIC shirt's page
+                                                                // This takes the user to the SPECIFIC shirt's page
                                                                 navigate(`/product/${item.id}`); 
                                                             }
                                                         }}
@@ -177,7 +180,7 @@ const Cart = () => {
                 )}
                 
 
-                {/* 📁 DIGITAL SECTION */}
+                {/* DIGITAL SECTION */}
                 {cartItems.some((i: any) => i.type === 'digital') && (
                     <div style={{ marginBottom: '60px' }}>
                         <div style={blueTableHeader}>
@@ -207,10 +210,10 @@ const Cart = () => {
                     </div>
                 )}
 
-               {/* 🛑 EMPTY STATE (Stacked Layout) */}
+               {/*  EMPTY STATE (Stacked Layout) */}
                 {cartItems.length === 0 && (
                     <div className="animate-cart-content" style={emptyStateWrapper}>
-                        {/* 🚀 Using your original local image */}
+                        {/*  Using your original local image */}
                         <img 
                             src="/img/empty-cart.png" 
                             alt="Empty Cart" 
@@ -234,7 +237,7 @@ const Cart = () => {
                     </div>
                 )}
 
-                {/* 💰 SUMMARY FOOTER AREA */}
+                {/* SUMMARY FOOTER AREA */}
                 {cartItems.length > 0 && (
                     <div style={cartSummaryArea}>
                         <div style={selectAllControl}>
@@ -253,7 +256,7 @@ const Cart = () => {
                             <button 
                                 style={proceedBtn} 
                                 onClick={() => {
-                                    // 🛑 Check if ANY selected item still says "Choose"
+                                    //  Check if ANY selected item still says "Choose"
                                     const hasIncompleteItems = selectedItems.some(
                                         (item: any) => item.size === 'Choose Size' || item.color === 'Choose Color'
                                     );
@@ -279,7 +282,7 @@ const Cart = () => {
 
 // --- STYLES ---
 const pageWrapper: React.CSSProperties = { background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: "'Inter', sans-serif", overflowY: 'visible', position: 'relative' };
-const contentContainer: React.CSSProperties = { width: '85%', maxWidth: '1200px', margin: '40px auto', flex: '1 0 auto'};
+const contentContainer: React.CSSProperties = { width: '85%', maxWidth: '1200px', margin: '120px auto 40px auto', flex: '1 0 auto'};
 const parallelEmptyWrapper: React.CSSProperties = { display: 'flex',  alignItems: 'center',  justifyContent: 'center',  width: '100%',  gap: '40px', paddingTop: '30px' };
 
 // Image Style

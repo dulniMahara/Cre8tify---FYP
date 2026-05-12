@@ -34,59 +34,24 @@ interface ImageLayer {
     flipY: boolean;
 }
 
-const CurvedText = ({ text, fontFamily, color, curve, letterSpacing, id, styleId }: {
-    text: string,
-    fontFamily: string,
-    color: string,
-    curve: number,
-    letterSpacing: number,
-    id: number,
-    styleId?: string
-}) => {
+const CurvedText = ({ text, fontFamily, color, curve, letterSpacing, id, styleId }: any) => {
     const pathId = `path-shop-${id}`;
     const isFullCircle = styleId === 'style-circle';
-    const cx = 250;
-    const cy = 250;
-    const r = 160;
-
+    const cx = 250; const cy = 250; const r = 160;
     let pathData = "";
+
     if (isFullCircle) {
-        pathData = `
-            M ${cx - r}, ${cy}
-            a ${r},${r} 0 1,1 ${r * 2},0
-            a ${r},${r} 0 1,1 -${r * 2},0
-        `;
+        pathData = `M ${cx - r}, ${cy} a ${r},${r} 0 1,1 ${r * 2},0 a ${r},${r} 0 1,1 -${r * 2},0`;
     } else {
-        const intensity = curve * 2.5;
+        const intensity = (curve || 0) * 2.5;
         pathData = `M 50,250 Q 250,${250 - intensity} 450,250`;
     }
 
     return (
-        <svg
-            viewBox="0 0 500 500"
-            width="200"
-            height="200"
-            style={{ overflow: 'visible', display: 'block', pointerEvents: 'none' }}
-        >
-            <defs>
-                <path id={pathId} d={pathData} fill="none" />
-            </defs>
-            <text
-                fill={color}
-                style={{
-                    fontFamily: fontFamily,
-                    fontSize: isFullCircle ? '32px' : '40px',
-                    fontWeight: 'bold',
-                    letterSpacing: `${letterSpacing}px`,
-                }}
-            >
-                <textPath
-                    xlinkHref={`#${pathId}`}
-                    startOffset="50%"
-                    textAnchor="middle"
-                >
-                    {text}
-                </textPath>
+        <svg viewBox="0 0 500 500" width="200" height="200" style={{ overflow: 'visible', display: 'block', pointerEvents: 'none' }}>
+            <defs><path id={pathId} d={pathData} fill="none" /></defs>
+            <text fill={color} style={{ fontFamily: fontFamily, fontSize: isFullCircle ? '32px' : '40px', fontWeight: 'bold', letterSpacing: `${letterSpacing}px` }}>
+                <textPath xlinkHref={`#${pathId}`} startOffset="50%" textAnchor="middle">{text}</textPath>
             </text>
         </svg>
     );
@@ -128,7 +93,7 @@ const formatDescription = (desc?: string) => {
         return desc;
     }
 
-    // 🚀 SCORCHED-EARTH SYNC
+    // SCORCHED-EARTH SYNC
     let clean = desc.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').trim();
     clean = clean.replace(/[()\[\]{}（）〈〉《》「」『』【】〔〕〖〗〘〙〚〛\x28\x29]/g, '');
     clean = clean.replace(/[•●○▪▫▸▹►▻■□◦]/g, '');
@@ -197,7 +162,7 @@ const MyShop = () => {
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // 🟢 NEW: State for live designs + combined list
+    //  NEW: State for live designs + combined list
     const [dbDesigns, setDbDesigns] = useState<DesignItem[]>([]);
     const [allDesigns, setAllDesigns] = useState<DesignItem[]>([]);
     const API_URL = "http://localhost:5000";
@@ -305,7 +270,7 @@ const MyShop = () => {
         },
     ];
 
-    // 🟢 FETCH FROM BACKEND
+    //  FETCH FROM BACKEND
     useEffect(() => {
         const fetchMyDesigns = async () => {
             const storedUser = localStorage.getItem('userInfo');
@@ -439,7 +404,7 @@ const MyShop = () => {
             const res = await fetch(`${API_URL}/api/products/${design.id}`);
             const fullDesign = await res.json();
 
-            // 🟢 Send them back to the TOOL, not the SUBMIT page
+            // Send them back to the TOOL, not the SUBMIT page
             navigate('/design-tool', {
                 state: {
                     isEdit: true,
@@ -481,7 +446,7 @@ const MyShop = () => {
             setIsLoading(false);
         }
     };
-    // 🟢 PLACE IT HERE (After hooks, before the 'return')
+    // PLACE IT HERE (After hooks, before the 'return')
     const handleLogout = () => {
         if (window.confirm("Are you sure you want to logout?")) {
             localStorage.removeItem('userInfo');
@@ -502,7 +467,7 @@ const MyShop = () => {
                 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@100..900&display=swap');
                 {`
 
-                    /* 🟢 NEW SEARCH BAR STYLES */
+                    /* NEW SEARCH BAR STYLES */
                     .glass-search-bar {
                         display: flex;
                         align-items: center;
@@ -641,7 +606,7 @@ const MyShop = () => {
                                     <div style={{ background: '#f1f5f9', padding: '3px 6px', borderRadius: '4px', fontSize: '7px', fontWeight: '800', color: '#0d375b', border: '1px solid #e2e8f0' }}>LKR {design.price.toLocaleString()}</div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-                                    {/* 🟢 UPDATED PREVIEW CLICK */}
+                                    {/*  UPDATED PREVIEW CLICK */}
                                     <ActionButton text="Preview" onClick={() => openPreview(design)} />
                                     <ActionButton text="Edit" onClick={() => handleEdit(design)} />
                                     <ActionButton
@@ -732,6 +697,7 @@ const MyShop = () => {
                                             designSrc={previewPopup.frontDesign}
                                             canvasState={previewPopup.canvasState}
                                             overallScale={1.5}
+                                            isPopup={true}
                                         />
                                     </div>
                                 )}
@@ -753,7 +719,7 @@ const MyShop = () => {
                                 <div style={{ fontSize: '8px', color: '#475569', lineHeight: '1.7', overflowWrap: 'break-word', wordBreak: 'break-word' }} dangerouslySetInnerHTML={{ __html: formatDescription(previewPopup.description) }} />
                             </div>
 
-                            {/* 🟢 INTERACTIVE COLORS */}
+                            {/*  INTERACTIVE COLORS */}
                             <div style={{ marginBottom: '13px' }}>
                                 <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '8px', color: '#0f172a', fontFamily: '"Outfit", sans-serif' }}>Colors</div>
 
@@ -775,7 +741,7 @@ const MyShop = () => {
                                 </div>
                             </div>
 
-                            {/* 🟢 INTERACTIVE SIZES */}
+                            {/*  INTERACTIVE SIZES */}
                             <div style={{ marginBottom: '18px' }}>
                                 <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '8px', color: '#0f172a', fontFamily: '"Outfit", sans-serif' }}>Sizes</div>
 
@@ -913,170 +879,96 @@ type MockupPreviewProps = {
     canvasState?: { imageLayers: ImageLayer[]; textLayers: TextConfig[] };
 };
 
-const MockupPreview = ({
-    mockupSrc,
-    maskSrc,
-    tshirtColor,
-    printArea,
-    designSrc,
-    overallScale = 1.0,
-    canvasState
-}: any) => {
-    // Combine and sort layers by zIndex
-    const allLayers = [
-        ...(canvasState?.imageLayers?.map((l: any) => ({ ...l, layerType: 'image' })) || []),
-        ...(canvasState?.textLayers?.map((t: any) => ({ ...t, layerType: 'text' })) || [])
-    ].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-
-    const hasLayers = allLayers.length > 0;
-    const finalPrintArea = printArea ? {
-        ...printArea,
-        width: `calc(${printArea.width} * 1.15)`,
-        height: `calc(${printArea.height} * 1.15)`
-    } : { top: '50%', left: '50%', width: '128%', height: '115%', rotation: 0 };
+const MockupPreview = ({ mockupSrc, maskSrc, tshirtColor, canvasState, overallScale = 1.0, isPopup = false }: any) => {
+    const imageLayers = canvasState?.imageLayers || [];
+    const textLayers = canvasState?.textLayers || [];
 
     return (
-        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-            <div style={{ width: '100%', height: '100%', transform: `scale(${overallScale})`, transformOrigin: 'center center', position: 'relative' }}>
-
-                {/* 1. Base Mockup Image (Bottom) */}
-                <img
-                    src={mockupSrc}
-                    alt="Mockup"
-                    style={{
-                        width: '100%', height: '100%', objectFit: 'contain',
-                        position: 'absolute', inset: 0, zIndex: 1,
-                        filter: 'contrast(1.0) brightness(1.0) saturate(0)'
-                    }}
-                />
-
-                {/* 2. Color Layer (Multiplied) */}
+        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ 
+                width: '100%', 
+                aspectRatio: '550 / 800', 
+                transform: `scale(${overallScale})`, 
+                transformOrigin: 'center center', 
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                {/* 1. Shirt Base */}
+                <img src={mockupSrc} alt="Shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', top: 0, left: 0, zIndex: 1 }} />
+                
+                {/* 2. Color Overlay */}
                 {tshirtColor && (
                     <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: tshirtColor,
+                        position: 'absolute', inset: 0, 
+                        backgroundColor: tshirtColor, 
+                        display: tshirtColor.toLowerCase() === '#ffffff' ? 'none' : 'block',
+                        mixBlendMode: 'multiply',
                         WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
-                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center',
-                        WebkitMaskRepeat: 'no-repeat', pointerEvents: 'none', zIndex: 2,
-                        mixBlendMode: 'multiply'
+                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center', WebkitMaskRepeat: 'no-repeat', zIndex: 2
                     }}></div>
                 )}
 
-                {/* 3. Design Layer */}
-                {(hasLayers || designSrc) && (
-                    <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
-                        WebkitMaskSize: 'contain', WebkitMaskPosition: 'center',
-                        WebkitMaskRepeat: 'no-repeat', zIndex: 3, pointerEvents: 'none'
-                    }}>
-                        <div style={{
-                            position: 'absolute', top: finalPrintArea.top, left: finalPrintArea.left,
-                            width: finalPrintArea.width,
-                            height: finalPrintArea.height,
-                            transform: `translate(-50%, -50%) rotate(${finalPrintArea.rotation || 0}deg)`,
-                            transformOrigin: 'center center', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', overflow: 'hidden'
+                {/* 3. Design Layers (Direct Rendering with Hardcoded Overrides) */}
+                <div style={{
+                    position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none',
+                    WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
+                    WebkitMaskSize: 'contain', WebkitMaskPosition: 'center', WebkitMaskRepeat: 'no-repeat',
+                }}>
+                    {/* Render Image Layers */}
+                    {imageLayers.map((layer: any) => (
+                        <img key={layer.id} src={layer.src} alt="Design Layer" style={{
+                            position: 'absolute',
+                            zIndex: layer.zIndex,
+                            //  Applied manual transform override as requested
+                            transform: isPopup 
+                                ? `translate(-121px, -125px) scale(0.12)`
+                                : `translate(-171px, -197px) scale(0.078) rotate(0deg) scaleX(1)`,
+                            mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
+                            opacity: 0.95, width: 'auto', height: 'auto', maxWidth: 'none'
+                        }} />
+                    ))}
+
+                    {/* Render Text Layers */}
+                    {textLayers.map((t: any) => (
+                        <div key={t.id} style={{
+                            position: 'absolute', zIndex: t.zIndex,
+                            //  Applied manual transform override as requested
+                            transform: isPopup 
+                                ? `translate(73px, 187px) scale(0.32)`
+                                : `translate(23px, 108px) scale(0.2)`,
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
                         }}>
-                            {designSrc ? (
-                                <img src={designSrc.startsWith('/uploads') ? `http://localhost:5000${designSrc}` : designSrc} alt="Design" style={{
-                                    width: '100%', height: '100%', objectFit: 'contain',
-                                    mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal'
-                                }} />
+                            {t.styleId === 'default' ? (
+                                (t.curve !== 0 && t.curve !== undefined) ? (
+                                    <CurvedText id={t.id} text={t.text} fontFamily={t.font} color={t.color} curve={t.curve ?? 0} letterSpacing={t.letterSpacing || 0} />
+                                ) : (
+                                    <div style={{ fontFamily: t.font, color: t.color, fontSize: '24px', fontWeight: 'bold', whiteSpace: 'nowrap', letterSpacing: `${t.letterSpacing || 0}px` }}>{t.text}</div>
+                                )
                             ) : (
-                                <div style={{ position: 'relative', width: '100%', height: '100%', isolation: 'isolate' }}>
-                                    {allLayers.map((layer: any) => (
-                                        layer.layerType === 'image' ? (
-                                            <img
-                                                key={layer.id}
-                                                src={layer.src}
-                                                style={{
-                                                    position: 'absolute',
-                                                    zIndex: layer.zIndex,
-                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg) scaleX(${layer.flipX ? -1 : 1}) scaleY(${layer.flipY ? -1 : 1})`,
-                                                    mixBlendMode: (tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
-                                                    opacity: 0.95,
-                                                    width: 'auto',
-                                                    height: 'auto'
-                                                }}
-                                            />
-                                        ) : (
-                                            <div
-                                                key={layer.id}
-                                                style={{
-                                                    position: 'absolute',
-                                                    zIndex: layer.zIndex,
-                                                    transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale}) rotate(${layer.rotation}deg)`,
-                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
-                                                }}
-                                            >
-                                                {/* Text rendering omitted for brevity but preserved in actual code if I were replacing partially... 
-                                                    Actually I should include the text rendering logic to be safe since I'm replacing the whole component.
-                                                */}
-                                                {layer.styleId === 'default' && (
-                                                    <>
-                                                        {(layer.curve !== 0 && layer.curve !== undefined) ? (
-                                                            <CurvedText
-                                                                id={layer.id}
-                                                                text={layer.text}
-                                                                fontFamily={layer.font}
-                                                                color={layer.color}
-                                                                curve={layer.curve ?? 0}
-                                                                letterSpacing={layer.letterSpacing || 0}
-                                                            />
-                                                        ) : (
-                                                            <div style={{
-                                                                fontFamily: layer.font,
-                                                                color: layer.color,
-                                                                fontSize: '24px',
-                                                                fontWeight: 'bold',
-                                                                whiteSpace: 'nowrap',
-                                                                letterSpacing: `${layer.letterSpacing || 0}px`,
-                                                                textShadow: '0px 1px 3px rgba(0,0,0,0.3)'
-                                                            }}>
-                                                                {layer.text}
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                )}
-                                                {/* ... other styles ... I'll just keep the main ones */}
-                                                {layer.styleId === 'style-wave' && (
-                                                    <div style={{
-                                                        fontFamily: layer.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900',
-                                                        textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b',
-                                                        transform: 'skewX(-10deg)', fontStyle: 'italic',
-                                                        letterSpacing: `${layer.letterSpacing || 0}px`
-                                                    }}>
-                                                        {layer.text}
-                                                    </div>
-                                                )}
-                                                {layer.styleId === 'style-stack' && (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${layer.letterSpacing || 0}px` }}>
-                                                        {[1, 2, 3].map((i) => (
-                                                            <span key={i} style={{ fontFamily: layer.font, color: i === 2 ? layer.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${layer.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{layer.text}</span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                                {layer.styleId === 'style-fish' && (
-                                                    <div style={{ fontFamily: layer.font, color: layer.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(layer.letterSpacing || 0) - 1}px` }}>
-                                                        {layer.text}
-                                                    </div>
-                                                )}
-                                                {!['default', 'style-wave', 'style-stack', 'style-fish'].includes(layer.styleId || '') && (
-                                                    <CurvedText
-                                                        id={layer.id} text={layer.text} styleId={layer.styleId} fontFamily={layer.font} color={layer.color}
-                                                        curve={layer.styleId === 'style-circle' ? (layer.curve ?? 120) : (layer.curve ?? 0)}
-                                                        letterSpacing={layer.letterSpacing || 0}
-                                                    />
-                                                )}
-                                            </div>
-                                        )
-                                    ))}
-                                </div>
+                                <>
+                                    {t.styleId === 'style-wave' && (
+                                        <div style={{ fontFamily: t.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900', textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b', transform: 'skewX(-10deg)', fontStyle: 'italic', letterSpacing: `${t.letterSpacing || 0}px` }}>{t.text}</div>
+                                    )}
+                                    {t.styleId === 'style-stack' && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${t.letterSpacing || 0}px` }}>
+                                            {[1, 2, 3].map((i: any) => (
+                                                <span key={i} style={{ fontFamily: t.font, color: i === 2 ? t.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${t.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{t.text}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {t.styleId === 'style-fish' && (
+                                        <div style={{ fontFamily: t.font, color: t.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(t.letterSpacing || 0) - 1}px` }}>{t.text}</div>
+                                    )}
+                                    {!['style-wave', 'style-stack', 'style-fish'].includes(t.styleId || '') && (
+                                        <CurvedText id={t.id} text={t.text} styleId={t.styleId} fontFamily={t.font} color={t.color} curve={t.styleId === 'style-circle' ? (t.curve ?? 120) : (t.curve ?? 0)} letterSpacing={t.letterSpacing || 0} />
+                                    )}
+                                </>
                             )}
                         </div>
-                    </div>
-                )}
+                    ))}
+                </div>
             </div>
         </div>
     );

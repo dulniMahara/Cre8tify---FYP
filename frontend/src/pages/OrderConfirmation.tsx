@@ -11,7 +11,11 @@ const OrderConfirmation = () => {
     
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, []);
+        const timer = setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [location.pathname]);
 
     const getEstimateRange = () => {
         const base = new Date();
@@ -102,7 +106,7 @@ const OrderConfirmation = () => {
             navigate('/sandbox-payment', { 
                 state: { 
                     totalAmount: total,
-                    orderData: { items, customer, total }
+                    orderData: { items, customer, total, isDigitalOnly: items.every((i: any) => i.type === 'digital') }
                 } 
             });
             return;
@@ -129,7 +133,7 @@ const OrderConfirmation = () => {
                     canvasState: item.canvasState,
                     frontDesignScale: item.frontDesignScale,
                     baseImages: item.baseImages,
-                    product: item._id || item.id 
+                    product: (item._id || item.id) && /^[0-9a-fA-F]{24}$/.test(String(item._id || item.id)) ? (item._id || item.id) : undefined 
                 })),
                 totalPrice: total,
                 shippingAddress: customer.address,
@@ -138,14 +142,25 @@ const OrderConfirmation = () => {
                 status: paymentMethod === 'bank' ? 'Awaiting Verification' : 'Processing'
             };
 
-            const config = {
+            let requestData;
+            let config = {
                 headers: {
-                    'Content-Type': 'application/json',
                     Authorization: `Bearer ${activeToken.trim()}`,
-                },
+                } as any,
             };
 
-            const { data } = await axios.post('http://localhost:5000/api/orders', orderData, config);
+            if (paymentMethod === 'bank' && selectedFile) {
+                const formData = new FormData();
+                formData.append('paymentSlip', selectedFile);
+                formData.append('orderData', JSON.stringify(orderData));
+                requestData = formData;
+                config.headers['Content-Type'] = 'multipart/form-data';
+            } else {
+                requestData = orderData;
+                config.headers['Content-Type'] = 'application/json';
+            }
+
+            const { data } = await axios.post('http://localhost:5000/api/orders', requestData, config);
 
             if (data) {
                 navigate('/order-success', { 
@@ -155,7 +170,8 @@ const OrderConfirmation = () => {
                         customerName: customer.name,
                         phone: customer.phone,
                         createdAt: data.createdAt,
-                        method: paymentMethod
+                        method: paymentMethod,
+                        isDigitalOnly: items.every((i: any) => i.type === 'digital')
                     } 
                 }); 
             }
@@ -166,6 +182,11 @@ const OrderConfirmation = () => {
 
     return (
         <div style={pageWrapper}>
+            <style dangerouslySetInnerHTML={{ __html: `
+                header {
+                    left: 0 !important;
+                }
+            ` }} />
             <div style={headerSection}>
                 <Header mode="title" title="CHECKOUT" />
             </div>
@@ -249,9 +270,8 @@ const OrderConfirmation = () => {
                         </div>
                         <div style={paymentOptions}>
                             {[
-                                { id: 'card', label: 'Credit / Debit Card' },
-                                { id: 'bank', label: 'Bank Deposit' },
-                                { id: 'sandbox', label: 'Sandbox' }
+                                { id: 'sandbox', label: 'Credit / Debit Card' },
+                                { id: 'bank', label: 'Bank Deposit' }
                             ].map((method) => (
                                 <label key={method.id} style={{
                                     ...paymentLabel,
@@ -340,7 +360,7 @@ const OrderConfirmation = () => {
 // --- STYLES ---
 const pageWrapper: React.CSSProperties = { background: '#f4f7f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: "'Inter', sans-serif" };
 const headerSection: React.CSSProperties = { background: '#0d375b' };
-const mainContent: React.CSSProperties = { width: '85%', maxWidth: '1200px', margin: '40px auto', display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '30px', flex: 1 };
+const mainContent: React.CSSProperties = { width: '85%', maxWidth: '1200px', margin: '120px auto 40px auto', display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '30px', flex: 1 };
 
 const leftCol: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '25px' };
 const rightCol: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '25px' };

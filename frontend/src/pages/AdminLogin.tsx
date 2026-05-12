@@ -99,7 +99,7 @@ const AdminLogin = () => {
                             autoComplete="new-password"
                             readOnly
                             onFocus={(e) => e.target.removeAttribute('readonly')}
-                            style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '14px' }}
+                            style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '14px', fontFamily: 'inherit', letterSpacing: '2px', transition: 'border-color 0.2s' }}
                         />
                     </div>
 
