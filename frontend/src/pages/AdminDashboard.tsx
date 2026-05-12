@@ -413,6 +413,87 @@ const MarketplaceOperations = () => {
     };
 
     // Render functions for tabs
+    const AdminCurvedText = ({ text, fontFamily, color, curve, letterSpacing, id, styleId }: any) => {
+        const pathId = `path-admin-${id}`;
+        const isFullCircle = styleId === 'style-circle';
+        const cx = 250; const cy = 250; const r = 160;
+        let pathData = "";
+        if (isFullCircle) {
+            pathData = `M ${cx - r}, ${cy} a ${r},${r} 0 1,1 ${r * 2},0 a ${r},${r} 0 1,1 -${r * 2},0`;
+        } else {
+            const intensity = (curve || 0) * 2.5;
+            pathData = `M 50,250 Q 250,${250 - intensity} 450,250`;
+        }
+        return (
+            <svg viewBox="0 0 500 500" width="200" height="200" style={{ overflow: 'visible', display: 'block', pointerEvents: 'none' }}>
+                <defs><path id={pathId} d={pathData} fill="none" /></defs>
+                <text fill={color} style={{ fontFamily: fontFamily, fontSize: isFullCircle ? '32px' : '40px', fontWeight: 'bold', letterSpacing: `${letterSpacing}px` }}>
+                    <textPath xlinkHref={`#${pathId}`} startOffset="50%" textAnchor="middle">{text}</textPath>
+                </text>
+            </svg>
+        );
+    };
+
+    const AdminMockupPreview = ({ mockupSrc, maskSrc, tshirtColor, canvasState, overallScale = 1.0 }: any) => {
+        const imageLayers = canvasState?.imageLayers || [];
+        const textLayers = canvasState?.textLayers || [];
+
+        return (
+            <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '100%', aspectRatio: '550 / 800', transform: `scale(${overallScale})`, transformOrigin: 'center center', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src={mockupSrc} alt="Shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', top: 0, left: 0, zIndex: 1 }} />
+                    {tshirtColor && (
+                        <div style={{ position: 'absolute', inset: 0, backgroundColor: tshirtColor, display: tshirtColor.toLowerCase() === '#ffffff' ? 'none' : 'block', mixBlendMode: 'multiply', WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`, WebkitMaskSize: 'contain', WebkitMaskPosition: 'center', WebkitMaskRepeat: 'no-repeat', zIndex: 2 }}></div>
+                    )}
+                    <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none', WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`, WebkitMaskSize: 'contain', WebkitMaskPosition: 'center', WebkitMaskRepeat: 'no-repeat' }}>
+                        {imageLayers.map((layer: any) => (
+                            <img key={layer.id} src={layer.src.startsWith('/uploads') ? `http://localhost:5000${layer.src}` : layer.src} alt="Design Layer" style={{
+                                position: 'absolute', zIndex: layer.zIndex,
+                                transform: `translate(-250px, -130px) scale(0.13)`,
+                                mixBlendMode: (tshirtColor && tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
+                                opacity: 0.95, width: 'auto', height: 'auto', maxWidth: 'none'
+                            }} />
+                        ))}
+                        {textLayers.map((t: any) => (
+                            <div key={t.id} style={{
+                                position: 'absolute', zIndex: t.zIndex,
+                                transform: `translate(70px, 185px) scale(0.40)`,
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'
+                            }}>
+                                {t.styleId === 'default' ? (
+                                    (t.curve !== 0 && t.curve !== undefined) ? (
+                                        <AdminCurvedText id={t.id} text={t.text} fontFamily={t.font} color={t.color} curve={t.curve ?? 0} letterSpacing={t.letterSpacing || 0} />
+                                    ) : (
+                                        <div style={{ fontFamily: t.font, color: t.color, fontSize: '24px', fontWeight: 'bold', whiteSpace: 'nowrap', letterSpacing: `${t.letterSpacing || 0}px` }}>{t.text}</div>
+                                    )
+                                ) : (
+                                    <>
+                                        {t.styleId === 'style-wave' && (
+                                            <div style={{ fontFamily: t.font, color: '#00d2ff', fontSize: '28px', fontWeight: '900', textTransform: 'uppercase', textShadow: '2px 2px 0px #0d375b', transform: 'skewX(-10deg)', fontStyle: 'italic', letterSpacing: `${t.letterSpacing || 0}px` }}>{t.text}</div>
+                                        )}
+                                        {t.styleId === 'style-stack' && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', alignItems: 'center', letterSpacing: `${t.letterSpacing || 0}px` }}>
+                                                {[1, 2, 3].map((i: any) => (
+                                                    <span key={i} style={{ fontFamily: t.font, color: i === 2 ? t.color : 'transparent', WebkitTextStroke: i === 2 ? 'none' : `1px ${t.color}`, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>{t.text}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {t.styleId === 'style-fish' && (
+                                            <div style={{ fontFamily: t.font, color: t.color, fontSize: '26px', fontWeight: 'bold', transform: 'scaleY(1.4) scaleX(0.9)', letterSpacing: `${(t.letterSpacing || 0) - 1}px` }}>{t.text}</div>
+                                        )}
+                                        {!['style-wave', 'style-stack', 'style-fish'].includes(t.styleId || '') && (
+                                            <AdminCurvedText id={t.id} text={t.text} styleId={t.styleId} fontFamily={t.font} color={t.color} curve={t.styleId === 'style-circle' ? (t.curve ?? 120) : (t.curve ?? 0)} letterSpacing={t.letterSpacing || 0} />
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const renderApprovals = () => (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
             {approvals.map((product: any) => (
@@ -431,7 +512,7 @@ const MarketplaceOperations = () => {
                                     }}
                                 />
                             ) : (
-                                <MockupPreview
+                                <AdminMockupPreview
                                     mockupSrc="/img/womenfront-mockup.png"
                                     maskSrc="/img/womenfront-mockup.png"
                                     tshirtColor={product.tshirtColor || '#ffffff'}
@@ -511,13 +592,17 @@ const MarketplaceOperations = () => {
     };
 
     const renderOrders = () => {
-        const statuses = ['All', 'Processing', 'Printing', 'Delivered', 'Cancelled'];
+        const statuses = ['All', 'Awaiting Verification', 'Processing', 'Printing', 'Dispatched', 'Delivered', 'Approved', 'Cancelled'];
 
         const getStatusColor = (status: string) => {
             switch (status) {
+                case 'Awaiting Verification': return { bg: '#fef3c7', text: '#d97706' };
                 case 'Pending': return { bg: '#fef3c7', text: '#92400e' };
+                case 'Processing': return { bg: '#e0e7ff', text: '#4338ca' };
                 case 'Printing': return { bg: '#dbeafe', text: '#1e40af' };
+                case 'Dispatched': return { bg: '#ffedd5', text: '#c2410c' };
                 case 'Delivered': return { bg: '#dcfce7', text: '#166534' };
+                case 'Approved': return { bg: '#d1fae5', text: '#059669' };
                 case 'Cancelled': return { bg: '#fee2e2', text: '#991b1b' };
                 default: return { bg: '#f1f5f9', text: '#475569' };
             }
@@ -584,7 +669,7 @@ const MarketplaceOperations = () => {
                                 <th>Thumbnail</th>
                                 <th>Customer</th>
                                 <th>Product Details</th>
-                                <th>Total Amount</th>
+                                <th>Total & Payment</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -659,7 +744,22 @@ const MarketplaceOperations = () => {
                                             ))}
                                         </td>
                                         <td style={{ ...tdStyle, fontWeight: 'bold' }}>
-                                            LKR {order.totalPrice ? Number(order.totalPrice).toLocaleString() : '0'}
+                                            <div style={{ marginBottom: '8px', fontSize: '14px' }}>LKR {order.totalPrice ? Number(order.totalPrice).toLocaleString() : '0'}</div>
+                                            <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                <span style={{ fontWeight: 'bold', color: '#cbd5e1' }}>
+                                                    {order.paymentMethod === 'bank' ? '🏦 Bank Deposit' : order.paymentMethod === 'card' ? '💳 Card' : order.paymentMethod === 'sandbox' ? '🧪 Sandbox' : order.paymentMethod || 'Unknown'}
+                                                </span>
+                                                {order.paymentMethod === 'bank' && order.paymentSlipUrl && (
+                                                    <a 
+                                                        href={order.paymentSlipUrl.startsWith('http') ? order.paymentSlipUrl : `http://localhost:5000${order.paymentSlipUrl}`}
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        style={{ color: '#38bdf8', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(56, 189, 248, 0.1)', padding: '4px 8px', borderRadius: '4px', width: 'fit-content' }}
+                                                    >
+                                                        📄 View Slip
+                                                    </a>
+                                                )}
+                                            </div>
                                         </td>
                                         <td style={tdStyle}>
                                             <span style={{
@@ -677,13 +777,33 @@ const MarketplaceOperations = () => {
                                             </span>
                                         </td>
                                         <td style={tdStyle}>
-                                            <select
-                                                value={order.status}
-                                                onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                                                style={{ padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '11px', fontWeight: 'bold' }}
-                                            >
-                                                {['Processing', 'Printing', 'Delivered', 'Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
-                                            </select>
+                                            {(() => {
+                                                const isDigitalOnly = order.orderItems?.length > 0 && order.orderItems.every((i: any) => i.name?.includes('(Digital)') || i.image?.includes('digital_download_icon'));
+                                                
+                                                if (isDigitalOnly) {
+                                                    if (order.status === 'Approved') {
+                                                        return <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: 'bold', color: '#10b981', padding: '6px 12px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px' }}>✔️ Approved</span>;
+                                                    }
+                                                    return (
+                                                        <button 
+                                                            onClick={() => updateOrderStatus(order._id, 'Approved')}
+                                                            style={{ padding: '6px 12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                                        >
+                                                            Approve Payment
+                                                        </button>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <select
+                                                        value={order.status}
+                                                        onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                                                        style={{ padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '11px', fontWeight: 'bold', background: 'white' }}
+                                                    >
+                                                        {['Awaiting Verification', 'Processing', 'Printing', 'Dispatched', 'Delivered', 'Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
+                                                    </select>
+                                                );
+                                            })()}
                                             {order.isPaid && !order.isRefunded && (
                                                 <button
                                                     onClick={() => handleRefund(order._id)}
@@ -723,7 +843,7 @@ const MarketplaceOperations = () => {
                             </div>
                             
                             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
                                     <div>
                                         <div style={labelStyle}>Order ID</div>
                                         <div style={{ fontWeight: 'bold', color: 'white' }}>#CR8-{selectedOrderDetails._id.substring(selectedOrderDetails._id.length - 8).toUpperCase()}</div>
@@ -731,6 +851,15 @@ const MarketplaceOperations = () => {
                                     <div>
                                         <div style={labelStyle}>Customer</div>
                                         <div style={{ fontWeight: 'bold', color: 'white' }}>{selectedOrderDetails.user?.name}</div>
+                                    </div>
+                                    <div>
+                                        <div style={labelStyle}>Payment Method</div>
+                                        <div style={{ fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            {selectedOrderDetails.paymentMethod === 'bank' ? 'Bank Deposit' : selectedOrderDetails.paymentMethod === 'card' ? 'Card' : selectedOrderDetails.paymentMethod === 'sandbox' ? 'Sandbox' : selectedOrderDetails.paymentMethod || 'Unknown'}
+                                            {selectedOrderDetails.paymentMethod === 'bank' && selectedOrderDetails.paymentSlipUrl && (
+                                                <a href={selectedOrderDetails.paymentSlipUrl.startsWith('http') ? selectedOrderDetails.paymentSlipUrl : `http://localhost:5000${selectedOrderDetails.paymentSlipUrl}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#38bdf8', textDecoration: 'underline' }}>View Slip</a>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -755,10 +884,12 @@ const MarketplaceOperations = () => {
                             </div>
                             
                             <div style={{ marginTop: '20px', borderTop: '2px dashed rgba(255,255,255,0.1)', paddingTop: '15px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-                                    <span style={{ color: '#94a3b8' }}>Delivery Fee</span>
-                                    <span>LKR {(selectedOrderDetails.shippingFee || 300).toLocaleString()}</span>
-                                </div>
+                                {!(selectedOrderDetails.orderItems?.length > 0 && selectedOrderDetails.orderItems.every((i: any) => i.name?.includes('(Digital)') || i.image?.includes('digital_download_icon'))) && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                                        <span style={{ color: '#94a3b8' }}>Delivery Fee</span>
+                                        <span>LKR {(selectedOrderDetails.shippingFee || 300).toLocaleString()}</span>
+                                    </div>
+                                )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '18px', fontWeight: '900', color: '#fbbf24' }}>
                                     <span>Grand Total</span>
                                     <span>LKR {(selectedOrderDetails.totalPrice).toLocaleString()}</span>

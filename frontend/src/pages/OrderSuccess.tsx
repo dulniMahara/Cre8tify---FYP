@@ -1,16 +1,39 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { getToken } from '../utils/auth';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 const OrderSuccess = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { orderId, address, customerName, phone, createdAt, method } = location.state || {};
+    const { orderId, address, customerName, phone, createdAt, method, isDigitalOnly } = location.state || {};
+
+    const [isApproved, setIsApproved] = useState(false);
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, []);
+
+        if (isDigitalOnly && method === 'bank' && orderId) {
+            const checkStatus = async () => {
+                try {
+                    const token = getToken('customer');
+                    if (!token) return;
+                    const { data } = await axios.get('http://localhost:5000/api/orders/myorders', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const matchedOrder = data.find((o: any) => o._id.toUpperCase().endsWith(orderId.toUpperCase()));
+                    if (matchedOrder && matchedOrder.status === 'Approved') {
+                        setIsApproved(true);
+                    }
+                } catch (e) {
+                    console.error("Failed to check status", e);
+                }
+            };
+            checkStatus();
+        }
+    }, [isDigitalOnly, method, orderId]);
 
     // Fallback if data is missing (e.g. direct URL access)
     const displayId = orderId || "CR8-" + Math.floor(10000 + Math.random() * 90000);
@@ -56,18 +79,35 @@ const OrderSuccess = () => {
                         </div>
                     </div>
 
-                    <div style={shippingInfo}>
-                        <p style={shippingTitle}>Shipping To:</p>
-                        <p style={shippingText}>{address || 'Your registered address'}</p>
-                    </div>
+                    {!isDigitalOnly && (
+                        <div style={shippingInfo}>
+                            <p style={shippingTitle}>Shipping To:</p>
+                            <p style={shippingText}>{address || 'Your registered address'}</p>
+                        </div>
+                    )}
 
                     <div style={actionButtons}>
-                        <button 
-                            style={primaryBtn} 
-                            onClick={() => navigate('/track-order', { state: { address, customerName, orderId: displayId } })}
-                        >
-                            Track Your Order
-                        </button>
+                        {isDigitalOnly ? (
+                            <button 
+                                style={primaryBtn} 
+                                onClick={() => {
+                                    if (method === 'bank' && !isApproved) {
+                                        alert("Your digital design will be available for download on your dashboard once an admin verifies your bank payment.");
+                                    } else {
+                                        alert("Your high-resolution PDF design is downloading...");
+                                    }
+                                }}
+                            >
+                                {(method === 'bank' && !isApproved) ? 'Pending Verification' : 'Download Design (PDF)'}
+                            </button>
+                        ) : (
+                            <button 
+                                style={primaryBtn} 
+                                onClick={() => navigate('/track-order', { state: { address, customerName, orderId: displayId } })}
+                            >
+                                Track Your Order
+                            </button>
+                        )}
                         <button 
                             style={secondaryBtn} 
                             onClick={() => navigate('/customer-dashboard')}
@@ -95,6 +135,11 @@ const OrderSuccess = () => {
                     100% { transform: translateY(0px); }
                 }
             `}</style>
+            <style dangerouslySetInnerHTML={{ __html: `
+                header {
+                    left: 0 !important;
+                }
+            ` }} />
         </div>
     );
 };
@@ -102,7 +147,7 @@ const OrderSuccess = () => {
 // --- STYLES ---
 const pageWrapper: React.CSSProperties = { background: '#f4f7f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: "'Inter', sans-serif" };
 const headerNudge: React.CSSProperties = { background: '#0d375b' };
-const mainContainer: React.CSSProperties = { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' };
+const mainContainer: React.CSSProperties = { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '130px 20px 60px 20px' };
 
 const successCard: React.CSSProperties = { background: '#fff', padding: '50px', borderRadius: '30px', boxShadow: '0 20px 50px rgba(0,0,0,0.05)', textAlign: 'center', maxWidth: '550px', width: '100%', border: '1px solid #eef2f6', animation: 'bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55)' };
 
