@@ -5,7 +5,15 @@ const Product = require('../models/productModel');
 // @desc    Create a new order after "Confirm & Pay"
 // @route   POST /api/orders
 const addOrderItems = async (req, res) => {
-    const { orderItems, totalPrice, shippingAddress, paymentMethod, isPaid, paidAt, status } = req.body;
+    let payload = req.body;
+    if (req.body.orderData) {
+        try {
+            payload = JSON.parse(req.body.orderData);
+        } catch (e) {
+            return res.status(400).json({ message: 'Invalid order data format' });
+        }
+    }
+    const { orderItems, totalPrice, shippingAddress, paymentMethod, isPaid, paidAt, status } = payload;
 
     if (orderItems && orderItems.length === 0) {
         return res.status(400).json({ message: 'No items in your cart' });
@@ -42,6 +50,8 @@ const addOrderItems = async (req, res) => {
 
         const taxAmount = totalPrice * taxRate;
 
+        const paymentSlipUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
+
         const order = new Order({
             user: req.user._id,
             orderItems,
@@ -52,6 +62,7 @@ const addOrderItems = async (req, res) => {
             platformProfit: totalPlatformProfit,
             designerEarnings: totalDesignerEarnings,
             paymentMethod: paymentMethod || 'card',
+            paymentSlipUrl,
             isPaid: isPaid || false,
             paidAt: isPaid ? (paidAt || new Date()) : undefined,
             status: status || 'Processing'

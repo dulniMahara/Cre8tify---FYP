@@ -31,6 +31,7 @@ const orderSchema = new mongoose.Schema({
     isPaid: { type: Boolean, default: false },
     paidAt: { type: Date },
     paymentMethod: { type: String, default: 'card' },
+    paymentSlipUrl: { type: String }, // 🚀 Added for bank deposit slips
     isRefunded: { type: Boolean, default: false },
     refundedAt: { type: Date },
     status: { type: String, default: 'Processing' },
