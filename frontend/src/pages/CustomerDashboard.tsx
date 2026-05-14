@@ -126,7 +126,7 @@ const CustomerDashboard = () => {
             <Sidebar variant="customer" />
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
                 <Header mode="search" userRole="customer" />
-                <div className="content-wrapper customer-content" style={{ overflowX: 'hidden', marginTop: '90px', paddingTop: '30px' }}>
+                <div className="content-wrapper customer-content" style={{ overflowX: 'hidden', marginTop: '45px', paddingTop: '0px' }}>
                     
                     <div style={bannerStyle}>
                         <div>
@@ -138,7 +138,7 @@ const CustomerDashboard = () => {
                         </button>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '45px', marginBottom: '35px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '45px', marginBottom: '60px' }}>
                         <CategoryCircle title="MEN" img="/img/men.png" scale="1.0" position="top" onClick={() => navigate('/men-collection')} />
                         <CategoryCircle title="WOMEN" img="/img/women.png" scale="1.3" position="center" onClick={() => navigate('/women-collection')} />
                         <CategoryCircle title="KIDS" img="/img/kids.png" scale="1.0" position="top"  onClick={() => navigate('/kids-collection')} />
@@ -214,18 +214,18 @@ const CustomerDashboard = () => {
 // ==================== STYLES & SUB-COMPONENTS ====================
 
 const CategoryCircle = ({ title, img, position = 'center', scale = '1', onClick }: any) => (
-    <div onClick={onClick} style={{ textAlign: 'center', cursor: 'pointer' }}>
-        <div style={{ width: '100px', height: '100px', borderRadius: '50%', overflow: 'hidden', marginBottom: '12px', border: '2px solid white', boxShadow: '0 10px 20px rgba(0,0,0,0.15)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position, transform: `scale(${scale})` }} />
+    <div onClick={onClick} className="category-circle-wrapper" style={{ textAlign: 'center', cursor: 'pointer' }}>
+        <div className="category-circle-img" style={{ width: '130px', height: '130px', borderRadius: '50%', overflow: 'hidden', marginBottom: '12px', border: '2px solid white', boxShadow: '0 10px 20px rgba(0,0,0,0.15)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.4s ease' }}>
+            <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position, transform: `scale(${scale})`, transition: 'all 0.4s ease' }} />
         </div>
-        <div style={{ fontWeight: '800', fontSize: '11px', letterSpacing: '1px', color: '#334155' }}>{title}</div>
+        <div className="category-circle-text" style={{ fontWeight: '800', fontSize: '11px', letterSpacing: '1px', color: '#334155', transition: 'all 0.4s ease' }}>{title}</div>
     </div>
 );
 
 const bannerStyle: React.CSSProperties = { 
     background: 'linear-gradient(135deg, #0d375b 0%, #1a5f96 100%)', 
     borderRadius: '12px', padding: '35px 45px', color: 'white', 
-    marginBottom: '35px', marginTop: '70px', display: 'flex', flexDirection: 'row', 
+    marginBottom: '45px', marginTop: '60px', display: 'flex', flexDirection: 'row', 
     justifyContent: 'space-between', alignItems: 'center',
     boxShadow: '0 10px 20px rgba(13, 55, 91, 0.25)' 
 };
@@ -248,15 +248,37 @@ const greetingTextStyle: React.CSSProperties = {
 };
 
 const newArrivalsStripe: React.CSSProperties = { 
-    display: 'flex', alignItems: 'center', marginBottom: '25px', marginLeft: '-20px', marginRight: '-20px', width: 'calc(100% + 40px)' 
+    display: 'flex', 
+    alignItems: 'center', 
+    marginBottom: '50px', 
+    marginLeft: '-30px', 
+    marginRight: '-30px', 
+    width: 'calc(100% + 60px)',
+    height: '35px',
+    position: 'relative',
+    overflow: 'hidden'
 };
 
 const zigzagStyle: React.CSSProperties = { 
-    height: '16px', flex: 1, background: 'repeating-linear-gradient(45deg, #0d375b 0, #0d375b 10px, transparent 10px, transparent 20px)' 
+    height: '100%', 
+    flex: 1, 
+    background: 'repeating-linear-gradient(-45deg, #0d375b, #0d375b 15px, #f1f5f9 15px, #f1f5f9 30px)',
+    opacity: 0.8
 };
 
 const stripeLabel: React.CSSProperties = { 
-    background: '#0d375b', color: 'white', padding: '6px 30px', fontWeight: 'bold', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase' 
+    background: '#042e52ff', 
+    color: 'white', 
+    padding: '0 50px', 
+    fontWeight: '900', 
+    fontSize: '13px', 
+    letterSpacing: '4px', 
+    textTransform: 'uppercase',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    boxShadow: '0 0 20px rgba(13, 55, 91, 0.4)',
+    zIndex: 10
 };
 
 const cardStyle: React.CSSProperties = { 

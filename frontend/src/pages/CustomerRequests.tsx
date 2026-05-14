@@ -75,7 +75,7 @@ const CustomerRequests = () => {
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc' }}>
                 <Header showCart={true} mode="title" title="MY EDIT REQUESTS" />
 
-                <div className="content-wrapper animate-fade" style={{ padding: '20px', flex: 1, maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+                <div className="content-wrapper animate-fade" style={{ padding: '90px 20px 20px 20px', flex: 1, maxWidth: '800px', margin: '0 auto', width: '100%' }}>
                     <div style={{ marginBottom: '25px' }}>
                         <p style={{ color: '#64748b', fontSize: '13px' }}>Track and manage your custom design requests sent to designers.</p>
                     </div>

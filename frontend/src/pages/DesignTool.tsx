@@ -2007,7 +2007,10 @@ export default function DesignTool() {
             {/* 1. SIDEBAR */}
             {viewMode === 'edit' && (
                 <div className="design-sidebar" style={{ width: '220px', flexShrink: 0 }}>
-                    <div className="sidebar-logo">Cre8tify</div>
+                    <div className="sidebar-logo">
+                        Cre<span>8</span>tify
+                        <div className="logo-accent"></div>
+                    </div>
                     <div className="sidebar-menu">
                         <label className="sidebar-btn">
                             <img src="/img/upload.png" alt="Upload" className="sidebar-icon" />

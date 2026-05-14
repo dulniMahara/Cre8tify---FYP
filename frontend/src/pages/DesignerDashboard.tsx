@@ -6,7 +6,7 @@ import Header from '../components/Header';
 import { getUserInfo, clearAuth } from '../utils/auth';
 import '../styles/dashboard.css';
 
-const API_URL = "http://localhost:5000"; // 🟢 Added API_URL for profile images
+const API_URL = "http://localhost:5000"; //  Added API_URL for profile images
 
 // State will be managed dynamically
 
@@ -19,11 +19,11 @@ export default function DesignerDashboard() {
 
   // 2. Effect to fetch name and image from localStorage, and fetch products
   useEffect(() => {
-    window.scrollTo(0, 0); // 🟢 Always start at the top
+    window.scrollTo(0, 0); //  Always start at the top
     const userObj = getUserInfo('designer');
     if (userObj) {
-        const name = userObj.name || "Designer";
-        setUserName(`Welcome, ${name}!`);
+      const name = userObj.name || "Designer";
+      setUserName(`Welcome, ${name}!`);
     }
 
     const fetchProducts = async () => {
@@ -91,7 +91,7 @@ export default function DesignerDashboard() {
       <div className="main-content">
         <Header showCart={false} userRole="designer" />
 
-        <div className="content-wrapper">
+        <div className="content-wrapper" style={{ marginTop: '90px' }}>
 
           {/* HERO BANNER */}
           <div className="hero-banner">
