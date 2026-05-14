@@ -163,7 +163,7 @@ const ActionButton = ({ text, onClick, disabled = false }: { text: string; onCli
 };
 
 // --- DESIGNER CARD COMPONENT (Dynamic) ---
-const DesignerCard = ({ name, shopName, bio, profileImage, onClick }: { name: string; shopName: string; bio: string; profileImage: string; onClick: () => void }) => {
+const DesignerCard = ({ name, shopName, bio, profileImage }: { name: string; shopName: string; bio: string; profileImage: string }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isActive, setIsActive] = useState(false);
 
@@ -190,12 +190,11 @@ const DesignerCard = ({ name, shopName, bio, profileImage, onClick }: { name: st
                         onMouseLeave={() => { setIsHovered(false); setIsActive(false); }}
                         onMouseDown={() => setIsActive(true)}
                         onMouseUp={() => setIsActive(false)}
-                        onClick={onClick}
                         style={{
                             padding: '8px 20px',
                             background: isActive ? '#1D4ED8' : (isHovered ? '#3B82F6' : '#000'),
                             color: '#fff', border: 'none', borderRadius: '12px',
-                            fontWeight: '800', fontSize: '12px', cursor: 'pointer',
+                            fontWeight: '800', fontSize: '12px', cursor: 'default',
                             transition: '0.3s ease',
                             transform: isActive ? 'scale(0.96)' : 'scale(1)'
                         }}
@@ -775,7 +774,6 @@ const ProductDetail = () => {
                                 shopName={product.shopName}
                                 bio={product.designerBio}
                                 profileImage={product.designerImg}
-                                onClick={() => navigate(`/my-shop`)}
                             />
 
                             {/* --- Color Selection (Organized Grid) --- */}
