@@ -226,11 +226,11 @@ const ProductDetail = () => {
     const location = useLocation();
     const { cartItems, addToCart } = useCart();
 
-    // 🟢 1. First, catch data from the click (Dashboard flow)
+    //  1. First, catch data from the click (Dashboard flow)
     let incoming = location.state?.product;
     const isDesignerPreview = location.state?.fromDesignerPreview || false;
 
-    // 🕵️ 2. IF COMING FROM CART (location.state is empty)
+    //  2. IF COMING FROM CART (location.state is empty)
     if (!incoming && id) {
         // A) Check the Cart first (for those unpredictable user designs)
         const inCart = cartItems.find((item: any) => String(item.id) === String(id));
@@ -376,7 +376,7 @@ const ProductDetail = () => {
             <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', width: 'calc(100% - 200px)' }}>
                 <Header mode="title" title={product.title} userRole="customer" />
                 {/* --- MAIN PRODUCT INFO SECTION --- */}
-                <div className="content-wrapper" style={{ padding: '0 25px 25px 25px', background: 'white' }}>
+                <div className="content-wrapper" style={{ padding: '60px 25px 25px 25px', background: 'white' }}>
                     {/* TOP GRID: LEFT (T-SHIRT) vs RIGHT (DETAILS) */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', alignItems: 'start', marginBottom: '10px' }}>
 
@@ -556,7 +556,7 @@ const ProductDetail = () => {
                                 )}
                             </div>
 
-                            {/* DOTS: Only show for Men/Women (where back view is available) */}
+                            {/* DOTS: Only visible for Men/Women (where back view is available) */}
                             {!product.isKids && (
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '25px', marginBottom: '50px' }}>
                                     <div
@@ -575,10 +575,32 @@ const ProductDetail = () => {
                                 <h4 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '15px', color: '#64748B' }}>Size Reference Guide</h4>
                                 <div style={{ borderRadius: '24px', border: '1px solid #f1f5f9', background: '#fff', padding: '15px', display: 'flex', justifyContent: 'center' }}>
                                     <img
-                                        src={product.isKids ? "/img/kids_sizechart.png" : "/img/sizechart.png"}
+                                        src={product.isKids ? "/img/kids-tshirt-chart.png" : "/img/adult-tshirt-chart.png"}
                                         alt="Size Chart"
                                         style={{ width: '100%', height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
                                     />
+                                </div>
+                            </div>
+
+                            {/* --- Size/Age Selection --- */}
+                            <div style={{ marginTop: '90px', padding: '0 20px', marginBottom: '40px' }}>
+                                <h4 style={{ fontSize: '18px', fontWeight: '900', marginBottom: '12px', color: '#0d375b', textAlign: 'center' }}>{product.isKids ? "Select Age Group" : "Select Size"}</h4>
+                                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                    {(availableSizes.length > 0 ? availableSizes : product.sizes).map((size: string) => (
+                                        <button
+                                            key={size}
+                                            onClick={() => setSelectedSize(size)}
+                                            style={{
+                                                padding: '10px 25px', borderRadius: '14px', fontSize: '14px', fontWeight: '800',
+                                                backgroundColor: selectedSize === size ? '#000' : '#fff',
+                                                color: selectedSize === size ? '#fff' : '#000',
+                                                border: '2px solid #e2e8f0', minWidth: '85px', cursor: 'pointer',
+                                                transition: '0.2s'
+                                            }}
+                                        >
+                                            {size.toUpperCase()}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -627,16 +649,16 @@ const ProductDetail = () => {
 
                                     //  ADVANCED PARSING & HIERARCHY
                                     let clean = desc.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').trim();
-                                    
+
                                     // Strip all bracket variations
-                                    clean = clean.replace(/[()\[\]{}（）〈〉《》「」『』【】〔〕〖〗〘〙〚〛\x28\x29]/g, ''); 
+                                    clean = clean.replace(/[()\[\]{}（）〈〉《》「」『』【】〔〕〖〗〘〙〚〛\x28\x29]/g, '');
                                     clean = clean.replace(/[•●○▪▫▸▹►▻■□◦]/g, '');
                                     clean = clean.replace(/\s{2,}/g, ' ').trim();
 
                                     // Identify the three main blocks
                                     const specStart = clean.indexOf('🛠 Product Specifications & Quality Assurance');
                                     const careStart = clean.indexOf('🧺 Care Instructions:');
-                                    
+
                                     let introNote = "";
                                     let specsPart = "";
                                     let carePart = "";
@@ -645,15 +667,15 @@ const ProductDetail = () => {
                                     if (specStart !== -1) {
                                         introNote = clean.substring(0, specStart).trim();
                                         const afterSpecs = clean.substring(specStart);
-                                        
+
                                         if (careStart !== -1) {
                                             specsPart = clean.substring(specStart, careStart).trim();
                                             const remaining = clean.substring(careStart);
-                                            
+
                                             // The "Care Instructions" usually end with "printed area."
                                             const careEndMarker = "printed area.";
                                             const careEndIndex = remaining.indexOf(careEndMarker);
-                                            
+
                                             if (careEndIndex !== -1) {
                                                 carePart = remaining.substring(0, careEndIndex + careEndMarker.length).trim();
                                                 finalNote = remaining.substring(careEndIndex + careEndMarker.length).trim();
@@ -705,47 +727,6 @@ const ProductDetail = () => {
                                 })()}
                             </div>
 
-                            {/* Color Selection (Restored) */}
-                            {(!product.isKids || product.frontDesign) && (
-                                <div style={{ marginTop: '5px' }}>
-                                    <h4 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '10px' }}>Change Color</h4>
-                                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                        {(availableColors.length > 0 ? availableColors : product.colors).map((c: string, index: number) => (
-                                            <div
-                                                key={index}
-                                                onClick={() => setSelectedColor(c)}
-                                                style={{
-                                                    width: '32px', height: '32px', borderRadius: '50%',
-                                                    background: c, cursor: 'pointer',
-                                                    border: selectedColor === c ? '3px solid #3b82f6' : '1px solid #cbd5e1'
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Size/Age Selection */}
-                            <div>
-                                <h4 style={{ fontSize: '16px', fontWeight: '900', marginBottom: '12px', marginTop: '15px' }}>{product.isKids ? "Select Age Group" : "Select Size"}</h4>
-                                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                                    {(availableSizes.length > 0 ? availableSizes : product.sizes).map((size: string) => (
-                                        <button
-                                            key={size}
-                                            onClick={() => setSelectedSize(size)}
-                                            style={{
-                                                padding: '8px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: '800',
-                                                backgroundColor: selectedSize === size ? '#000' : '#fff',
-                                                color: selectedSize === size ? '#fff' : '#000',
-                                                border: '2px solid #e2e8f0', minWidth: '80px', cursor: 'pointer'
-                                            }}
-                                        >
-                                            {size.toUpperCase()}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
                             {/* Buttons with Correct Text & Navigation (Horizontal Layout) */}
                             <div style={{ display: 'flex', gap: '8px', marginTop: '20px', marginBottom: '10px' }}>
                                 {(() => {
@@ -761,13 +742,13 @@ const ProductDetail = () => {
                                                 <ActionButton
                                                     text="Customize Design"
                                                     disabled={!product.allowCustomization}
-                                                    onClick={() => navigate('/design-tool', { 
-                                                        state: { 
+                                                    onClick={() => navigate('/design-tool', {
+                                                        state: {
                                                             product: latestProduct,
                                                             isCustomization: true,
                                                             selectedColor,
                                                             selectedSize
-                                                        } 
+                                                        }
                                                     })}
                                                 />
                                             </div>
@@ -796,6 +777,34 @@ const ProductDetail = () => {
                                 profileImage={product.designerImg}
                                 onClick={() => navigate(`/my-shop`)}
                             />
+
+                            {/* --- Color Selection (Organized Grid) --- */}
+                            {(!product.isKids || product.frontDesign) && (
+                                <div style={{ marginTop: '10px', background: '#f8fafc', padding: '20px', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
+                                    <h4 style={{ fontSize: '16px', fontWeight: '900', marginBottom: '15px', color: '#0d375b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Change Color</h4>
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(6, 1fr)',
+                                        gap: '12px',
+                                        justifyItems: 'center'
+                                    }}>
+                                        {(availableColors.length > 0 ? availableColors : product.colors).map((c: string, index: number) => (
+                                            <div
+                                                key={index}
+                                                onClick={() => setSelectedColor(c)}
+                                                style={{
+                                                    width: '28px', height: '28px', borderRadius: '50%',
+                                                    background: c, cursor: 'pointer',
+                                                    border: selectedColor === c ? '3px solid #3b82f6' : '1px solid #cbd5e1',
+                                                    transition: 'all 0.2s ease',
+                                                    boxShadow: selectedColor === c ? '0 0 10px rgba(59, 130, 246, 0.3)' : 'none'
+                                                }}
+                                                title={colorNames[c] || c}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -808,9 +817,9 @@ const ProductDetail = () => {
                         </div>
 
                         {[
-                            { name: "Ramindi Suhurya", date: "Oct 19, 2025", color: "Off White", text: "Loved the design and the soft color blend." },
-                            { name: "S. Sachini", date: "Oct 19, 2025", color: "Black", text: "Loved the design and the soft color blend." },
-                            { name: "Thiseja Lochi", date: "Oct 19, 2025", color: "Pearl Blue", text: "Loved the design and the soft color blend." }
+                            { name: "Ramindi Suhurya", date: "Jan 09, 2026", color: "Off White", text: "Loved the design and the soft color blend." },
+                            { name: "Ravindi Premachandra", date: "Dec 13, 2025", color: "Black", text: "Loved the design and the soft color blend." },
+                            { name: "Tiffany Paul", date: "Oct 19, 2025", color: "Pearl Blue", text: "Loved the design and the soft color blend." }
                         ].map((rev, index) => (
                             <div key={index} style={{ marginBottom: '25px', maxWidth: '800px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '5px' }}>
@@ -825,7 +834,7 @@ const ProductDetail = () => {
                         ))}
                     </div>
 
-                    {/* --- YOU MAY ALSO LIKE (CENTERED, RESPONSIVE & CLICKABLE) --- */}
+                    {/* --- YOU MAY ALSO LIKE --- */}
                     {!isDesignerPreview && (
                         <div style={{
                             marginTop: '60px',
@@ -835,7 +844,7 @@ const ProductDetail = () => {
                             paddingBottom: '60px'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '40px' }}>
-                                {/* Left Line: Shorter and slightly lighter for elegance */}
+                                {/* Left Line */}
                                 <div style={{ width: '80px', height: '2px', background: 'linear-gradient(to left, #cbd5e1, transparent)' }}></div>
 
                                 <h2 style={{
@@ -920,8 +929,8 @@ const ProductDetail = () => {
                             {/*  OPTION 1: PHYSICAL T-SHIRT (Updates the Cart with Size/Color) */}
                             <div
                                 onClick={() => {
-                                    const itemPrice = typeof product.price === 'string' 
-                                        ? parseFloat(product.price.replace(/[^\d.]/g, '')) 
+                                    const itemPrice = typeof product.price === 'string'
+                                        ? parseFloat(product.price.replace(/[^\d.]/g, ''))
                                         : product.price;
 
                                     const updatedProduct = {
@@ -948,7 +957,7 @@ const ProductDetail = () => {
                                         frontDesignScale: product.frontDesignScale,
                                         baseImages: product.baseImages
                                     };
-                                    addToCart(updatedProduct); // This saves it!
+                                    addToCart(updatedProduct); // saving it
                                     setShowPurchaseModal(false);
                                     navigate('/cart');
                                 }}
@@ -971,7 +980,7 @@ const ProductDetail = () => {
                                         quantity: 1,
                                         selected: true
                                     };
-                                    addToCart(digitalProduct); //  This saves it!
+                                    addToCart(digitalProduct); // saving it
                                     setShowPurchaseModal(false);
                                     navigate('/cart');
                                 }}

@@ -1,4 +1,4 @@
-/* 🟢 GLOBAL RESET */
+/*  GLOBAL RESET */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -20,9 +20,9 @@ html {
     width: 100%;
     min-height: 100vh;
     height: auto !important;
-    /* 🟢 Let it grow! */
+    /* Let it grow! */
     overflow: visible !important;
-    /* 🟢 Allow scrolling */
+    /*  Allow scrolling */
 }
 
 /* --- SIDEBAR --- */
@@ -42,19 +42,41 @@ html {
 }
 
 .sidebar-logo {
-    font-size: 22px;
-    font-weight: 800;
-    margin-top: 5px;
-    margin-bottom: 20px;
+    font-size: 32px !important;
+    font-weight: 900 !important;
+    margin-top: -15px;
+    margin-bottom: 15px;
     text-align: center;
     color: white;
+    letter-spacing: -1.5px;
+    position: relative;
+    padding-bottom: 12px;
+}
+
+.sidebar-logo span {
+    color: #38bdf8;
+    /* A bright sky blue to pop against the dark navy */
+    text-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+}
+
+.logo-accent {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 3px;
+    background: #38bdf8;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
 }
 
 .sidebar-menu {
     display: flex;
     flex-direction: column;
     margin-top: 20px;
-    gap: 38px;
+    gap: 30px !important;
+
 }
 
 .sidebar-btn {
@@ -72,12 +94,18 @@ html {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* 🟢 Narrower & Slightly Taller Buttons for Customer Sidebar */
+/*  Narrower & Slightly Taller Buttons for Customer Sidebar */
 .customer-sidebar .sidebar-btn {
     width: 88%;
     margin: 0 auto;
     padding: 11px 16px;
     font-size: 13px;
+}
+
+/*  Wider Buttons for Designer Sidebar */
+.designer-sidebar .sidebar-btn {
+    width: 85%;
+    margin: 0 auto;
 }
 
 .sidebar-icon {
@@ -96,7 +124,6 @@ html {
 .sidebar-btn.active {
     background-color: #ffffff;
     border: 2px solid #0c5fe3;
-    /* Subtle border for active state */
 }
 
 .sidebar-btn.active {
@@ -203,22 +230,22 @@ html {
     padding: 0 30px 30px 30px;
     background-color: white;
     flex: 1;
-    margin-top: 90px !important;
+    margin-top: 70px;
     min-height: 100vh;
 }
 
-/* 🟢 Flush Layout for Customer Pages Only */
+/*  Flush Layout for Customer Pages Only */
 .content-wrapper.customer-content {
-    margin-top: 0 !important;
+    margin-top: 0;
 }
 
-/* 🟢 Full-Width for Collection Hero Pages */
+/* Full-Width for Collection Hero Pages */
 .content-wrapper.collection-content {
-    margin-top: 0 !important;
+    margin-top: 70px;
     padding: 0 !important;
 }
 
-/* 🟢 HERO BANNER STYLE */
+/*  HERO BANNER STYLE */
 .hero-banner {
     background: linear-gradient(135deg, #0d375b 0%, #1a5f96 100%);
     padding: 30px 50px;
@@ -289,7 +316,7 @@ html {
 }
 
 
-/* 🟢 PRODUCT CARD (INTERACTIVE) */
+/* PRODUCT CARD (INTERACTIVE) */
 .product-card {
     display: flex;
     flex-direction: column;
@@ -323,7 +350,7 @@ html {
 
 .product-card:hover {
     transform: translateY(-6px);
-    /* 🟢 Card lifts up */
+    /*  Card lifts up */
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
 }
 
@@ -380,4 +407,82 @@ html {
         grid-template-columns: repeat(2, 1fr);
         max-width: 450px;
     }
+}
+
+/* --- CATEGORY CIRCLES HOVER --- */
+.category-circle-wrapper {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.category-circle-wrapper:hover {
+    transform: translateY(-10px);
+}
+
+.category-circle-wrapper:hover .category-circle-img {
+    box-shadow: 0 15px 30px rgba(13, 55, 91, 0.3);
+    border-color: #0d375b !important;
+    transform: scale(1.05);
+}
+
+.category-circle-wrapper:hover .category-circle-text {
+    color: #0d375b !important;
+    letter-spacing: 2px !important;
+}
+
+/* --- ANALYTICS CHARTS --- */
+@keyframes barGrow {
+    from {
+        height: 0;
+        opacity: 0;
+    }
+
+    to {
+        height: var(--target-height);
+        opacity: 1;
+    }
+}
+
+.analytics-bar {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: barGrow 1s ease-out forwards;
+}
+
+.analytics-bar:hover {
+    filter: brightness(1.2);
+    transform: scaleX(1.05);
+    z-index: 10;
+}
+
+.analytics-tooltip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(8px);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 20;
+}
+
+.analytics-bar:hover .analytics-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.analytics-grid-line {
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+    width: 100%;
+    position: absolute;
 }

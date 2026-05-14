@@ -934,7 +934,7 @@ const MockupPreview = ({ mockupSrc, maskSrc, tshirtColor, canvasState, overallSc
                     {textLayers.map((t: any) => (
                         <div key={t.id} style={{
                             position: 'absolute', zIndex: t.zIndex,
-                            //  Applied manual transform override as requested
+                            // Applied manual transform override as requested
                             transform: isPopup 
                                 ? `translate(73px, 187px) scale(0.32)`
                                 : `translate(23px, 108px) scale(0.2)`,

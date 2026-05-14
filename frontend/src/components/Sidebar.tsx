@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import '../styles/dashboard.css'; 
+import '../styles/dashboard.css';
 
-// 🟢 Define Prop Type
+//  Define Prop Type
 interface SidebarProps {
   variant?: 'designer' | 'customer' | 'admin';
 }
@@ -10,7 +10,7 @@ interface SidebarProps {
 export default function Sidebar({ variant = 'designer' }: SidebarProps) {
   const location = useLocation();
 
-  // 🟢 Helper to check if the link is active
+  //  Helper to check if the link is active
   const getActiveClass = (path: string) => {
     return location.pathname === path ? 'sidebar-btn active' : 'sidebar-btn';
   };
@@ -19,11 +19,12 @@ export default function Sidebar({ variant = 'designer' }: SidebarProps) {
     <div className={`sidebar ${variant}-sidebar`}>
       {/* LOGO */}
       <div className="sidebar-logo">
-        Cre8tify
+        Cre<span>8</span>tify
+        <div className="logo-accent"></div>
       </div>
 
       <nav className="sidebar-menu">
-        
+
         {/* ================== DESIGNER MENU ================== */}
         {variant === 'designer' ? (
           <>
@@ -31,7 +32,7 @@ export default function Sidebar({ variant = 'designer' }: SidebarProps) {
               <img src="/img/dashboard.png" alt="" className="sidebar-icon" />
               Dashboard
             </Link>
-            
+
             <Link to="/my-designs" className={getActiveClass('/my-designs')}>
               <img src="/img/mydesigns.png" alt="" className="sidebar-icon" />
               My Designs
@@ -59,7 +60,7 @@ export default function Sidebar({ variant = 'designer' }: SidebarProps) {
               <img src="/img/dashboard.png" alt="" className="sidebar-icon" />
               Dashboard
             </Link>
-            
+
             <Link to="/my-custom-designs" className={getActiveClass('/my-custom-designs')}>
               <img src="/img/design.png" alt="" className="sidebar-icon" />
               My Custom Designs
@@ -79,11 +80,6 @@ export default function Sidebar({ variant = 'designer' }: SidebarProps) {
               <img src="/img/myshop.png" alt="" className="sidebar-icon" />
               My Orders
             </Link>
-
-            <Link to="/settings" className={getActiveClass('/settings')}>
-              <img src="/img/setting.png" alt="" className="sidebar-icon" />
-              Settings
-            </Link>
           </>
         ) : variant === 'admin' ? (
           <>
@@ -91,7 +87,7 @@ export default function Sidebar({ variant = 'designer' }: SidebarProps) {
               <img src="/img/dashboard.png" alt="" className="sidebar-icon" />
               Manage Modules
             </Link>
-            
+
             <Link to="/admin-dashboard/users" className={getActiveClass('/admin-dashboard/users')}>
               <img src="/img/setting.png" alt="" className="sidebar-icon" />
               User & Security Control

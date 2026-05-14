@@ -7,16 +7,16 @@ const API_URL = "http://localhost:5000";
 const CustomerProfile = () => {
     const navigate = useNavigate();
 
-    // 🟢 UPDATED: Pulls real data from localStorage if it exists
-    // 🟢 UPDATED: Pulls real data from role-specific storage
+    // Pulls real data from localStorage if it exists
+    // Pulls real data from role-specific storage
     const [profile, setProfile] = useState({
-        name: "", 
+        name: "",
         email: "",
-        contact: "", 
+        contact: "",
         address: "",
         image: "/img/profile-picture.png",
-        orders: 0, 
-        likes: 0, 
+        orders: 0,
+        likes: 0,
         points: 0
     });
 
@@ -25,15 +25,21 @@ const CustomerProfile = () => {
             const { getUserInfo } = await import('../utils/auth');
             const parsed = getUserInfo('customer');
             if (parsed) {
+                const rawImage = parsed.image || parsed.profileImage || "/img/profile-picture.png";
+                let finalImage = rawImage;
+                if (rawImage.startsWith('/uploads') || rawImage.startsWith('uploads')) {
+                    finalImage = `${API_URL}${rawImage.startsWith('/') ? '' : '/'}${rawImage}`;
+                }
+
                 setProfile(prev => ({
                     ...prev,
-                    name: parsed.name || "", 
+                    name: parsed.name || "",
                     email: parsed.email || "",
-                    contact: parsed.contact || parsed.phone || "", 
+                    contact: parsed.contact || parsed.phone || "",
                     address: parsed.address || "",
-                    image: parsed.image || parsed.profileImage || "/img/profile-picture.png",
-                    orders: parsed.orders || 0, 
-                    likes: parsed.likes || 0, 
+                    image: finalImage,
+                    orders: parsed.orders || 0,
+                    likes: parsed.likes || 0,
                     points: parsed.points || 0
                 }));
             }
@@ -41,7 +47,7 @@ const CustomerProfile = () => {
         init();
     }, []);
 
-    // 🟢 NEW: Fetch real stats from Backend & LocalStorage
+    // Fetch real stats from Backend & LocalStorage
     useEffect(() => {
         const fetchStats = async () => {
             const { getToken } = await import('../utils/auth');
@@ -89,14 +95,14 @@ const CustomerProfile = () => {
         e.preventDefault();
         const { getUserInfo, setUserInfo } = await import('../utils/auth');
         const existingInfo = getUserInfo('customer') || {};
-        
-        // 🟢 Merging the new profile data into existing userInfo
+
+        // Merging the new profile data into existing userInfo
         const updatedInfo = { ...existingInfo, ...profile };
-        
+
         setUserInfo(updatedInfo);
         window.dispatchEvent(new Event('storage'));
         alert("Profile Updated Successfully!");
-        navigate('/customer-dashboard'); 
+        navigate('/customer-dashboard');
     };
 
     return (
@@ -123,38 +129,38 @@ const CustomerProfile = () => {
                         <div style={formCard}>
                             <h2 style={cardTitle}>Personal Details</h2>
                             <div style={titleUnderline} />
-                            
+
                             <form onSubmit={handleUpdate} style={formStack}>
                                 <div style={inputGroup}>
                                     <label style={fieldLabel}>Full Name</label>
-                                    <input 
-                                        style={textInput} 
-                                        value={profile.name} 
-                                        onChange={(e)=>setProfile({...profile, name: e.target.value})} 
+                                    <input
+                                        style={textInput}
+                                        value={profile.name}
+                                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                                     />
                                 </div>
                                 <div style={inputGroup}>
                                     <label style={fieldLabel}>Email Address</label>
-                                    <input 
-                                        style={textInput} 
-                                        value={profile.email} 
-                                        onChange={(e)=>setProfile({...profile, email: e.target.value})}
+                                    <input
+                                        style={textInput}
+                                        value={profile.email}
+                                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                                     />
                                 </div>
                                 <div style={inputGroup}>
                                     <label style={fieldLabel}>Contact Number</label>
-                                    <input 
-                                        style={textInput} 
+                                    <input
+                                        style={textInput}
                                         value={profile.contact || ""}
-                                        onChange={(e)=>setProfile({...profile, contact: e.target.value})}
+                                        onChange={(e) => setProfile({ ...profile, contact: e.target.value })}
                                     />
                                 </div>
                                 <div style={inputGroup}>
                                     <label style={fieldLabel}>Primary Address</label>
-                                    <input 
-                                        style={textInput} 
-                                        value={profile.address || ""} 
-                                        onChange={(e)=>setProfile({...profile, address: e.target.value})}
+                                    <input
+                                        style={textInput}
+                                        value={profile.address || ""}
+                                        onChange={(e) => setProfile({ ...profile, address: e.target.value })}
                                     />
                                 </div>
                                 <button type="submit" style={saveBtn}>UPDATE MY PROFILE</button>
@@ -164,22 +170,29 @@ const CustomerProfile = () => {
                         <div style={sideStack}>
                             <div style={profileVisualCard}>
                                 <div style={imageContainer}>
-                                    <img src={profile.image} style={bigAvatar} alt="Profile" />
+                                    <img
+                                        src={profile.image}
+                                        style={bigAvatar}
+                                        alt="Profile"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = "/img/profile-picture.png";
+                                        }}
+                                    />
                                     <label style={cameraBadge}>
-                                        <input 
-                                            type="file" 
-                                            hidden 
+                                        <input
+                                            type="file"
+                                            hidden
                                             accept="image/*"
-                                            onChange={handleImageChange} 
+                                            onChange={handleImageChange}
                                         />
-                                        <img src="/img/camera.png" style={{width: '24px'}} alt="Camera" />
+                                        <img src="/img/camera.png" style={{ width: '24px' }} alt="Camera" />
                                     </label>
                                 </div>
                                 <h3 style={displayName}>{profile.name}</h3>
                                 <p style={roleText}>BUYER</p>
-                                <button 
+                                <button
                                     style={removePhotoBtn}
-                                    onClick={() => setProfile({...profile, image: "/img/profile-picture.png"})}
+                                    onClick={() => setProfile({ ...profile, image: "/img/profile-picture.png" })}
                                 >
                                     Remove Photo
                                 </button>
@@ -200,7 +213,7 @@ const CustomerProfile = () => {
     );
 };
 
-// --- STYLES (Updated Font Sizes) ---
+// --- STYLES ---
 const rootContainer: React.CSSProperties = { display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', background: '#f8fafc' };
 const sidebarWrapper: React.CSSProperties = { width: '200px', flexShrink: 0, height: '100vh' };
 const mainContentArea: React.CSSProperties = { flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' };

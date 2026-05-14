@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
-import Header from '../components/Header'; 
+import Header from '../components/Header';
 import CollectionHero from '../components/CollectionHero';
 import '../styles/dashboard.css';
 
-// --- 🟢 SHARED MOCKUP PREVIEW COMPONENT ---
+// ---  SHARED MOCKUP PREVIEW COMPONENT ---
 type PrintArea = { top: string; left: string; width: string; height: string; rotation?: number };
 type MockupPreviewProps = {
     mockupSrc: string;
@@ -49,15 +49,15 @@ const MockupPreview = ({
                 )}
 
                 {/* 2. Mockup Image with Shadows (Top) */}
-                <img 
-                    src={mockupSrc} 
-                    alt="Mockup" 
-                    style={{ 
-                        width: '100%', height: '100%', objectFit: 'contain', 
+                <img
+                    src={mockupSrc}
+                    alt="Mockup"
+                    style={{
+                        width: '100%', height: '100%', objectFit: 'contain',
                         position: 'relative', zIndex: 1,
                         mixBlendMode: 'multiply',
                         filter: 'contrast(1.0) brightness(0.95) saturate(0)'
-                    }} 
+                    }}
                 />
                 {printArea && designSrc && (
                     <div style={{
@@ -88,41 +88,41 @@ const MockupPreview = ({
 
 // Collection data
 export const originalProducts = [
-        { id: 201, gender: 'girl', title: 'Petal Soft Tee', price: 900, age: 'Kids (5-10y)', material: 'Soft Cotton', img: '/img/girlkid1.png', scale: 1.2, likes: 22, sales: 5},
-        { id: 202, gender: 'girl', title: 'Daisy Dream', price: 950, age: 'Kids (5-10y)', material: 'Soft Cotton', img: '/img/girlkid2.png', scale: 1.3, likes: 12, sales: 2 },
-        { id: 203, gender: 'girl', title: 'Pink Sparkle', price: 980, age: 'Kids (5-10y)', material: 'Soft Cotton', img: '/img/girlkid3.png', scale: 1.3, likes: 45, sales: 12 },
-        { id: 204, gender: 'girl', title: 'Fairy Cotton', price: 1000, age: 'Kids (5-10y)', material: 'Soft Cotton', img: '/img/girlkid4.png', scale: 1.2, likes: 30, sales: 8 },
-        { id: 205, gender: 'girl', title: 'Teen Floral', price: 1100, age: 'Teens (11y+)', material: 'Soft Cotton', img: '/img/girlteen1.png', scale: 1.3, likes: 55, sales: 20 },
-        { id: 206, gender: 'girl', title: 'Chic Cotton', price: 1150, age: 'Teens (11y+)', material: 'Soft Cotton', img: '/img/girlteen2.png', scale: 1.3, likes: 60, sales: 15 },
-        { id: 207, gender: 'girl', title: 'Urban Rose', price: 1200, age: 'Teens (11y+)', material: 'Soft Cotton', img: '/img/girlteen3.png', scale: 1.6, likes: 40, sales: 10 },
-        { id: 208, gender: 'girl', title: 'Summer Breeze', price: 1250, age: 'Teens (11y+)', material: 'Soft Cotton', img: '/img/girlteen4.png', scale: 1.6, likes: 88, sales: 30 },
-        { id: 209, gender: 'girl', title: 'Butterfly Garden', price: 920, age: 'Kids (5-10y)', material: 'Soft Cotton', img: '/img/girlkid5.png', scale: 1.3, likes: 15, sales: 4 },
-        { id: 210, gender: 'girl', title: 'Berry Sweet', price: 940, age: 'Kids (5-10y)', material: 'Soft Cotton', img: '/img/girlkid6.png', scale: 1.3, likes: 19, sales: 6 },
-        { id: 211, gender: 'girl', title: 'Modern Muse', price: 1300, age: 'Teens (11y+)', material: 'Soft Cotton', img: '/img/girlteen5.png', scale: 1.2, likes: 95, sales: 40 },
-        { id: 212, gender: 'girl', title: 'Velvet Sky', price: 1350, age: 'Teens (11y+)', material: 'Soft Cotton', img: '/img/girlteen6.png', scale: 1.3, likes: 110, sales: 50 },
-        { id: 301, gender: 'boy', title: 'Dino Dash', price: 950, age: 'Kids (5-10y)', material: 'Active Play', img: '/img/boykid1.png', scale: 1.4, likes: 18, sales: 7 },
-        { id: 302, gender: 'boy', title: 'Speed Racer', price: 980, age: 'Kids (5-10y)', material: 'Active Play', img: '/img/boykid2.png', scale: 1.4, likes: 25, sales: 9 },
-        { id: 303, gender: 'boy', title: 'Space Explorer', price: 1000, age: 'Kids (5-10y)', material: 'Active Play', img: '/img/boykid3.png', scale: 1.5, likes: 60, sales: 20 },
-        { id: 304, gender: 'boy', title: 'Arctic Fox', price: 1050, age: 'Kids (5-10y)', material: 'Active Play', img: '/img/boykid4.png', scale: 1.4, likes: 33, sales: 11 },
-        { id: 305, gender: 'boy', title: 'Tech Teen', price: 1200, age: 'Teens (11y+)', material: 'Active Play', img: '/img/boyteen1.png', scale: 1.3, likes: 50, sales: 15 },
-        { id: 306, gender: 'boy', title: 'Vapor Street', price: 1250, age: 'Teens (11y+)', material: 'Active Play', img: '/img/boyteen2.png', scale: 1.4, likes: 70, sales: 22 },
-        { id: 307, gender: 'boy', title: 'Gamer Core', price: 1300, age: 'Teens (11y+)', material: 'Active Play', img: '/img/boyteen3.png', scale: 1.2, likes: 44, sales: 18 },
-        { id: 308, gender: 'boy', title: 'Shadow Runner', price: 1350, age: 'Teens (11y+)', material: 'Active Play', img: '/img/boyteen4.png', scale: 1.3, likes: 92, sales: 33 },
-        { id: 309, gender: 'boy', title: 'Jungle Beat', price: 970, age: 'Kids (5-10y)', material: 'Active Play', img: '/img/boykid5.png', scale: 1.3, likes: 14, sales: 3 },
-        { id: 310, gender: 'boy', title: 'Mountain Peak', price: 990, age: 'Kids (5-10y)', material: 'Active Play', img: '/img/boykid6.png', scale: 1.3, likes: 21, sales: 8 },
-        { id: 311, gender: 'boy', title: 'Circuit Teen', price: 1400, age: 'Teens (11y+)', material: 'Active Play', img: '/img/boyteen5.png', scale: 1.3, likes: 120, sales: 45 },
-        { id: 312, gender: 'boy', title: 'Ultra Sonic', price: 1450, age: 'Teens (11y+)', material: 'Active Play', img: '/img/boyteen6.png', scale: 1.3, likes: 150, sales: 55 }
+    { id: 201, gender: 'girl', title: 'Petal Soft Tee', price: 900, age: '5-6 Years', material: 'Soft Cotton', img: '/img/girlkid1.png', scale: 1.2, likes: 22, sales: 5 },
+    { id: 202, gender: 'girl', title: 'Daisy Dream', price: 950, age: '5-6 Years', material: 'Soft Cotton', img: '/img/girlkid2.png', scale: 1.3, likes: 12, sales: 2 },
+    { id: 203, gender: 'girl', title: 'Pink Sparkle', price: 980, age: '7-8 Years', material: 'Soft Cotton', img: '/img/girlkid3.png', scale: 1.3, likes: 45, sales: 12 },
+    { id: 204, gender: 'girl', title: 'Fairy Cotton', price: 1000, age: '7-8 Years', material: 'Soft Cotton', img: '/img/girlkid4.png', scale: 1.2, likes: 30, sales: 8 },
+    { id: 205, gender: 'girl', title: 'Teen Floral', price: 1100, age: '9-10 Years', material: 'Soft Cotton', img: '/img/girlteen1.png', scale: 1.3, likes: 55, sales: 20 },
+    { id: 206, gender: 'girl', title: 'Chic Cotton', price: 1150, age: '9-10 Years', material: 'Soft Cotton', img: '/img/girlteen2.png', scale: 1.3, likes: 60, sales: 15 },
+    { id: 207, gender: 'girl', title: 'Urban Rose', price: 1200, age: '9-10 Years', material: 'Soft Cotton', img: '/img/girlteen3.png', scale: 1.6, likes: 40, sales: 10 },
+    { id: 208, gender: 'girl', title: 'Summer Breeze', price: 1250, age: '9-10 Years', material: 'Soft Cotton', img: '/img/girlteen4.png', scale: 1.6, likes: 88, sales: 30 },
+    { id: 209, gender: 'girl', title: 'Butterfly Garden', price: 920, age: '5-6 Years', material: 'Soft Cotton', img: '/img/girlkid5.png', scale: 1.3, likes: 15, sales: 4 },
+    { id: 210, gender: 'girl', title: 'Berry Sweet', price: 940, age: '5-6 Years', material: 'Soft Cotton', img: '/img/girlkid6.png', scale: 1.3, likes: 19, sales: 6 },
+    { id: 211, gender: 'girl', title: 'Modern Muse', price: 1300, age: '9-10 Years', material: 'Soft Cotton', img: '/img/girlteen5.png', scale: 1.2, likes: 95, sales: 40 },
+    { id: 212, gender: 'girl', title: 'Velvet Sky', price: 1350, age: '9-10 Years', material: 'Soft Cotton', img: '/img/girlteen6.png', scale: 1.3, likes: 110, sales: 50 },
+    { id: 301, gender: 'boy', title: 'Dino Dash', price: 950, age: '5-6 Years', material: 'Active Play', img: '/img/boykid1.png', scale: 1.4, likes: 18, sales: 7 },
+    { id: 302, gender: 'boy', title: 'Speed Racer', price: 980, age: '5-6 Years', material: 'Active Play', img: '/img/boykid2.png', scale: 1.4, likes: 25, sales: 9 },
+    { id: 303, gender: 'boy', title: 'Space Explorer', price: 1000, age: '7-8 Years', material: 'Active Play', img: '/img/boykid3.png', scale: 1.5, likes: 60, sales: 20 },
+    { id: 304, gender: 'boy', title: 'Arctic Fox', price: 1050, age: '7-8 Years', material: 'Active Play', img: '/img/boykid4.png', scale: 1.4, likes: 33, sales: 11 },
+    { id: 305, gender: 'boy', title: 'Tech Teen', price: 1200, age: '9-10 Years', material: 'Active Play', img: '/img/boyteen1.png', scale: 1.3, likes: 50, sales: 15 },
+    { id: 306, gender: 'boy', title: 'Vapor Street', price: 1250, age: '9-10 Years', material: 'Active Play', img: '/img/boyteen2.png', scale: 1.4, likes: 70, sales: 22 },
+    { id: 307, gender: 'boy', title: 'Gamer Core', price: 1300, age: '9-10 Years', material: 'Active Play', img: '/img/boyteen3.png', scale: 1.2, likes: 44, sales: 18 },
+    { id: 308, gender: 'boy', title: 'Shadow Runner', price: 1350, age: '9-10 Years', material: 'Active Play', img: '/img/boyteen4.png', scale: 1.3, likes: 92, sales: 33 },
+    { id: 309, gender: 'boy', title: 'Jungle Beat', price: 970, age: '5-6 Years', material: 'Active Play', img: '/img/boykid5.png', scale: 1.3, likes: 14, sales: 3 },
+    { id: 310, gender: 'boy', title: 'Mountain Peak', price: 990, age: '7-8 Years', material: 'Active Play', img: '/img/boykid6.png', scale: 1.3, likes: 21, sales: 8 },
+    { id: 311, gender: 'boy', title: 'Circuit Teen', price: 1400, age: '9-10 Years', material: 'Active Play', img: '/img/boyteen5.png', scale: 1.3, likes: 120, sales: 45 },
+    { id: 312, gender: 'boy', title: 'Ultra Sonic', price: 1450, age: '9-10 Years', material: 'Active Play', img: '/img/boyteen6.png', scale: 1.3, likes: 150, sales: 55 }
 ];
 
 const KidsCollection = () => {
     const navigate = useNavigate();
-    
-    // 🛡️ 1. Grab the Context (Including cartItems for live sync)
+
+    //  1. Grab the Context (Including cartItems for live sync)
     const cartContext = useCart();
     const addToCart = cartContext ? cartContext.addToCart : null;
     const cartItems = cartContext ? cartContext.cartItems : [];
 
-    // 🚀 2. handleAddToCart with alert
+    //  2. handleAddToCart with alert
     const handleAddToCart = (item: any) => {
         if (!item || !addToCart) {
             console.error("Cart system error");
@@ -130,13 +130,13 @@ const KidsCollection = () => {
         }
 
         const productWithDefaults = {
-            id: item.id, 
+            id: item.id,
             title: item.title,
             price: item.price,
             image: item.img ? (item.img.startsWith('/img/') ? item.img : `/img/${item.img}`) : "/img/placeholder.png",
-            size: 'Choose Size', 
+            size: 'Choose Size',
             color: 'Choose Color',
-            quantity: 1, 
+            quantity: 1,
             selected: true,
             type: 'physical'
         };
@@ -148,9 +148,8 @@ const KidsCollection = () => {
     const [heroImageIndex, setHeroImageIndex] = useState(0);
     const heroImages = ['/img/kidscollect1.png', '/img/kidscollect2.png', '/img/kidscollect3.png'];
     const [backendProducts, setBackendProducts] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
-    // 🟢 FETCH APPROVED PRODUCTS FROM BACKEND
+    //  FETCH APPROVED PRODUCTS FROM BACKEND
     useEffect(() => {
         const fetchDesignerProducts = async () => {
             try {
@@ -162,10 +161,10 @@ const KidsCollection = () => {
 
                 const response = await fetch('http://localhost:5000/api/products?category=kids');
                 const data = await response.json();
-                
+
                 // Map backend products and ensure strict category filtering
                 const mapped = data.filter((p: any) => p.category.toLowerCase() === 'kids' || p.category.toLowerCase() === 'unisex').map((p: any) => ({
-                    ...p, 
+                    ...p,
                     id: p._id,
                     title: p.title,
                     price: p.price,
@@ -180,17 +179,17 @@ const KidsCollection = () => {
                     isDesignerProduct: true,
                     designer: p.designer
                 }));
-                
+
                 setBackendProducts(mapped);
             } catch (error) {
                 console.error("Error fetching designer products:", error);
             } finally {
-                setIsLoading(false);
+                // Loading finished
             }
         };
         fetchDesignerProducts();
     }, []);
-    
+
     useEffect(() => {
         const interval = setInterval(() => {
             setHeroImageIndex((prev) => (prev + 1) % heroImages.length);
@@ -199,18 +198,18 @@ const KidsCollection = () => {
     }, [heroImages.length]);
 
     const [likedProducts, setLikedProducts] = useState<any[]>([]);
-    const [filterBy, setFilterBy] = useState('All Ages'); 
+    const [filterBy, setFilterBy] = useState('All');
     const [filterOpen, setFilterOpen] = useState(false);
     const [visibleGirls, setVisibleGirls] = useState(8);
     const [visibleBoys, setVisibleBoys] = useState(8);
 
-    const toggleLike = (id: any) => { 
+    const toggleLike = (id: any) => {
         setLikedProducts((prev: any) => {
-            const updated = prev.includes(id) 
-                ? prev.filter((item: any) => item !== id) 
+            const updated = prev.includes(id)
+                ? prev.filter((item: any) => item !== id)
                 : [...prev, id];
-            
-            // SAVE TO LOCAL STORAGE
+
+            // SAVing TO LOCAL STORAGE
             localStorage.setItem('wishlist', JSON.stringify(updated));
             return updated;
         });
@@ -218,7 +217,7 @@ const KidsCollection = () => {
 
     const getFiltered = (gender: string) => {
         let items = [...originalProducts, ...backendProducts].filter(p => !p.gender || p.gender === gender);
-        if (filterBy !== 'All Ages') items = items.filter(p => p.age === filterBy || p.isDesignerProduct);
+        if (filterBy !== 'All') items = items.filter(p => p.age === filterBy || p.isDesignerProduct);
         return items;
     };
 
@@ -231,27 +230,24 @@ const KidsCollection = () => {
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
                 <Header mode="search" userRole="customer" />
 
-                <div className="content-wrapper collection-content" style={{ padding: '0', background: '#f8fafc', marginTop: '0px' }}>
-                    <CollectionHero 
-                        title="KIDS COLLECTION" 
-                        subtitle="Soft cotton for girls & Active play for boys" 
-                        image={heroImages[heroImageIndex]} 
+                <div className="content-wrapper collection-content" style={{ padding: '0', background: '#f8fafc', marginTop: '70px' }}>
+                    <CollectionHero
+                        title="KIDS COLLECTION"
+                        subtitle="Soft cotton for girls & Active play for boys"
+                        image={heroImages[heroImageIndex]}
                     />
 
                     <div style={{ padding: '0 30px 40px 30px' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px', marginTop: '10px' }}>
                             <div style={{ position: 'relative' }}>
-                                <FilterButton 
-                                    text={filterBy} 
-                                    icon="/img/icon-filter.png" 
-                                    onClick={() => setFilterOpen(!filterOpen)} 
-                                    active={filterOpen || filterBy !== 'All Ages'} 
-                                />
+                                <FilterButton text={filterBy === 'All' ? "Filter" : filterBy} onClick={() => { setFilterOpen(!filterOpen); }} active={filterOpen || filterBy !== 'All'} />
                                 {filterOpen && (
                                     <div style={dropdownStyle}>
-                                        <DropdownItem text="All Ages" onClick={() => { setFilterBy('All Ages'); setFilterOpen(false); }} />
-                                        <DropdownItem text="Kids (5-10y)" onClick={() => { setFilterBy('Kids (5-10y)'); setFilterOpen(false); }} />
-                                        <DropdownItem text="Teens (11y+)" onClick={() => { setFilterBy('Teens (11y+)'); setFilterOpen(false); }} />
+                                        <DropdownItem text="5-6 Years" onClick={() => { setFilterBy('5-6 Years'); setFilterOpen(false); }} />
+                                        <DropdownItem text="7-8 Years" onClick={() => { setFilterBy('7-8 Years'); setFilterOpen(false); }} />
+                                        <DropdownItem text="9-10 Years" onClick={() => { setFilterBy('9-10 Years'); setFilterOpen(false); }} />
+                                        <div style={{ height: '1px', background: '#f1f5f9', margin: '8px 0' }}></div>
+                                        <DropdownItem text="Reset All" onClick={() => { setFilterBy('All'); setFilterOpen(false); }} />
                                     </div>
                                 )}
                             </div>
@@ -266,13 +262,13 @@ const KidsCollection = () => {
                                 </div>
                                 <div style={productGridStyle}>
                                     {backendProducts.map((item: any) => (
-                                        <ProductCard 
-                                            key={item.id} 
-                                            item={item} 
-                                            likedProducts={likedProducts} 
-                                            toggleLike={toggleLike} 
-                                            color="#0d375b" 
-                                            onAddToCart={handleAddToCart} 
+                                        <ProductCard
+                                            key={item.id}
+                                            item={item}
+                                            likedProducts={likedProducts}
+                                            toggleLike={toggleLike}
+                                            color="#0d375b"
+                                            onAddToCart={handleAddToCart}
                                             cartItems={cartItems}
                                         />
                                     ))}
@@ -288,14 +284,14 @@ const KidsCollection = () => {
                             </div>
                             <div style={productGridStyle}>
                                 {girlsList.slice(0, visibleGirls).map((item: any) => (
-                                    <ProductCard 
-                                        key={item.id} 
-                                        item={item} 
-                                        likedProducts={likedProducts} 
-                                        toggleLike={toggleLike} 
-                                        color="#db2777" 
-                                        onAddToCart={handleAddToCart} 
-                                        cartItems={cartItems} 
+                                    <ProductCard
+                                        key={item.id}
+                                        item={item}
+                                        likedProducts={likedProducts}
+                                        toggleLike={toggleLike}
+                                        color="#db2777"
+                                        onAddToCart={handleAddToCart}
+                                        cartItems={cartItems}
                                     />
                                 ))}
                             </div>
@@ -312,14 +308,14 @@ const KidsCollection = () => {
                             </div>
                             <div style={productGridStyle}>
                                 {boysList.slice(0, visibleBoys).map((item: any) => (
-                                    <ProductCard 
-                                        key={item.id} 
-                                        item={item} 
-                                        likedProducts={likedProducts} 
-                                        toggleLike={toggleLike} 
-                                        color="#0284c7" 
+                                    <ProductCard
+                                        key={item.id}
+                                        item={item}
+                                        likedProducts={likedProducts}
+                                        toggleLike={toggleLike}
+                                        color="#0284c7"
                                         onAddToCart={handleAddToCart}
-                                        cartItems={cartItems} 
+                                        cartItems={cartItems}
                                     />
                                 ))}
                             </div>
@@ -340,20 +336,20 @@ const KidsCollection = () => {
 const ProductCard = ({ item, likedProducts, toggleLike, color, onAddToCart, cartItems }: any) => {
     const navigate = useNavigate();
 
-    // 🚀 LIVE SYNC LOGIC: Find quantity in the context
+    //  LIVE SYNC LOGIC: Find quantity in the context
     const quantityInCart = cartItems?.find((c: any) => c.id === item.id)?.quantity || 0;
 
     const handleProductClick = () => {
-        navigate(`/product/${item.id}`, { 
-            state: { 
+        navigate(`/product/${item.id}`, {
+            state: {
                 product: {
                     ...item,
                     isKids: true,
                     sizes: item.age && item.age.includes('5-10y') ? ['5-6y', '7-8y', '9-10y'] : ['11-12y', '13-14y', '15y+'],
                     basePrice: 500, designerCharge: 250, serviceCharge: 150
                 },
-                selectedColor: '#FFFFFF' 
-            } 
+                selectedColor: '#FFFFFF'
+            }
         });
     };
 
@@ -361,7 +357,7 @@ const ProductCard = ({ item, likedProducts, toggleLike, color, onAddToCart, cart
         <div className="product-card" style={{ ...productCardMain, cursor: 'pointer' }} onClick={handleProductClick}>
             <div style={{ ...productImgBox, position: 'relative', padding: item.isDesignerProduct ? '0' : '8px', height: '210px' }}>
                 {item.isDesignerProduct && item.frontDesign ? (
-                    <MockupPreview 
+                    <MockupPreview
                         mockupSrc="/img/dummymodels/child_front.png"
                         maskSrc="/img/dummymodels/child_front.png"
                         maskSize="contain"
@@ -379,7 +375,7 @@ const ProductCard = ({ item, likedProducts, toggleLike, color, onAddToCart, cart
             <div style={{ fontSize: '6px', fontStyle: 'italic', color: '#94a3b8' }}>{item.designer?.shopName || 'Artisa LK'}</div>
             <h3 style={{ fontSize: '12px', fontWeight: '800', margin: '0 0 3px 0', color: '#1e293b' }}>{item.title}</h3>
             <div style={{ fontSize: '6px', color: '#94a3b8', marginBottom: '6px' }}>{item.age || 'All Ages'}</div>
-            
+
             <div style={cardFooterStyle} onClick={(e) => e.stopPropagation()}>
                 <div style={{ fontSize: '9px', fontWeight: '900', color: '#ef4444' }}>LKR {item.price.toLocaleString()}.00</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -388,7 +384,7 @@ const ProductCard = ({ item, likedProducts, toggleLike, color, onAddToCart, cart
                         <span style={{ fontSize: '6px', color: '#64748b', fontWeight: '700' }}>{likedProducts.includes(item.id) ? (item.likes || 0) + 1 : (item.likes || 0)}</span>
                     </div>
 
-                    {/* 🟢 DYNAMIC CART SECTION */}
+                    {/*  DYNAMIC CART SECTION */}
                     <div onClick={() => onAddToCart(item)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}>
                         <img src="/img/cart.png" alt="Add to Cart" style={{ width: '9px', opacity: 0.7 }} />
                         <span style={{ fontSize: '6px', color: '#64748b', fontWeight: '600' }}>
@@ -401,10 +397,10 @@ const ProductCard = ({ item, likedProducts, toggleLike, color, onAddToCart, cart
     );
 };
 
-// ... Styles remain the same ...
-const FilterButton = ({ icon, text, onClick, active }: any) => (
-    <button onClick={onClick} style={{ padding: '8px 16px', background: active ? '#0d375b' : 'white', color: active ? 'white' : '#1e293b', border: '1px solid #e2e8f0', borderRadius: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800', fontSize: '8px', transition: 'all 0.3s' }}>
-        <img src={icon} alt="" style={{ width: '10px', filter: active ? 'invert(1)' : 'none' }} /> {text}
+
+const FilterButton = ({ text, onClick, active }: any) => (
+    <button onClick={onClick} style={{ padding: '10px 20px', background: active ? '#0d375b' : 'white', color: active ? 'white' : '#1e293b', border: '1px solid #e2e8f0', borderRadius: '25px', display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '13px', fontWeight: '700', transition: 'all 0.2s', minWidth: '100px', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+        {text}
     </button>
 );
 
@@ -412,8 +408,8 @@ const DropdownItem = ({ text, onClick }: any) => (
     <div onClick={onClick} style={dropdownItemStyle} onMouseOver={(e) => (e.currentTarget.style.background = '#f1f5f9')} onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}>{text}</div>
 );
 
-const dropdownStyle: React.CSSProperties = { position: 'absolute', top: '35px', right: 0, width: '120px', background: 'white', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', padding: '5px', zIndex: 100, border: '1px solid #e2e8f0' };
-const dropdownItemStyle: React.CSSProperties = { padding: '7px 10px', cursor: 'pointer', fontSize: '8px', color: '#334155', borderRadius: '6px', fontWeight: '600' };
+const dropdownStyle: React.CSSProperties = { position: 'absolute', top: '40px', right: 0, width: '180px', background: 'white', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', padding: '10px', zIndex: 100, border: '1px solid #e2e8f0' };
+const dropdownItemStyle: React.CSSProperties = { padding: '10px', cursor: 'pointer', fontSize: '13px', color: '#334155', borderRadius: '6px', fontWeight: '600' };
 const productGridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' };
 const sectionHeaderStyle = (color: string): React.CSSProperties => ({ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' });
 const loadMoreBtn = (color: string): React.CSSProperties => ({ marginTop: '25px', padding: '9px 23px', borderRadius: '20px', border: `2px solid ${color}`, color: color, background: 'transparent', fontSize: '9px', fontWeight: '900', cursor: 'pointer', display: 'block', margin: '25px auto 0', transition: '0.3s' });

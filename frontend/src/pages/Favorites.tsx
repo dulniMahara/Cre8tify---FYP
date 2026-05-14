@@ -15,7 +15,7 @@ const Favorites: React.FC = () => {
     const navigate = useNavigate();
     const [likedIds, setLikedIds] = useState<(number | string)[]>([]);
     const [dbProducts, setDbProducts] = useState<any[]>([]);
-    
+
     const cartContext = useCart();
     const addToCart = cartContext ? cartContext.addToCart : null;
 
@@ -30,16 +30,16 @@ const Favorites: React.FC = () => {
             try {
                 const res = await fetch('http://localhost:5000/api/products');
                 const data = await res.json();
-                
+
                 const mapped = data.map((p: any) => ({
                     ...p,
                     id: p._id,
-                    img: (p.mockupImages && p.mockupImages.length > 0) 
-                        ? (p.mockupImages[0].startsWith('/uploads') ? `http://localhost:5000${p.mockupImages[0]}` : p.mockupImages[0]) 
+                    img: (p.mockupImages && p.mockupImages.length > 0)
+                        ? (p.mockupImages[0].startsWith('/uploads') ? `http://localhost:5000${p.mockupImages[0]}` : p.mockupImages[0])
                         : (p.displayImage || '/img/placeholder.png'),
                     isDesignerProduct: true
                 }));
-                
+
                 setDbProducts(mapped);
             } catch (err) {
                 console.error("Error fetching favorites products:", err);
@@ -74,7 +74,7 @@ const Favorites: React.FC = () => {
             <Sidebar variant="customer" />
             <div className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
                 <Header mode="title" title="MY FAVORITES" />
-                
+
                 <div className="content-wrapper" style={contentWrapperStyle}>
                     {/* Favorites Content Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '25px', borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
@@ -86,12 +86,12 @@ const Favorites: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <span style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>Sort by:</span>
-                            <select style={{ 
-                                padding: '8px 15px', borderRadius: '10px', border: '1px solid #e2e8f0', 
-                                fontSize: '12px', fontWeight: '600', color: '#0d375b', outline: 'none', cursor: 'pointer' 
+                            <select style={{
+                                padding: '8px 15px', borderRadius: '10px', border: '1px solid #e2e8f0',
+                                fontSize: '12px', fontWeight: '600', color: '#0d375b', outline: 'none', cursor: 'pointer'
                             }}>
                                 <option>Recently Liked</option>
                                 <option>Last 7 Days</option>
@@ -105,10 +105,10 @@ const Favorites: React.FC = () => {
                         <div style={gridStyle}>
                             {favoriteProducts.map((item) => (
                                 <div key={item.id} className="product-card" style={favCardStyle}>
-   
+
                                     <div style={imgBoxStyle} onClick={() => navigate(`/product/${item.id}`)}>
                                         {item.isDesignerProduct ? (
-                                            <MockupPreview 
+                                            <MockupPreview
                                                 mockupSrc="/img/womenfront-mockup.png"
                                                 maskSrc="/img/womenfront-mockup.png"
                                                 tshirtColor={item.tshirtColor || '#ffffff'}
@@ -119,14 +119,14 @@ const Favorites: React.FC = () => {
                                                 designScale={item.frontDesignScale || 1.0}
                                             />
                                         ) : (
-                                            <img 
-                                                src={item.img} 
-                                                alt={item.title} 
-                                                style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain', filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.1))' }} 
+                                            <img
+                                                src={item.img}
+                                                alt={item.title}
+                                                style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain', filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.1))' }}
                                             />
                                         )}
                                     </div>
-                                    
+
                                     <div style={{ padding: '15px' }}>
                                         <h3 style={{ fontSize: '13px', fontWeight: '800', margin: '0 0 5px 0', color: '#1e293b' }}>{item.title}</h3>
                                         <div style={{ color: '#ef4444', fontWeight: '900', fontSize: '12px', marginBottom: '15px' }}>
@@ -134,13 +134,13 @@ const Favorites: React.FC = () => {
                                         </div>
 
                                         <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button 
+                                            <button
                                                 onClick={() => handleAddToCart(item)}
                                                 style={cartBtnStyle}
                                             >
                                                 Add to Cart
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => removeFavorite(item.id)}
                                                 style={removeBtnStyle}
                                                 title="Remove"
@@ -182,7 +182,7 @@ const Favorites: React.FC = () => {
                 /* Adjusted padding-top to bring the title UP */
                 .content-wrapper {
                     margin-top: 0 !important;
-                    padding-top: 40px !important;  /* Balanced spacing */
+                    padding-top: 90px !important;  /* Balanced spacing */
                 }
             `}</style>
         </div>
@@ -235,55 +235,55 @@ const gridStyle: React.CSSProperties = {
     marginTop: '20px'
 };
 
-const favCardStyle: React.CSSProperties = { 
-    background: 'white', 
-    borderRadius: '16px', 
-    overflow: 'hidden', 
-    boxShadow: '0 8px 20px rgba(0,0,0,0.04)', 
+const favCardStyle: React.CSSProperties = {
+    background: 'white',
+    borderRadius: '16px',
+    overflow: 'hidden',
+    boxShadow: '0 8px 20px rgba(0,0,0,0.04)',
     border: '1px solid #f1f5f9',
     transition: 'transform 0.2s ease'
 };
 
-const imgBoxStyle: React.CSSProperties = { 
-    background: '#f1f5f9', 
-    height: '180px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    cursor: 'pointer' 
+const imgBoxStyle: React.CSSProperties = {
+    background: '#f1f5f9',
+    height: '180px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer'
 };
 
-const cartBtnStyle: React.CSSProperties = { 
-    flex: 1, 
-    padding: '10px', 
-    background: '#0d375b', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '10px', 
-    fontSize: '10px', 
-    fontWeight: '800', 
+const cartBtnStyle: React.CSSProperties = {
+    flex: 1,
+    padding: '10px',
+    background: '#0d375b',
+    color: 'white',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '10px',
+    fontWeight: '800',
     cursor: 'pointer',
     boxShadow: '0 4px 10px rgba(13, 55, 91, 0.2)'
 };
 
-const removeBtnStyle: React.CSSProperties = { 
-    padding: '10px 14px', 
-    background: '#fee2e2', 
-    color: '#ef4444', 
-    border: 'none', 
-    borderRadius: '10px', 
+const removeBtnStyle: React.CSSProperties = {
+    padding: '10px 14px',
+    background: '#fee2e2',
+    color: '#ef4444',
+    border: 'none',
+    borderRadius: '10px',
     cursor: 'pointer',
     fontWeight: 'bold'
 };
 
-const shopNowBtn: React.CSSProperties = { 
-    marginTop: '20px', 
-    padding: '12px 30px', 
-    background: '#93c5fd', 
+const shopNowBtn: React.CSSProperties = {
+    marginTop: '20px',
+    padding: '12px 30px',
+    background: '#93c5fd',
     color: '#0d375b',
-    border: 'none', 
-    borderRadius: '25px', 
-    fontWeight: '900', 
+    border: 'none',
+    borderRadius: '25px',
+    fontWeight: '900',
     fontSize: '11px',
     cursor: 'pointer',
     textTransform: 'uppercase',
