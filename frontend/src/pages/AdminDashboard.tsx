@@ -304,36 +304,36 @@ const MarketplaceOperations = () => {
     const updateOrderStatus = async (id: string, status: string) => {
         console.log(`[Admin] Updating order ${id} to status: ${status}`);
         const token = getToken('admin');
-        
+
         // Optimistic UI Update
         const previousOrders = [...allOrders];
         setAllOrders(prev => prev.map(o => o._id === id ? { ...o, status } : o));
-        
+
         try {
             const res = await fetch(`${API_URL}/api/admin/orders/${id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ status })
             });
-            
+
             if (!res.ok) {
                 const errorData = await res.json();
                 console.error("[Admin] Update failed:", errorData);
                 throw new Error(errorData.message || "Failed to update");
             }
-            
+
             console.log(`[Admin] Order ${id} updated successfully.`);
             fetchData('Orders');
-        } catch (err: any) { 
+        } catch (err: any) {
             console.error("[Admin] Error updating order:", err);
             setAllOrders(previousOrders); // Rollback
-            
+
             // Extract the most specific error message possible
             let msg = err.message;
             if (err.response && err.response.data && err.response.data.error) {
                 msg = err.response.data.error;
             }
-            alert("Failed to update order: " + msg); 
+            alert("Failed to update order: " + msg);
         }
     };
 
@@ -716,8 +716,8 @@ const MarketplaceOperations = () => {
                                                 ) : (
                                                     <img
                                                         src={(() => {
-                                                            const img = (order.orderItems?.[0]?.product?.mockupImages && order.orderItems[0].product.mockupImages.length > 0) 
-                                                                ? order.orderItems[0].product.mockupImages[0] 
+                                                            const img = (order.orderItems?.[0]?.product?.mockupImages && order.orderItems[0].product.mockupImages.length > 0)
+                                                                ? order.orderItems[0].product.mockupImages[0]
                                                                 : (order.orderItems?.[0]?.image || '/img/womenfront-mockup.png');
                                                             if (!img) return "/img/placeholder.png";
                                                             if (img.startsWith('http') || img.startsWith('data:')) return img;
@@ -750,9 +750,9 @@ const MarketplaceOperations = () => {
                                                     {order.paymentMethod === 'bank' ? '🏦 Bank Deposit' : order.paymentMethod === 'card' ? '💳 Card' : order.paymentMethod === 'sandbox' ? '🧪 Sandbox' : order.paymentMethod || 'Unknown'}
                                                 </span>
                                                 {order.paymentMethod === 'bank' && order.paymentSlipUrl && (
-                                                    <a 
+                                                    <a
                                                         href={order.paymentSlipUrl.startsWith('http') ? order.paymentSlipUrl : `http://localhost:5000${order.paymentSlipUrl}`}
-                                                        target="_blank" 
+                                                        target="_blank"
                                                         rel="noopener noreferrer"
                                                         style={{ color: '#38bdf8', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(56, 189, 248, 0.1)', padding: '4px 8px', borderRadius: '4px', width: 'fit-content' }}
                                                     >
@@ -779,13 +779,13 @@ const MarketplaceOperations = () => {
                                         <td style={tdStyle}>
                                             {(() => {
                                                 const isDigitalOnly = order.orderItems?.length > 0 && order.orderItems.every((i: any) => i.name?.includes('(Digital)') || i.image?.includes('digital_download_icon'));
-                                                
+
                                                 if (isDigitalOnly) {
                                                     if (order.status === 'Approved') {
                                                         return <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: 'bold', color: '#10b981', padding: '6px 12px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px' }}>✔️ Approved</span>;
                                                     }
                                                     return (
-                                                        <button 
+                                                        <button
                                                             onClick={() => updateOrderStatus(order._id, 'Approved')}
                                                             style={{ padding: '6px 12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                                                         >
@@ -841,7 +841,7 @@ const MarketplaceOperations = () => {
                                 <h2 style={{ fontSize: '20px', color: '#38bdf8', margin: 0 }}>Order Financial Breakdown</h2>
                                 <button onClick={() => setShowOrderDetailsModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
                             </div>
-                            
+
                             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
                                     <div>
@@ -882,7 +882,7 @@ const MarketplaceOperations = () => {
                                     </div>
                                 ))}
                             </div>
-                            
+
                             <div style={{ marginTop: '20px', borderTop: '2px dashed rgba(255,255,255,0.1)', paddingTop: '15px' }}>
                                 {!(selectedOrderDetails.orderItems?.length > 0 && selectedOrderDetails.orderItems.every((i: any) => i.name?.includes('(Digital)') || i.image?.includes('digital_download_icon'))) && (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
@@ -916,237 +916,237 @@ const MarketplaceOperations = () => {
 
     const renderPayouts = () => {
         return (
-        <div style={{ padding: '0 20px', textAlign: 'left' }}>
-            {/* Revenue Summary Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '50px' }}>
-                <div style={{ ...cardStyle, padding: '30px', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(56, 189, 248, 0.1)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Revenue</div>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ color: '#38bdf8', fontSize: '16px' }}>$</span>
+            <div style={{ padding: '0 20px', textAlign: 'left' }}>
+                {/* Revenue Summary Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '50px' }}>
+                    <div style={{ ...cardStyle, padding: '30px', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(56, 189, 248, 0.1)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Revenue</div>
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <span style={{ color: '#38bdf8', fontSize: '16px' }}>$</span>
+                            </div>
+                        </div>
+                        <div style={{ fontSize: '32px', fontWeight: '800', color: '#f8fafc' }}>
+                            LKR {financialSummary?.totalRevenue?.toLocaleString() || '0'}.00
+                        </div>
+                        <div style={{ fontSize: '12px', marginTop: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <span style={{ color: '#22c55e' }}>↑ 100%</span> Across all paid orders
                         </div>
                     </div>
-                    <div style={{ fontSize: '32px', fontWeight: '800', color: '#f8fafc' }}>
-                        LKR {financialSummary?.totalRevenue?.toLocaleString() || '0'}.00
+
+                    <div style={{ ...cardStyle, padding: '30px', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(245, 158, 11, 0.1)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Pending Payouts</div>
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <span style={{ color: '#f59e0b', fontSize: '16px' }}>◔</span>
+                            </div>
+                        </div>
+                        <div style={{ fontSize: '32px', fontWeight: '800', color: '#f8fafc' }}>
+                            LKR {financialSummary?.pendingPayouts?.toLocaleString() || '0'}.00
+                        </div>
+                        <div style={{ fontSize: '12px', marginTop: '12px', color: '#64748b' }}>Owed to designers</div>
                     </div>
-                    <div style={{ fontSize: '12px', marginTop: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <span style={{ color: '#22c55e' }}>↑ 100%</span> Across all paid orders
+
+                    <div style={{ ...cardStyle, padding: '30px', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Platform Profit</div>
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <span style={{ color: '#10b981', fontSize: '16px' }}>📈</span>
+                            </div>
+                        </div>
+                        <div style={{ fontSize: '32px', fontWeight: '800', color: '#f8fafc' }}>
+                            LKR {financialSummary?.platformProfit?.toLocaleString() || '0'}.00
+                        </div>
+                        <div style={{ fontSize: '12px', marginTop: '12px', color: '#64748b' }}>Net Service Fees</div>
                     </div>
                 </div>
 
-                <div style={{ ...cardStyle, padding: '30px', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(245, 158, 11, 0.1)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Pending Payouts</div>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ color: '#f59e0b', fontSize: '16px' }}>◔</span>
-                        </div>
-                    </div>
-                    <div style={{ fontSize: '32px', fontWeight: '800', color: '#f8fafc' }}>
-                        LKR {financialSummary?.pendingPayouts?.toLocaleString() || '0'}.00
-                    </div>
-                    <div style={{ fontSize: '12px', marginTop: '12px', color: '#64748b' }}>Owed to designers</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+                    <h3 style={{ margin: 0, color: 'white', fontWeight: '700', fontSize: '20px' }}>Designer Earnings & Settlements</h3>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Total Designers: {designerPayouts.length}</div>
                 </div>
 
-                <div style={{ ...cardStyle, padding: '30px', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Platform Profit</div>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ color: '#10b981', fontSize: '16px' }}>📈</span>
-                        </div>
-                    </div>
-                    <div style={{ fontSize: '32px', fontWeight: '800', color: '#f8fafc' }}>
-                        LKR {financialSummary?.platformProfit?.toLocaleString() || '0'}.00
-                    </div>
-                    <div style={{ fontSize: '12px', marginTop: '12px', color: '#64748b' }}>Net Service Fees</div>
-                </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-                <h3 style={{ margin: 0, color: 'white', fontWeight: '700', fontSize: '20px' }}>Designer Earnings & Settlements</h3>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Total Designers: {designerPayouts.length}</div>
-            </div>
-
-            <div style={tableCardStyle}>
-                <table style={tableStyle}>
-                    <thead>
-                        <tr style={thStyle}>
-                            <th style={{ padding: '15px 20px' }}>Designer</th>
-                            <th style={{ padding: '15px 20px' }}>Total Earned</th>
-                            <th style={{ padding: '15px 20px' }}>Already Paid</th>
-                            <th style={{ padding: '15px 20px' }}>Balance Owed</th>
-                            <th style={{ padding: '15px 20px' }}>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {designerPayouts.map((d: any) => (
-                            <tr key={d.id} style={tdRowStyle}>
-                                <td style={{ ...tdStyle, padding: '16px 20px' }}>
-                                    <div style={{ fontWeight: '600', color: '#f8fafc' }}>{d.name}</div>
-                                    <div style={{ fontSize: '11px', color: '#64748b' }}>{d.email}</div>
-                                </td>
-                                <td style={tdStyle}>LKR {d.totalEarned.toLocaleString()}.00</td>
-                                <td style={tdStyle}>LKR {d.alreadyPaid.toLocaleString()}.00</td>
-                                <td style={{ ...tdStyle, color: d.balance > 0 ? '#f43f5e' : '#10b981', fontWeight: '700' }}>LKR {d.balance.toLocaleString()}.00</td>
-                                <td style={tdStyle}>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button
-                                            disabled={d.balance <= 0}
-                                            onClick={() => {
-                                                setPayoutForm({ ...payoutForm, designerId: d.id, name: d.name, amount: d.balance.toString() });
-                                                setShowPayoutModal(true);
-                                            }}
-                                            style={{
-                                                padding: '8px 16px',
-                                                background: d.balance > 0 ? '#38bdf8' : 'rgba(148, 163, 184, 0.1)',
-                                                color: d.balance > 0 ? 'white' : '#64748b',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                cursor: d.balance > 0 ? 'pointer' : 'not-allowed',
-                                                fontWeight: '700',
-                                                fontSize: '11px',
-                                                transition: 'all 0.2s'
-                                            }}
-                                        >
-                                            Process Payout
-                                        </button>
-                                        <button
-                                            onClick={async () => {
-                                                const token = getToken('admin');
-                                                const res = await fetch(`${API_URL}/api/admin/financial/designers/${d.id}`, {
-                                                    headers: { 'Authorization': `Bearer ${token}` }
-                                                });
-                                                if (res.ok) {
-                                                    setSelectedDesignerHistory(await res.json());
-                                                    setShowDesignerHistoryModal(true);
-                                                }
-                                            }}
-                                            style={{
-                                                padding: '8px 16px',
-                                                background: 'rgba(255,255,255,0.05)',
-                                                color: 'white',
-                                                border: '1px solid rgba(255,255,255,0.1)',
-                                                borderRadius: '8px',
-                                                cursor: 'pointer',
-                                                fontWeight: '700',
-                                                fontSize: '11px'
-                                            }}
-                                        >
-                                            View History
-                                        </button>
-                                    </div>
-                                </td>
+                <div style={tableCardStyle}>
+                    <table style={tableStyle}>
+                        <thead>
+                            <tr style={thStyle}>
+                                <th style={{ padding: '15px 20px' }}>Designer</th>
+                                <th style={{ padding: '15px 20px' }}>Total Earned</th>
+                                <th style={{ padding: '15px 20px' }}>Already Paid</th>
+                                <th style={{ padding: '15px 20px' }}>Balance Owed</th>
+                                <th style={{ padding: '15px 20px' }}>Action</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-                {designerPayouts.length === 0 && <p style={{ padding: '40px', color: '#64748b', textAlign: 'center' }}>No designer records available.</p>}
-            </div>
+                        </thead>
+                        <tbody>
+                            {designerPayouts.map((d: any) => (
+                                <tr key={d.id} style={tdRowStyle}>
+                                    <td style={{ ...tdStyle, padding: '16px 20px' }}>
+                                        <div style={{ fontWeight: '600', color: '#f8fafc' }}>{d.name}</div>
+                                        <div style={{ fontSize: '11px', color: '#64748b' }}>{d.email}</div>
+                                    </td>
+                                    <td style={tdStyle}>LKR {d.totalEarned.toLocaleString()}.00</td>
+                                    <td style={tdStyle}>LKR {d.alreadyPaid.toLocaleString()}.00</td>
+                                    <td style={{ ...tdStyle, color: d.balance > 0 ? '#f43f5e' : '#10b981', fontWeight: '700' }}>LKR {d.balance.toLocaleString()}.00</td>
+                                    <td style={tdStyle}>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                disabled={d.balance <= 0}
+                                                onClick={() => {
+                                                    setPayoutForm({ ...payoutForm, designerId: d.id, name: d.name, amount: d.balance.toString() });
+                                                    setShowPayoutModal(true);
+                                                }}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    background: d.balance > 0 ? '#38bdf8' : 'rgba(148, 163, 184, 0.1)',
+                                                    color: d.balance > 0 ? 'white' : '#64748b',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    cursor: d.balance > 0 ? 'pointer' : 'not-allowed',
+                                                    fontWeight: '700',
+                                                    fontSize: '11px',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                Process Payout
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    const token = getToken('admin');
+                                                    const res = await fetch(`${API_URL}/api/admin/financial/designers/${d.id}`, {
+                                                        headers: { 'Authorization': `Bearer ${token}` }
+                                                    });
+                                                    if (res.ok) {
+                                                        setSelectedDesignerHistory(await res.json());
+                                                        setShowDesignerHistoryModal(true);
+                                                    }
+                                                }}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    background: 'rgba(255,255,255,0.05)',
+                                                    color: 'white',
+                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    fontWeight: '700',
+                                                    fontSize: '11px'
+                                                }}
+                                            >
+                                                View History
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {designerPayouts.length === 0 && <p style={{ padding: '40px', color: '#64748b', textAlign: 'center' }}>No designer records available.</p>}
+                </div>
 
-            {/* Designer History Modal */}
-            {showDesignerHistoryModal && selectedDesignerHistory && (
-                <div style={modalOverlayStyle}>
-                    <div style={{ ...modalContentStyle, maxWidth: '700px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h2 style={{ fontSize: '20px', color: '#38bdf8', margin: 0 }}>Transaction History: {selectedDesignerHistory.designer?.name}</h2>
-                            <button onClick={() => setShowDesignerHistoryModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
-                        </div>
+                {/* Designer History Modal */}
+                {showDesignerHistoryModal && selectedDesignerHistory && (
+                    <div style={modalOverlayStyle}>
+                        <div style={{ ...modalContentStyle, maxWidth: '700px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <h2 style={{ fontSize: '20px', color: '#38bdf8', margin: 0 }}>Transaction History: {selectedDesignerHistory.designer?.name}</h2>
+                                <button onClick={() => setShowDesignerHistoryModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+                            </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', marginBottom: '25px' }}>
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
-                                <div style={labelStyle}>Total Earned</div>
-                                <div style={{ fontSize: '18px', fontWeight: 'bold' }}>LKR {selectedDesignerHistory.summary?.totalEarned.toLocaleString()}</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', marginBottom: '25px' }}>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
+                                    <div style={labelStyle}>Total Earned</div>
+                                    <div style={{ fontSize: '18px', fontWeight: 'bold' }}>LKR {selectedDesignerHistory.summary?.totalEarned.toLocaleString()}</div>
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
+                                    <div style={labelStyle}>Already Paid</div>
+                                    <div style={{ fontSize: '18px', fontWeight: 'bold' }}>LKR {selectedDesignerHistory.summary?.alreadyPaid.toLocaleString()}</div>
+                                </div>
+                                <div style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
+                                    <div style={{ ...labelStyle, color: '#38bdf8' }}>Current Balance</div>
+                                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8' }}>LKR {selectedDesignerHistory.summary?.balance.toLocaleString()}</div>
+                                </div>
                             </div>
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
-                                <div style={labelStyle}>Already Paid</div>
-                                <div style={{ fontSize: '18px', fontWeight: 'bold' }}>LKR {selectedDesignerHistory.summary?.alreadyPaid.toLocaleString()}</div>
-                            </div>
-                            <div style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
-                                <div style={{ ...labelStyle, color: '#38bdf8' }}>Current Balance</div>
-                                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8' }}>LKR {selectedDesignerHistory.summary?.balance.toLocaleString()}</div>
-                            </div>
-                        </div>
 
-                        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                            <table style={tableStyle}>
-                                <thead>
-                                    <tr style={thStyle}>
-                                        <th style={{ padding: '10px' }}>Date</th>
-                                        <th style={{ padding: '10px' }}>Type</th>
-                                        <th style={{ padding: '10px' }}>Description</th>
-                                        <th style={{ padding: '10px', textAlign: 'right' }}>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {selectedDesignerHistory.history?.map((h: any, idx: number) => (
-                                        <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <td style={{ ...tdStyle, padding: '10px', fontSize: '12px' }}>{new Date(h.date).toLocaleDateString()}</td>
-                                            <td style={{ ...tdStyle, padding: '10px' }}>
-                                                <span style={{
-                                                    padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                                                    background: h.type === 'sale' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-                                                    color: h.type === 'sale' ? '#22c55e' : '#f43f5e'
-                                                }}>
-                                                    {h.type.toUpperCase()}
-                                                </span>
-                                            </td>
-                                            <td style={{ ...tdStyle, padding: '10px', fontSize: '12px' }}>{h.description}</td>
-                                            <td style={{ ...tdStyle, padding: '10px', textAlign: 'right', fontWeight: 'bold', color: h.amount > 0 ? '#22c55e' : '#f43f5e' }}>
-                                                {h.amount > 0 ? '+' : ''}{h.amount.toLocaleString()}
-                                            </td>
+                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                <table style={tableStyle}>
+                                    <thead>
+                                        <tr style={thStyle}>
+                                            <th style={{ padding: '10px' }}>Date</th>
+                                            <th style={{ padding: '10px' }}>Type</th>
+                                            <th style={{ padding: '10px' }}>Description</th>
+                                            <th style={{ padding: '10px', textAlign: 'right' }}>Amount</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {selectedDesignerHistory.history?.map((h: any, idx: number) => (
+                                            <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                <td style={{ ...tdStyle, padding: '10px', fontSize: '12px' }}>{new Date(h.date).toLocaleDateString()}</td>
+                                                <td style={{ ...tdStyle, padding: '10px' }}>
+                                                    <span style={{
+                                                        padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
+                                                        background: h.type === 'sale' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                                                        color: h.type === 'sale' ? '#22c55e' : '#f43f5e'
+                                                    }}>
+                                                        {h.type.toUpperCase()}
+                                                    </span>
+                                                </td>
+                                                <td style={{ ...tdStyle, padding: '10px', fontSize: '12px' }}>{h.description}</td>
+                                                <td style={{ ...tdStyle, padding: '10px', textAlign: 'right', fontWeight: 'bold', color: h.amount > 0 ? '#22c55e' : '#f43f5e' }}>
+                                                    {h.amount > 0 ? '+' : ''}{h.amount.toLocaleString()}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            <h3 style={{ marginTop: '60px', marginBottom: '25px', color: 'white', fontWeight: '700', fontSize: '20px' }}>Recent Transaction History</h3>
-            <div style={tableCardStyle}>
-                <table style={tableStyle}>
-                    <thead>
-                        <tr style={thStyle}>
-                            <th style={{ padding: '15px 20px' }}>Date</th>
-                            <th style={{ padding: '15px 20px' }}>Order ID</th>
-                            <th style={{ padding: '15px 20px' }}>Customer</th>
-                            <th style={{ padding: '15px 20px' }}>Total Amount</th>
-                            <th style={{ padding: '15px 20px' }}>Payment</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {allOrders.slice(0, 10).map((order: any) => (
-                            <tr key={order._id} style={tdRowStyle}>
-                                <td style={{ ...tdStyle, padding: '16px 20px', fontSize: '12px' }}>
-                                    {new Date(order.createdAt).toLocaleDateString()}
-                                </td>
-                                <td style={{ ...tdStyle, fontWeight: '700', color: '#38bdf8' }}>
-                                    #CR8-{order._id?.substring(order._id.length - 6).toUpperCase()}
-                                </td>
-                                <td style={tdStyle}>
-                                    <div style={{ fontWeight: '500', color: '#f1f5f9' }}>{order.user?.name}</div>
-                                </td>
-                                <td style={{ ...tdStyle, fontWeight: '600' }}>LKR {order.totalPrice.toLocaleString()}.00</td>
-                                <td style={tdStyle}>
-                                    <span style={{
-                                        padding: '4px 12px',
-                                        borderRadius: '20px',
-                                        fontSize: '10px',
-                                        fontWeight: '800',
-                                        background: order.isPaid ? 'rgba(34, 197, 94, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-                                        color: order.isPaid ? '#22c55e' : '#f43f5e',
-                                        border: order.isPaid ? '1px solid rgba(34, 197, 94, 0.2)' : '1px solid rgba(244, 63, 94, 0.2)'
-                                    }}>
-                                        {order.isPaid ? 'PAID' : 'UNPAID'}
-                                    </span>
-                                </td>
+                <h3 style={{ marginTop: '60px', marginBottom: '25px', color: 'white', fontWeight: '700', fontSize: '20px' }}>Recent Transaction History</h3>
+                <div style={tableCardStyle}>
+                    <table style={tableStyle}>
+                        <thead>
+                            <tr style={thStyle}>
+                                <th style={{ padding: '15px 20px' }}>Date</th>
+                                <th style={{ padding: '15px 20px' }}>Order ID</th>
+                                <th style={{ padding: '15px 20px' }}>Customer</th>
+                                <th style={{ padding: '15px 20px' }}>Total Amount</th>
+                                <th style={{ padding: '15px 20px' }}>Payment</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-                {allOrders.length === 0 && <p style={{ padding: '40px', color: '#64748b', textAlign: 'center' }}>No transactions recorded.</p>}
+                        </thead>
+                        <tbody>
+                            {allOrders.slice(0, 10).map((order: any) => (
+                                <tr key={order._id} style={tdRowStyle}>
+                                    <td style={{ ...tdStyle, padding: '16px 20px', fontSize: '12px' }}>
+                                        {new Date(order.createdAt).toLocaleDateString()}
+                                    </td>
+                                    <td style={{ ...tdStyle, fontWeight: '700', color: '#38bdf8' }}>
+                                        #CR8-{order._id?.substring(order._id.length - 6).toUpperCase()}
+                                    </td>
+                                    <td style={tdStyle}>
+                                        <div style={{ fontWeight: '500', color: '#f1f5f9' }}>{order.user?.name}</div>
+                                    </td>
+                                    <td style={{ ...tdStyle, fontWeight: '600' }}>LKR {order.totalPrice.toLocaleString()}.00</td>
+                                    <td style={tdStyle}>
+                                        <span style={{
+                                            padding: '4px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '10px',
+                                            fontWeight: '800',
+                                            background: order.isPaid ? 'rgba(34, 197, 94, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                                            color: order.isPaid ? '#22c55e' : '#f43f5e',
+                                            border: order.isPaid ? '1px solid rgba(34, 197, 94, 0.2)' : '1px solid rgba(244, 63, 94, 0.2)'
+                                        }}>
+                                            {order.isPaid ? 'PAID' : 'UNPAID'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {allOrders.length === 0 && <p style={{ padding: '40px', color: '#64748b', textAlign: 'center' }}>No transactions recorded.</p>}
+                </div>
             </div>
-        </div>
         );
     };
 
@@ -1813,6 +1813,25 @@ const UserManagement = () => {
     );
 };
 
+// --- ANALYTICS COMPONENTS ---
+const AnalyticsBar = ({ height, color, tooltip, label }: { height: number, color: string, tooltip: string, label?: string }) => {
+    return (
+        <div
+            className="analytics-bar"
+            style={{
+                flex: 1,
+                height: `${height}px`,
+                background: color,
+                borderRadius: '6px 6px 0 0',
+                '--target-height': `${height}px`
+            } as any}
+        >
+            <div className="analytics-tooltip">{tooltip}</div>
+            {label && <div style={{ position: 'absolute', top: '100%', marginTop: '10px', fontSize: '10px', color: '#94a3b8', width: '100%', textAlign: 'center' }}>{label}</div>}
+        </div>
+    );
+};
+
 // -------------------------------------------------------------
 // 3. ANALYTICS & INSIGHTS
 // -------------------------------------------------------------
@@ -1926,36 +1945,36 @@ const AnalyticsInsights = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '25px' }}>
                     {/* Sales Performance Chart */}
-                    <div style={{ background: '#0f172a', padding: '25px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
-                        <h3 style={{ color: '#38bdf8', fontSize: '16px', marginBottom: '20px' }}>Sales Performance (Last 30 Days)</h3>
-                        <div style={{ height: '250px', display: 'flex', alignItems: 'flex-end', gap: '8px', paddingBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ background: '#0f172a', padding: '25px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', position: 'relative' }}>
+                        <h3 style={{ color: '#38bdf8', fontSize: '16px', marginBottom: '25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            Sales Performance
+                            <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'normal' }}>Last 30 Days</span>
+                        </h3>
+
+                        <div style={{ height: '250px', position: 'relative', display: 'flex', alignItems: 'flex-end', gap: '8px', paddingBottom: '30px', paddingLeft: '30px' }}>
+                            {/* Y-Axis Grid Lines */}
+                            {[0, 0.25, 0.5, 0.75, 1].map((p, idx) => (
+                                <div key={idx} className="analytics-grid-line" style={{ bottom: `${p * 200 + 30}px`, left: 0 }} />
+                            ))}
+
                             {salesData.length > 0 ? (
                                 salesData.map((day: any, i: number) => {
                                     const maxRev = Math.max(...salesData.map((d: any) => d.totalRevenue), 1);
                                     const height = (day.totalRevenue / maxRev) * 200;
-
-
                                     return (
-                                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                            <div
-                                                title={`LKR ${day.totalRevenue}`}
-                                                style={{
-                                                    width: '100%',
-                                                    height: `${height}px`,
-                                                    background: '#38bdf8',
-                                                    borderRadius: '4px 4px 0 0',
-                                                    boxShadow: '0 0 10px rgba(56, 189, 248, 0.3)',
-                                                    transition: 'all 0.3s ease'
-                                                }}
-                                            />
-                                        </div>
+                                        <AnalyticsBar
+                                            key={i}
+                                            height={height}
+                                            color="linear-gradient(to top, #38bdf8, #0ea5e9)"
+                                            tooltip={`LKR ${day.totalRevenue.toLocaleString()} (${day._id})`}
+                                        />
                                     );
                                 })
                             ) : (
-                                <div style={{ width: '100%', textAlign: 'center', color: '#64748b' }}>No sales data available for this period.</div>
+                                <div style={{ width: '100%', textAlign: 'center', color: '#64748b', paddingBottom: '100px' }}>No sales data available.</div>
                             )}
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '11px', color: '#94a3b8' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '-20px', paddingLeft: '30px', fontSize: '11px', color: '#94a3b8' }}>
                             <span>{salesData[0]?._id || ''}</span>
                             <span>{salesData[salesData.length - 1]?._id || ''}</span>
                         </div>
@@ -1986,30 +2005,31 @@ const AnalyticsInsights = () => {
 
                 {/* User Growth */}
                 <div style={{ background: '#0f172a', padding: '25px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', marginTop: '25px' }}>
-                    <h3 style={{ color: '#38bdf8', fontSize: '16px', marginBottom: '20px' }}>User Growth (New Sign-ups)</h3>
-                    <div style={{ height: '150px', display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
+                    <h3 style={{ color: '#f59e0b', fontSize: '16px', marginBottom: '25px' }}>User Growth Trend</h3>
+                    <div style={{ height: '180px', position: 'relative', display: 'flex', alignItems: 'flex-end', gap: '6px', paddingBottom: '30px', paddingLeft: '30px' }}>
+                        {/* Y-Axis Grid Lines */}
+                        {[0, 0.33, 0.66, 1].map((p, idx) => (
+                            <div key={idx} className="analytics-grid-line" style={{ bottom: `${p * 120 + 30}px`, left: 0 }} />
+                        ))}
+
                         {userGrowth.length > 0 ? (
                             userGrowth.map((day: any, i: number) => {
                                 const maxUsers = Math.max(...userGrowth.map((d: any) => d.newUsers), 1);
                                 const height = (day.newUsers / maxUsers) * 120;
-
-
                                 return (
-                                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <div
-                                            title={`${day.newUsers} New Users`}
-                                            style={{
-                                                width: '100%',
-                                                height: `${height}px`,
-                                                background: '#f59e0b',
-                                                borderRadius: '2px',
-                                                boxShadow: '0 0 8px rgba(245, 158, 11, 0.2)'
-                                            }}
-                                        />
-                                    </div>
+                                    <AnalyticsBar
+                                        key={i}
+                                        height={height}
+                                        color="linear-gradient(to top, #f59e0b, #fbbf24)"
+                                        tooltip={`${day.newUsers} New Sign-ups (${day._id})`}
+                                    />
                                 );
                             })
-                        ) : <p style={{ width: '100%', textAlign: 'center', color: '#64748b' }}>No new sign-ups in the last 30 days.</p>}
+                        ) : <p style={{ width: '100%', textAlign: 'center', color: '#64748b', paddingBottom: '50px' }}>No user growth data available.</p>}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '-20px', paddingLeft: '30px', fontSize: '11px', color: '#94a3b8' }}>
+                        <span>{userGrowth[0]?._id || ''}</span>
+                        <span>{userGrowth[userGrowth.length - 1]?._id || ''}</span>
                     </div>
                 </div>
             </div>
@@ -2161,13 +2181,15 @@ const AdminHub = () => {
             <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(56,189,248,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(60px)', zIndex: 0 }} />
 
             <div style={{ position: 'absolute', top: '25px', left: '35px', zIndex: 10, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span
+                <div
+                    className="sidebar-logo"
                     onClick={() => navigate('/')}
-                    style={{ color: 'white', fontSize: '20px', fontWeight: '900', letterSpacing: '1px', cursor: 'pointer' }}
+                    style={{ fontSize: '24px', cursor: 'pointer', margin: 0, paddingBottom: '8px' }}
                 >
-                    Cre8tify
-                </span>
-                <span style={{ background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '3px 10px', borderRadius: '15px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>Admin</span>
+                    Cre<span>8</span>tify
+                    <div className="logo-accent" style={{ width: '20px', height: '2px' }}></div>
+                </div>
+                <span style={{ background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '3px 10px', borderRadius: '15px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', alignSelf: 'flex-start', marginTop: '5px' }}>Admin</span>
             </div>
 
             <div style={{ zIndex: 10, textAlign: 'center', marginBottom: '45px', marginTop: '40px' }}>

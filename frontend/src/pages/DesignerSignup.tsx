@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react'; 
+import { Eye, EyeOff } from 'lucide-react';
 import "../styles/signup.css";
 import Footer from '../components/Footer';
 
 const initialFormState = {
   name: '',
   username: '',
-  email: '',  
+  email: '',
   contact: '',
   password: '',
   confirmPassword: '',
@@ -41,8 +41,8 @@ export default function DesignerSignup() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      alert("⚠️ Passwords do not match! Please check again."); 
-      return; 
+      alert("⚠️ Passwords do not match! Please check again.");
+      return;
     }
 
     try {
@@ -55,13 +55,13 @@ export default function DesignerSignup() {
       const data = await response.json();
 
       if (response.ok) {
-        // 🟢 THE CHANGE: Save the user data immediately (Auto-Login)
+        // THE CHANGE: Save the user data immediately (Auto-Login)
         localStorage.setItem('userInfo', JSON.stringify(data));
-        
+
         alert("✅ Registration Successful! Welcome to Cre8tify!");
-        
-        // 🟢 Redirect straight to the Designer Dashboard
-        navigate('/designer-dashboard'); 
+
+        //  Redirect straight to the Designer Dashboard
+        navigate('/designer-dashboard');
       } else {
         alert(data.message || "Signup failed");
       }
@@ -72,27 +72,29 @@ export default function DesignerSignup() {
   };
 
   const fillingBarStyle: React.CSSProperties = {
-    border: '1px solid #475569', 
-    background: '#f8fafc', 
-    borderRadius: '8px',
-    padding: '10px', 
-    fontSize: '11px', 
+    border: '1.5px solid #e2e8f0',
+    background: '#ffffff',
+    borderRadius: '10px',
+    padding: '11px 14px',
+    fontSize: '12px',
     width: '100%',
     outline: 'none',
-    color: '#0d375b', 
-    fontWeight: '600',
-    transition: 'border-color 0.2s'
+    color: '#1e293b',
+    fontWeight: '500',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
   };
 
   const eyeIconStyle: React.CSSProperties = {
     position: 'absolute',
-    right: '10px',
+    right: '12px',
     top: '50%',
     transform: 'translateY(-50%)',
     cursor: 'pointer',
-    color: '#000000',
+    color: '#94a3b8',
     display: 'flex',
-    alignItems: 'center'
+    alignItems: 'center',
+    transition: 'color 0.2s ease'
   };
 
   return (
@@ -109,6 +111,37 @@ export default function DesignerSignup() {
         .animate-logo { animation: fadeInScale 0.8s ease-out forwards; }
         .animate-text { opacity: 0; animation: fadeInUp 0.8s ease-out 0.3s forwards; }
         .animate-list { opacity: 0; animation: fadeInUp 0.8s ease-out 0.6s forwards; }
+        
+        .filling-input:focus {
+          border-color: #0d375b !important;
+          box-shadow: 0 0 0 4px rgba(13, 55, 91, 0.05) !important;
+          background: #fff !important;
+        }
+        
+        .btn-signup-pro {
+          width: 100%;
+          padding: 13px;
+          fontSize: 13px;
+          font-weight: 800;
+          border-radius: 12px;
+          background-color: #0d375b;
+          color: #fff;
+          border: none;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(13, 55, 91, 0.15);
+          transition: all 0.3s ease;
+          letter-spacing: 0.5px;
+        }
+        
+        .btn-signup-pro:hover {
+          background-color: #0a2d4a;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(13, 55, 91, 0.25);
+        }
+        
+        .btn-signup-pro:active {
+          transform: translateY(0);
+        }
       `}</style>
 
       <div className="signup-container">
@@ -126,100 +159,102 @@ export default function DesignerSignup() {
           </ul>
         </div>
 
-        <div className="signup-right" style={{ 
-            flex: 1, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            padding: '20px', 
-            background: '#fcfcfc',
-            overflowX: 'auto',
-            minWidth: '0'
+        <div className="signup-right" style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          background: '#f8fafc',
+          overflowX: 'auto',
+          minWidth: '0'
         }}>
           <div className="blue-card-container" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-            <div className="white-form-card" style={{ 
-                width: '500px', 
-                minWidth: '500px',
-                padding: '20px 20px', 
-                borderRadius: '20px',
-                background: '#fff',
-                margin:'auto',
-                boxShadow: '0 13px 35px rgba(0,0,0,0.07)'
+            <div className="white-form-card" style={{
+              width: '500px',
+              minWidth: '500px',
+              padding: '30px',
+              borderRadius: '24px',
+              background: '#fff',
+              margin: 'auto',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.06)',
+              border: '1px solid rgba(0,0,0,0.02)'
             }}>
 
-              <h2 className="form-title" style={{ fontSize: '21px', marginBottom: '20px', textAlign: 'center', fontWeight: '900', color: '#0d375b' }}>
+              <div style={{ marginBottom: '25px', textAlign: 'center' }}>
+                <h2 className="form-title" style={{ fontSize: '22px', fontWeight: '900', color: '#0d375b', letterSpacing: '0.5px', marginBottom: '8px' }}>
                   DESIGNER APPLICATION
-              </h2>
-              
+                </h2>
+                <div style={{ width: '35px', height: '3px', background: '#0d375b', margin: '0 auto', borderRadius: '10px' }}></div>
+              </div>
+
               <form onSubmit={handleSignup} autoComplete="off">
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                    <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Full Name</label>
-                      <input type="text" name="name" value={formData.name} onChange={handleChange} style={fillingBarStyle} required autoComplete="off" />
-                    </div>
-                    <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Username</label>
-                      <input type="text" name="username" value={formData.username} onChange={handleChange} style={fillingBarStyle} required autoComplete="off" />
-                    </div>
-                    <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Email Address</label>
-                      <input type="email" name="email" value={formData.email} onChange={handleChange} style={fillingBarStyle} required />
-                    </div>
-                    <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Contact Number</label>
-                      <input type="text" name="contact" value={formData.contact} onChange={handleChange} style={fillingBarStyle} />
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px', marginBottom: '18px' }}>
+                  <div className="form-group">
+                    <label style={{ fontWeight: '700', fontSize: '11px', color: '#64748b', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Full Name</label>
+                    <input type="text" className="filling-input" name="name" value={formData.name} onChange={handleChange} style={fillingBarStyle} required autoComplete="off" />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: '700', fontSize: '11px', color: '#64748b', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Username</label>
+                    <input type="text" className="filling-input" name="username" value={formData.username} onChange={handleChange} style={fillingBarStyle} required autoComplete="off" />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: '700', fontSize: '11px', color: '#64748b', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Email Address</label>
+                    <input type="email" className="filling-input" name="email" value={formData.email} onChange={handleChange} style={fillingBarStyle} required />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: '700', fontSize: '11px', color: '#64748b', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Contact Number</label>
+                    <input type="text" className="filling-input" name="contact" value={formData.contact} onChange={handleChange} style={fillingBarStyle} />
+                  </div>
 
-                    <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Password</label>
-                      <div style={{ position: 'relative' }}>
-                        <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} style={fillingBarStyle} required autoComplete="new-password" />
-                        <div style={eyeIconStyle} onClick={() => setShowPassword(!showPassword)}>
-                          {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
-                        </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: '700', fontSize: '11px', color: '#64748b', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Password</label>
+                    <div style={{ position: 'relative' }}>
+                      <input type={showPassword ? "text" : "password"} className="filling-input" name="password" value={formData.password} onChange={handleChange} style={fillingBarStyle} required autoComplete="new-password" />
+                      <div style={eyeIconStyle} onClick={() => setShowPassword(!showPassword)} onMouseEnter={(e) => e.currentTarget.style.color = '#0d375b'} onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}>
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </div>
                     </div>
+                  </div>
 
-                    <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Confirm Password</label>
-                      <div style={{ position: 'relative' }}>
-                        <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} style={fillingBarStyle} required />
-                        <div style={eyeIconStyle} onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                          {showConfirmPassword ? <EyeOff size={24} /> : <Eye size={24} />}
-                        </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: '700', fontSize: '11px', color: '#64748b', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Confirm Password</label>
+                    <div style={{ position: 'relative' }}>
+                      <input type={showConfirmPassword ? "text" : "password"} className="filling-input" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} style={fillingBarStyle} required />
+                      <div style={eyeIconStyle} onClick={() => setShowConfirmPassword(!showConfirmPassword)} onMouseEnter={(e) => e.currentTarget.style.color = '#0d375b'} onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}>
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </div>
                     </div>
+                  </div>
 
-                    <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Shop Name</label>
-                      <input type="text" name="shopName" value={formData.shopName} onChange={handleChange} style={fillingBarStyle} />
-                    </div>
-                    <div className="form-group">
-                      <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Portfolio Link</label>
-                      <input type="text" name="portfolio" value={formData.portfolio} onChange={handleChange} style={fillingBarStyle} />
-                    </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: '700', fontSize: '11px', color: '#64748b', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Shop Name</label>
+                    <input type="text" className="filling-input" name="shopName" value={formData.shopName} onChange={handleChange} style={fillingBarStyle} />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: '700', fontSize: '11px', color: '#64748b', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Portfolio Link</label>
+                    <input type="text" className="filling-input" name="portfolio" value={formData.portfolio} onChange={handleChange} style={fillingBarStyle} />
+                  </div>
                 </div>
 
-                <div className="form-group" style={{ marginBottom: '18px' }}>
-                  <label style={{ fontWeight: '800', fontSize: '11px', color: '#0d375b', marginBottom: '5px', display: 'block' }}>Description</label>
-                  <textarea name="description" value={formData.description} onChange={handleChange} style={{ ...fillingBarStyle, minHeight: '80px', resize: 'vertical' }}></textarea>
+                <div className="form-group" style={{ marginBottom: '22px' }}>
+                  <label style={{ fontWeight: '700', fontSize: '11px', color: '#64748b', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Description</label>
+                  <textarea className="filling-input" name="description" value={formData.description} onChange={handleChange} style={{ ...fillingBarStyle, minHeight: '85px', resize: 'vertical' }}></textarea>
                 </div>
 
-                <div className="checkbox-group" style={{ marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <input type="checkbox" id="terms" required style={{ width: '10px', height: '10px' }} />
-                  <label htmlFor="terms" style={{ margin: 0, fontWeight: 600, fontSize: '11px', color: '#64748b' }}>
-                    I agree to the Terms & Conditions
+                <div className="checkbox-group" style={{ marginBottom: '22px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="checkbox" id="terms" required style={{ width: '13px', height: '13px', cursor: 'pointer' }} />
+                  <label htmlFor="terms" style={{ margin: 0, fontWeight: 500, fontSize: '12px', color: '#64748b', cursor: 'pointer' }}>
+                    I agree to the <span style={{ color: '#0d375b', fontWeight: '700' }}>Terms & Conditions</span>
                   </label>
                 </div>
 
-                <button type="submit" className="btn-signup" style={{ 
-                    width: '100%', padding: '11px', fontSize: '12px', fontWeight: '900', borderRadius: '10px', backgroundColor: '#0d375b', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 8px 18px rgba(13, 55, 91, 0.3)'
-                }}>
-                  SIGN UP
+                <button type="submit" className="btn-signup-pro">
+                  CREATE ACCOUNT
                 </button>
               </form>
 
-              <div className="login-redirect" style={{ marginTop: '15px', textAlign: 'center', fontSize: '9px' }}>
+              <div className="login-redirect" style={{ marginTop: '20px', textAlign: 'center', fontSize: '12px' }}>
                 <span style={{ color: '#64748b' }}>Already have an account? </span>
                 <Link to="/login" state={{ role: 'designer' }} style={{ color: '#0d375b', fontWeight: '800', textDecoration: 'none' }}>Login here</Link>
               </div>
