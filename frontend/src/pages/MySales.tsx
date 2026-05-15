@@ -59,14 +59,14 @@ const MySales = () => {
     }, []);
 
     const filteredSales = sales.filter(sale => {
-        const matchesSearch = sale.item.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             sale.id.toLowerCase().includes(searchQuery.toLowerCase());
-        
+        const matchesSearch = sale.item.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            sale.id.toLowerCase().includes(searchQuery.toLowerCase());
+
         if (orderFilter === 'All') return matchesSearch;
-        
+
         const saleDate = new Date(sale.date);
         const now = new Date();
-        
+
         if (orderFilter === 'Today') return matchesSearch && saleDate.toDateString() === now.toDateString();
         if (orderFilter === 'Last 7 Days') {
             const sevenDaysAgo = new Date();
@@ -105,8 +105,8 @@ const MySales = () => {
                     <div style={{ marginBottom: '40px' }}>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '15px' }}>
                             {['All', 'Today', 'Last 7 Days', 'Last 30 Days', 'This Year'].map(f => (
-                                <button 
-                                    key={f} 
+                                <button
+                                    key={f}
                                     onClick={() => setOrderFilter(f)}
                                     style={{
                                         padding: '8px 16px',
@@ -150,13 +150,13 @@ const MySales = () => {
                                             <td style={{ padding: '15px', fontSize: '13px', color: '#334155' }}>{new Date(sale.date).toLocaleDateString()}</td>
                                             <td style={{ padding: '15px', fontWeight: '700', fontSize: '14px', color: '#0f172a' }}>{sale.earned}</td>
                                             <td style={{ padding: '15px' }}>
-                                                <span style={{ 
-                                                    padding: '5px 12px', 
-                                                    borderRadius: '15px', 
-                                                    fontSize: '11px', 
-                                                    fontWeight: '700', 
-                                                    background: sale.status === 'Delivered' ? '#dcfce7' : '#fff7ed', 
-                                                    color: sale.status === 'Delivered' ? '#166534' : '#c2410c' 
+                                                <span style={{
+                                                    padding: '5px 12px',
+                                                    borderRadius: '15px',
+                                                    fontSize: '11px',
+                                                    fontWeight: '700',
+                                                    background: sale.status === 'Delivered' ? '#dcfce7' : '#fff7ed',
+                                                    color: sale.status === 'Delivered' ? '#166534' : '#c2410c'
                                                 }}>{sale.status}</span>
                                             </td>
                                             <td style={{ padding: '15px' }}>
@@ -176,8 +176,8 @@ const MySales = () => {
                     <div style={{ marginTop: '50px' }}>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '15px' }}>
                             {['Today', 'Last 7 Days', 'Last Week', 'Last Month', 'Last Year'].map(f => (
-                                <button 
-                                    key={f} 
+                                <button
+                                    key={f}
                                     onClick={() => setChartFilter(f)}
                                     style={{
                                         padding: '8px 16px',
@@ -196,17 +196,17 @@ const MySales = () => {
                             ))}
                         </div>
 
-                        <div style={{ 
-                            background: '#ffffff', 
-                            borderRadius: '20px', 
-                            padding: '40px', 
-                            textAlign: 'center', 
-                            boxShadow: '0 5px 25px rgba(0, 0, 0, 0.05)', 
-                            border: '1px solid #e2e8f0' 
+                        <div style={{
+                            background: '#ffffff',
+                            borderRadius: '20px',
+                            padding: '40px',
+                            textAlign: 'center',
+                            boxShadow: '0 5px 25px rgba(0, 0, 0, 0.05)',
+                            border: '1px solid #e2e8f0'
                         }}>
                             <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '5px' }}>Earning Breakdown</h3>
                             <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '40px' }}>Period: {chartFilter}</p>
-                            
+
                             <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '60px' }}>
                                 <DonutChart percent={75} value={`LKR ${summary?.totalEarned.toLocaleString()}`} label="Design Revenue" color1="#2563eb" color2="#60a5fa" />
                                 <DonutChart percent={25} value={`LKR ${(summary?.totalEarned ? summary.totalEarned * 0.25 : 0).toLocaleString()}`} label="Customization" color1="#2563eb" color2="#60a5fa" />
@@ -256,20 +256,20 @@ const DonutChart = ({ percent, value, label, color1 = "#2563eb", color2 = "#38bd
                         </linearGradient>
                     </defs>
                     {/* Background Circle */}
-                    <circle 
-                        cx="75" cy="75" r={radius} 
-                        fill="transparent" 
-                        stroke="#eff6ff" 
-                        strokeWidth="12" 
+                    <circle
+                        cx="75" cy="75" r={radius}
+                        fill="transparent"
+                        stroke="#eff6ff"
+                        strokeWidth="12"
                     />
                     {/* Progress Circle */}
-                    <circle 
-                        cx="75" cy="75" r={radius} 
-                        fill="transparent" 
-                        stroke={`url(#${uniqueId})`} 
-                        strokeWidth="12" 
-                        strokeDasharray={circumference} 
-                        strokeDashoffset={offset} 
+                    <circle
+                        cx="75" cy="75" r={radius}
+                        fill="transparent"
+                        stroke={`url(#${uniqueId})`}
+                        strokeWidth="12"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
                         strokeLinecap="round"
                         style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)' }}
                     />
@@ -279,14 +279,14 @@ const DonutChart = ({ percent, value, label, color1 = "#2563eb", color2 = "#38bd
                     <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600', marginTop: '2px' }}>{percent}%</div>
                 </div>
             </div>
-            <div style={{ 
-                marginTop: '20px', 
-                background: 'white', 
-                padding: '6px 20px', 
-                borderRadius: '30px', 
-                fontSize: '12px', 
-                fontWeight: '700', 
-                color: '#475569', 
+            <div style={{
+                marginTop: '20px',
+                background: 'white',
+                padding: '6px 20px',
+                borderRadius: '30px',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: '#475569',
                 border: '1px solid #f1f5f9',
                 boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
                 letterSpacing: '0.3px'

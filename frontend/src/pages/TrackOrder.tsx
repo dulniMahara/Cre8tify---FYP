@@ -37,8 +37,7 @@ const TrackOrder = () => {
         customerName = fetchedOrder?.user?.name || "Guest User",
         orderId = rawState.orderId || "CR8-XXXXX",
         createdAt = fetchedOrder?.createdAt || rawState.createdAt || new Date().toISOString(),
-        status = fetchedOrder?.status || rawState.status || "Processing", 
-        fromMyOrders = rawState.fromMyOrders || false 
+        status = fetchedOrder?.status || rawState.status || "Processing"
     } = rawState;
 
     useEffect(() => {
@@ -68,7 +67,7 @@ const TrackOrder = () => {
             };
             fetchOrder();
         }
-    }, [rawState.orderId]);
+    }, [rawState.orderId, rawState.createdAt, rawState.status]);
 
     if (loading) return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f4f7f9' }}>
@@ -269,7 +268,6 @@ const TrackOrder = () => {
 
 // --- STYLES ---
 const pageWrapper: React.CSSProperties = { background: '#f4f7f9', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' };
-const headerCenterTitle: React.CSSProperties = { fontSize: '16px', fontWeight: 900, margin: 0 };
 const contentContainer: React.CSSProperties = { width: '85%', margin: '120px auto 40px auto', flex: 1 };
 const whiteContentBox: React.CSSProperties = { background: '#fff', padding: '30px', borderRadius: '15px', boxShadow: '0 8px 20px rgba(0,0,0,0.04)' };
 const mainTitle: React.CSSProperties = { fontSize: '24px', fontWeight: 900, color: '#0d375b', margin: 0 };

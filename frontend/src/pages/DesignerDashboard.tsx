@@ -44,14 +44,7 @@ export default function DesignerDashboard() {
     navigate('/design-tool', { state: { selectedProduct: product } });
   };
 
-  const handleLogout = () => {
-    const confirmLogout = window.confirm("Are you sure you want to logout?");
-    if (confirmLogout) {
-      clearAuth('designer');
-      alert("You have been logged out successfully.");
-      navigate('/');
-    }
-  };
+  // handleLogout removed as it was unused and handled by global navigation components
 
   // Helper to render a specific category grid
   const renderProductSection = (title: string, categoryItems: any[]) => (

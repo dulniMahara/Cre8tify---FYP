@@ -108,6 +108,8 @@ const MockupPreview: React.FC<MockupPreviewProps & { isPopup?: boolean }> = ({
     maskSrc,
     tshirtColor,
     canvasState,
+    designSrc,
+    printArea,
     overallScale = 1.0,
     isPopup = false
 }) => {
@@ -116,11 +118,11 @@ const MockupPreview: React.FC<MockupPreviewProps & { isPopup?: boolean }> = ({
 
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ 
-                width: '100%', 
-                aspectRatio: '550 / 800', 
-                transform: `scale(${overallScale})`, 
-                transformOrigin: 'center center', 
+            <div style={{
+                width: '100%',
+                aspectRatio: '550 / 800',
+                transform: `scale(${overallScale})`,
+                transformOrigin: 'center center',
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
@@ -128,12 +130,12 @@ const MockupPreview: React.FC<MockupPreviewProps & { isPopup?: boolean }> = ({
             }}>
                 {/* 1. Shirt Base */}
                 <img src={mockupSrc} alt="Shirt" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', top: 0, left: 0, zIndex: 1 }} />
-                
+
                 {/* 2. Color Overlay */}
                 {tshirtColor && (
                     <div style={{
-                        position: 'absolute', inset: 0, 
-                        backgroundColor: tshirtColor, 
+                        position: 'absolute', inset: 0,
+                        backgroundColor: tshirtColor,
                         display: tshirtColor.toLowerCase() === '#ffffff' ? 'none' : 'block',
                         mixBlendMode: 'multiply',
                         WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
@@ -147,12 +149,29 @@ const MockupPreview: React.FC<MockupPreviewProps & { isPopup?: boolean }> = ({
                     WebkitMaskImage: `url(${maskSrc || mockupSrc})`, maskImage: `url(${maskSrc || mockupSrc})`,
                     WebkitMaskSize: 'contain', WebkitMaskPosition: 'center', WebkitMaskRepeat: 'no-repeat',
                 }}>
+                    {/* Render single designSrc if provided (fallback/legacy support) */}
+                    {designSrc && !imageLayers.length && (
+                        <img
+                            src={designSrc.startsWith('/uploads') ? `http://localhost:5000${designSrc}` : designSrc}
+                            alt="Design"
+                            style={{
+                                position: 'absolute',
+                                zIndex: 5,
+                                ...(printArea || { top: '45%', left: '50%', width: '35%', height: '45%' }),
+                                transform: 'translate(-50%, -50%)',
+                                objectFit: 'contain',
+                                mixBlendMode: (tshirtColor && tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
+                                opacity: 0.95
+                            }}
+                        />
+                    )}
+
                     {/* Render Image Layers */}
                     {imageLayers.map((layer: any) => (
                         <img key={layer.id} src={layer.src.startsWith('/uploads') ? `http://localhost:5000${layer.src}` : layer.src} alt="Design Layer" style={{
                             position: 'absolute',
                             zIndex: layer.zIndex,
-                            transform: isPopup 
+                            transform: isPopup
                                 ? `translate(-121px, -125px) scale(0.12)`
                                 : `translate(-171px, -197px) scale(0.078) rotate(0deg) scaleX(1)`,
                             mixBlendMode: (tshirtColor && tshirtColor.toLowerCase() !== '#ffffff') ? 'multiply' : 'normal',
@@ -164,7 +183,7 @@ const MockupPreview: React.FC<MockupPreviewProps & { isPopup?: boolean }> = ({
                     {textLayers.map((t: any) => (
                         <div key={t.id} style={{
                             position: 'absolute', zIndex: t.zIndex,
-                            transform: isPopup 
+                            transform: isPopup
                                 ? `translate(73px, 187px) scale(0.32)`
                                 : `translate(23px, 108px) scale(0.2)`,
                             display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px'

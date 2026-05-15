@@ -59,10 +59,10 @@ const RequestEdit = () => {
         }
 
         setStatus('loading');
-        
+
         try {
             const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-            
+
             // Helper to convert File to Base64
             const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
@@ -131,7 +131,7 @@ const RequestEdit = () => {
                 `}
             </style>
             <Header mode="title" title="" userRole="customer" />
-            
+
             <div className="content-wrapper" style={mainContent}>
                 <div style={headerSection}>
                     <h1 style={pageTitle}>Request Designer Edit</h1>
@@ -144,21 +144,21 @@ const RequestEdit = () => {
                         <div style={disclaimerBox}>
                             Your request will be sent to <strong>{product?.shopName || "the designer"}</strong>.
                         </div>
-                        
+
                         <div style={imageContainer}>
                             <div style={{
                                 width: '100%', height: '100%',
                                 backgroundColor: currentColor,
                                 WebkitMaskImage: `url(${product?.baseImages?.[0] || '/img/womenfront-mockup.png'})`,
                                 maskImage: `url(${product?.baseImages?.[0] || '/img/womenfront-mockup.png'})`,
-                                WebkitMaskSize: 'contain', maskSize: 'contain', 
-                                WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', 
+                                WebkitMaskSize: 'contain', maskSize: 'contain',
+                                WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
                                 WebkitMaskPosition: 'center', maskPosition: 'center',
                                 position: 'relative',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}>
-                                <img src={product?.baseImages?.[0] || '/img/womenfront-mockup.png'} alt="Mockup" 
-                                    style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: 'multiply', filter: 'contrast(1.0) brightness(0.95) saturate(0)' }} 
+                                <img src={product?.baseImages?.[0] || '/img/womenfront-mockup.png'} alt="Mockup"
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: 'multiply', filter: 'contrast(1.0) brightness(0.95) saturate(0)' }}
                                 />
 
                                 {/* Design Overlay */}
@@ -179,16 +179,16 @@ const RequestEdit = () => {
                             <h2 style={productTitle}>{product?.title}</h2>
                             <p style={designerSub}>{product?.shopName || "Artisa Studio"}</p>
                             <p style={priceHighlight}>{product?.price?.startsWith('LKR') ? product.price : `LKR ${product?.price?.toLocaleString()}.00`}</p>
-                            
+
                             <div style={selectionBadgeContainer}>
                                 <div style={selectionBadge}>
                                     <span>Color:</span>
                                     <span style={{ ...colorCircle, background: currentColor }}></span>
-                                    <span style={{fontSize: '11px'}}>{colorNames[currentColor] || 'Custom'}</span>
+                                    <span style={{ fontSize: '11px' }}>{colorNames[currentColor] || 'Custom'}</span>
                                 </div>
                                 <div style={selectionBadge}>
                                     <span>Size:</span>
-                                    <span style={{fontWeight: '800'}}>{currentSize}</span>
+                                    <span style={{ fontWeight: '800' }}>{currentSize}</span>
                                 </div>
                             </div>
                         </div>
@@ -197,12 +197,12 @@ const RequestEdit = () => {
                     {/* RIGHT COLUMN: Request Form */}
                     <div style={formCard}>
                         <h2 style={formHeader}>Request Form</h2>
-                        
+
                         <div style={fieldGroup}>
                             <label style={fieldLabel}>Preferred Changes</label>
-                            <textarea 
+                            <textarea
                                 name="preferredChanges"
-                                style={textArea} 
+                                style={textArea}
                                 value={formData.preferredChanges}
                                 onChange={handleInputChange}
                                 placeholder="Example: Could you change the text color to gold and move it slightly higher?"
@@ -226,11 +226,11 @@ const RequestEdit = () => {
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} accept=".jpg,.png,.pdf" />
                             <div style={uploadZone} onClick={handleUploadClick}>
                                 {selectedFile ? (
-                                    <span style={{color: '#2ecc71', fontWeight: '800'}}>✓ {selectedFile.name}</span>
+                                    <span style={{ color: '#2ecc71', fontWeight: '800' }}>✓ {selectedFile.name}</span>
                                 ) : (
-                                    <div style={{display: 'flex', flexDirection: 'column', gap: '5px'}}>
-                                        <span style={{fontSize: '18px'}}>📤</span>
-                                        <span style={{fontSize: '12px'}}>Upload or drag inspiration image (JPG, PNG)</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                        <span style={{ fontSize: '18px' }}>📤</span>
+                                        <span style={{ fontSize: '12px' }}>Upload or drag inspiration image (JPG, PNG)</span>
                                     </div>
                                 )}
                             </div>
@@ -241,12 +241,12 @@ const RequestEdit = () => {
                             <input name="extraNote" type="text" style={textInput} value={formData.extraNote} onChange={handleInputChange} placeholder="Anything else we should know?" />
                         </div>
 
-                        <button 
+                        <button
                             style={{
                                 ...sendRequestBtn,
                                 opacity: status === 'loading' ? 0.7 : 1,
                                 cursor: status === 'loading' ? 'not-allowed' : 'pointer'
-                            }} 
+                            }}
                             onClick={handleSubmit}
                             disabled={status === 'loading'}
                         >
@@ -267,11 +267,11 @@ const RequestEdit = () => {
                             {status === 'success' ? 'Request Sent!' : 'Oops! Failed'}
                         </h2>
                         <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 25px 0', lineHeight: '1.6' }}>
-                            {status === 'success' 
-                                ? 'The designer will review your request shortly. Keep an eye on your "Requests" tab for updates.' 
+                            {status === 'success'
+                                ? 'The designer will review your request shortly. Keep an eye on your "Requests" tab for updates.'
                                 : 'We encountered an error. Please check your connection and try again.'}
                         </p>
-                        <button 
+                        <button
                             style={status === 'success' ? successBtn : errorBtn}
                             onClick={() => {
                                 if (status === 'success') navigate('/customer-requests');

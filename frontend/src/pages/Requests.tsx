@@ -191,13 +191,13 @@ const Requests = () => {
                                     <DetailSection label="Timeline" value={selectedRequest.preferredTime} />
                                     <DetailSection label="Message" value={selectedRequest.message} />
                                     {selectedRequest.extraNote && <DetailSection label="Note" value={selectedRequest.extraNote} />}
-                                    
+
                                     {selectedRequest.referenceImage && (
                                         <div style={{ marginTop: '20px', padding: '15px', background: '#f0f9ff', borderRadius: '15px', border: '1px solid #bae6fd' }}>
                                             <div style={{ fontSize: '11px', color: '#0369a1', fontWeight: '800', textTransform: 'uppercase', marginBottom: '10px' }}>Customer Reference Image</div>
-                                            <img src={selectedRequest.referenceImage} alt="Reference" style={{ width: '100%', maxHeight: '160px', objectFit: 'contain', borderRadius: '10px', marginBottom: '10px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', background: '#f8fafc' }} />
-                                            <a 
-                                                href={selectedRequest.referenceImage} 
+                                            <img src={selectedRequest.referenceImage} alt="Reference" style={{ width: '100%', maxHeight: '100px', objectFit: 'contain', borderRadius: '8px', marginBottom: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', background: '#fff' }} />
+                                            <a
+                                                href={selectedRequest.referenceImage}
                                                 download={`reference-${selectedRequest.id}.png`}
                                                 style={{ display: 'block', textAlign: 'center', padding: '8px', background: 'white', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: '8px', fontSize: '12px', fontWeight: '700', textDecoration: 'none' }}
                                             >
@@ -206,7 +206,7 @@ const Requests = () => {
                                         </div>
                                     )}
                                 </div>
-                                <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #f1f5f9' }}>
+                                <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #f1f5f9', paddingBottom: '30px' }}>
                                     <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                                         <button onClick={async () => {
                                             const res = await fetch(`${API_URL}/api/requests/${selectedRequest.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Accepted' }) });
@@ -217,10 +217,10 @@ const Requests = () => {
                                     <button onClick={() => setShowOfferForm(true)} disabled={!isAccepted} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: isAccepted ? 'white' : '#f1f5f9', color: isAccepted ? '#0f172a' : '#94a3b8', border: `2px solid ${isAccepted ? '#0f172a' : '#e2e8f0'}`, fontSize: '13px', fontWeight: '800', cursor: isAccepted ? 'pointer' : 'not-allowed' }}>Send Offer ➜</button>
                                 </div>
                             </div>
-                            <div style={{ flex: 1, padding: '30px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <div onClick={handleEditRequest} style={{ background: 'white', padding: '25px', borderRadius: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', width: '100%', maxWidth: '350px', textAlign: 'center', cursor: 'pointer' }}>
-                                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#38bdf8', marginBottom: '15px', textTransform: 'uppercase' }}>Edit Design →</div>
-                                    <div style={{ width: '100%', height: '160px', position: 'relative' }}>
+                            <div style={{ flex: 1, padding: '25px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: '1px solid #f1f5f9' }}>
+                                <div onClick={handleEditRequest} style={{ background: 'white', padding: '25px', borderRadius: '25px', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', width: '100%', maxWidth: '320px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s ease' }}>
+                                    <div style={{ fontSize: '10px', fontWeight: '800', color: '#38bdf8', marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>EDIT DESIGN →</div>
+                                    <div style={{ width: '100%', height: '200px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {(() => {
                                             const productMask = selectedRequest.productImage?.startsWith?.('/uploads') ? `${API_URL}${selectedRequest.productImage}` : selectedRequest.productImage;
                                             const isBase64 = productMask?.startsWith('data:image');
@@ -234,7 +234,8 @@ const Requests = () => {
                                                     designSrc={selectedRequest.frontDesign}
                                                     printArea={selectedRequest.frontPrintArea}
                                                     designScale={selectedRequest.frontDesignScale || 1.0}
-                                                    overallScale={1.2}
+                                                    overallScale={1.1}
+                                                    isPopup={true}
                                                 />
                                             );
                                         })()}
