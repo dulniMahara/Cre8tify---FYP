@@ -3,13 +3,39 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import MockupPreview from '../components/MockupPreview';
+// MockupPreview removed — using static .png images from DB
 import { useCart } from '../context/CartContext';
 
 // Import your product data to cross-reference the IDs
 import { originalProducts as menProducts } from './MenCollection';
 import { originalProducts as womenProducts } from './WomenCollection';
 import { originalProducts as kidsProducts } from './KidsCollection';
+
+const API_URL = "http://localhost:5000";
+
+const PerfectPreview = ({ mockupSrc, maskSrc, tshirtColor, printArea, frontDesign, containerWidth }: any) => {
+    const ORIGINAL_WIDTH = 550;
+    const ORIGINAL_HEIGHT = 800;
+    const scaleRatio = containerWidth / ORIGINAL_WIDTH;
+    const safePrintArea = printArea || { top: "50%", left: "51%", width: "30%", height: "27%", rotation: 0 };
+    const safeDesignSrc = frontDesign?.startsWith("/uploads") ? `${API_URL}${frontDesign}` : frontDesign;
+
+    return (
+        <div style={{ width: `${containerWidth}px`, height: `${ORIGINAL_HEIGHT * scaleRatio}px`, overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "transparent" }}>
+            <div style={{ width: `${ORIGINAL_WIDTH}px`, height: `${ORIGINAL_HEIGHT}px`, transform: `scale(${scaleRatio})`, transformOrigin: "top left", position: "absolute", top: 0, left: 0 }}>
+                <img src={mockupSrc} crossOrigin="anonymous" style={{ position: "absolute", display: "block", height: "125%", width: "125%", objectFit: "contain", top: "-100px", right: "-71px", zIndex: 1 }} alt="mockup" />
+                <div style={{ position: "absolute", top: "-100px", right: "-71px", width: "125%", height: "125%", backgroundColor: tshirtColor || "#ffffff", display: (tshirtColor || "#ffffff").toLowerCase() === "#ffffff" ? "none" : "block", mixBlendMode: "multiply", WebkitMaskImage: `url(${maskSrc})`, maskImage: `url(${maskSrc})`, WebkitMaskSize: "contain", WebkitMaskPosition: "center", WebkitMaskRepeat: "no-repeat", zIndex: 2 }} />
+                <div style={{ position: "absolute", top: "-100px", right: "-71px", width: "125%", height: "125%", WebkitMaskImage: `url(${maskSrc})`, maskImage: `url(${maskSrc})`, WebkitMaskSize: "contain", WebkitMaskPosition: "center", WebkitMaskRepeat: "no-repeat", zIndex: 20 }}>
+                    <div style={{ position: "absolute", top: "100px", right: "71px", width: "550px", height: "800px" }}>
+                        <div style={{ position: "absolute", zIndex: 20, top: safePrintArea.top, left: safePrintArea.left, width: safePrintArea.width, height: safePrintArea.height, marginLeft: `calc(-1 * ${safePrintArea.width} / 2)`, marginTop: `calc(-1 * ${safePrintArea.height} / 2)`, transform: `rotate(${safePrintArea.rotation ?? 0}deg)` }}>
+                            {safeDesignSrc && <img src={safeDesignSrc} alt="Design" style={{ width: "100%", height: "100%", objectFit: "contain" }} />}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const Favorites: React.FC = () => {
     const navigate = useNavigate();
@@ -107,22 +133,31 @@ const Favorites: React.FC = () => {
                                 <div key={item.id} className="product-card" style={favCardStyle}>
 
                                     <div style={imgBoxStyle} onClick={() => navigate(`/product/${item.id}`)}>
-                                        {item.isDesignerProduct ? (
-                                            <MockupPreview
-                                                mockupSrc="/img/womenfront-mockup.png"
-                                                maskSrc="/img/womenfront-mockup.png"
-                                                tshirtColor={item.tshirtColor || '#ffffff'}
-                                                printArea={item.frontPrintArea || { top: '56%', left: '49%', width: '30%', height: '27%', rotation: 0 }}
-                                                designSrc={item.frontDesign}
-                                                canvasState={item.canvasState}
-                                                overallScale={1.5}
-                                                designScale={item.frontDesignScale || 1.0}
-                                            />
+                                        {item.frontDesign ? (
+                                            <div style={{ transform: 'translateX(0px) translateY(0px)' }}>
+                                                <PerfectPreview
+                                                    mockupSrc={
+                                                        item.isKids
+                                                            ? "/img/mockups/kids_base_front.png"
+                                                            : "/img/womenfront-mockup.png"
+                                                    }
+                                                    maskSrc={
+                                                        item.isKids
+                                                            ? "/img/mockups/kids_base_front.png"
+                                                            : "/img/womenfront-mockup.png"
+                                                    }
+                                                    tshirtColor={item.tshirtColor || "#ffffff"}
+                                                    printArea={item.frontPrintArea}
+                                                    frontDesign={item.frontDesign}
+                                                    containerWidth={150}
+                                                />
+                                            </div>
                                         ) : (
                                             <img
-                                                src={item.img}
+                                                src={item.img || '/img/placeholder.png'}
                                                 alt={item.title}
-                                                style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain', filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.1))' }}
+                                                style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain', filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.1))' }}
+                                                onError={(e) => { e.currentTarget.src = '/img/placeholder.png'; }}
                                             />
                                         )}
                                     </div>
