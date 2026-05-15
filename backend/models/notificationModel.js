@@ -23,6 +23,10 @@ const notificationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Order'
     },
+    requestId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Request'
+    },
     isRead: {
         type: Boolean,
         default: false

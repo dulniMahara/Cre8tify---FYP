@@ -8,6 +8,7 @@ interface HeaderProps {
     showSearch?: boolean;
     onSearch?: (query: string) => void;
     userRole?: 'customer' | 'designer' | 'admin';
+    backPath?: string; // correct navigation for back button
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -16,7 +17,8 @@ const Header: React.FC<HeaderProps> = ({
     showCart = true, 
     showSearch = true,
     onSearch,
-    userRole: propRole
+    userRole: propRole,
+    backPath 
 }) => {
     const navigate = useNavigate();
     const API_URL = "http://localhost:5000";
@@ -122,7 +124,7 @@ const Header: React.FC<HeaderProps> = ({
     return (
         <header style={headerStyle}>
             {/* LEFT: BACK BUTTON */}
-            <div onClick={() => navigate(-1)} style={backContainer}>
+            <div onClick={() => backPath ? navigate(backPath) : navigate(-1)} style={backContainer}>
                 <img src="/img/back.png" alt="Back" style={backIconStyle} />
                 <span style={backTextStyle}>Back</span>
             </div>
@@ -194,6 +196,8 @@ const Header: React.FC<HeaderProps> = ({
                                                             navigate('/my-sales');
                                                         } else if (n.type === 'status_update') {
                                                             navigate('/track-order', { state: { orderId: n.orderId, fromNotification: true } });
+                                                        } else if (n.type === 'customization_update') {
+                                                            navigate('/my-custom-designs', { state: { requestId: n.requestId } });
                                                         }
                                                     }}
                                                 >

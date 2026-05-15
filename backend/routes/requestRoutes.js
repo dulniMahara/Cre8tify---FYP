@@ -31,14 +31,14 @@ router.get('/', async (req, res) => {
 // @route   GET /api/requests/customer/:customerId
 // @desc    Get requests by customer
 router.get('/customer/:customerId', async (req, res) => {
-    try {
-      const filter = { customerId: req.params.customerId };
-      if (req.query.type) filter.requestType = req.query.type;
-      const requests = await Request.find(filter).sort({ createdAt: -1 });
-      res.json(requests);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
+  try {
+    const filter = { customerId: req.params.customerId };
+    if (req.query.type) filter.requestType = req.query.type;
+    const requests = await Request.find(filter).sort({ createdAt: -1 });
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 // @route   PUT /api/requests/:id
@@ -53,23 +53,26 @@ router.put('/:id', async (req, res) => {
 
     // 🟢 ADD NOTIFICATION TRIGGER
     if (req.body.status && updatedRequest) {
-        let title = 'Design Update';
-        let message = `Your request for ${updatedRequest.productName} has been updated to ${req.body.status}.`;
-        
-        if (req.body.status === 'Completed') {
-            title = 'Customization Approved! 🎉';
-            message = `Great news! Your custom design for ${updatedRequest.productName} has been approved. You can now proceed to purchase it from your "My Custom Designs" dashboard.`;
-        } else if (req.body.status === 'Rejected') {
-            title = 'Design Update';
-            message = `Your customization request for ${updatedRequest.productName} was not approved at this time.`;
-        }
+      let title = 'Design Update';
+      let message = `Your request for ${updatedRequest.productName} has been updated to ${req.body.status}.`;
+      let type = 'status_update';
 
-        await Notification.create({
-            user: updatedRequest.customerId,
-            title,
-            message,
-            type: 'status_update'
-        });
+      if (req.body.status === 'Completed' || req.body.status === 'Accepted') {
+        title = 'Customization Approved! 🎉';
+        message = `Great news! Your custom design for ${updatedRequest.productName} has been approved. You can now proceed to purchase it from your "My Custom Designs" dashboard.`;
+        type = 'customization_update';
+      } else if (req.body.status === 'Rejected') {
+        title = 'Design Update';
+        message = `Your customization request for ${updatedRequest.productName} was not approved at this time.`;
+      }
+
+      await Notification.create({
+        user: updatedRequest.customerId,
+        title,
+        message,
+        type,
+        requestId: updatedRequest._id
+      });
     }
 
     res.json(updatedRequest);
