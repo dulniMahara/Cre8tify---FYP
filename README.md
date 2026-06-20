@@ -4,15 +4,25 @@ Cre8tify is a high-fidelity, full-stack marketplace designed for custom T-shirt 
 
 ---
 
+## 🎯 System Overview
+
+Cre8tify follows a role-based architecture supporting three main user types:
+
+- **Customers**: Browse, customize, preview, and purchase products  
+- **Designers**: Manage design requests and product customization workflows  
+- **Administrators**: Control marketplace operations, approvals, and analytics
+
+---
+
 ## 🚀 Key Features
 
-### 🎨 Interactive Designer Toolkit
+### 🎨 Interactive Design Tool
 - **Precision Editing**: Add, scale, and rotate text and images with pixel-perfect accuracy.
 - **Categorized Base Products**: Access a diverse collection of high-quality base T-shirts for **Men, Women, and Kids**.
 - **Layer Management**: Multi-layer design support with Z-index control and full Undo/Redo functionality.
 - **Dynamic Previews**: Toggle between editing and high-fidelity preview modes to visualize designs in real-time.
 
-### 🤖 AI Virtual Try-On & 360° Visualization
+### 🤖 AI Virtual Try-On System
 - **Live Fitting Experience**: Customers can upload their own images to see exactly how a T-shirt will fit their physique, powered by advanced AI (IDM-VTON).
 - **360° Dummy Preview**: Interactive 360-degree visualization allows users to inspect products from every angle.
 - **Realistic Textures**: High-fidelity rendering that captures fabric details and design placement accurately.
@@ -23,7 +33,7 @@ Cre8tify is a high-fidelity, full-stack marketplace designed for custom T-shirt 
 - **Analytics Hub**: Visual growth metrics, trending designs, and revenue tracking.
 - **Role-Based Access**: Secure management for Administrators, Designers, and Customers.
 
-### 🛒 Customer Experience
+### 🛒 Customer Order System
 - **Live Preview**: Real-time visualization of product variants.
 - **Request Designer Edit**: Collaborative workflow allowing customers to request professional refinements to their designs.
 - **Responsive Interface**: Optimized for 100% browser zoom and mobile responsiveness.
@@ -73,15 +83,16 @@ Authentication: JWT-based secure session management
 
 ## 📈 Current Project Status
 
-The project is currently in the final refinement phase, with core marketplace operations and administrative synchronization fully implemented. The latest updates focused on:
-- Pixel-perfect synchronization between Admin configurations and the Design Tool.
-- Harmonized dark-theme UI across the Administrative Dashboard.
-- Standardized product attribute rendering (Uppercase sizes and high-fidelity mockups).
+The project is in its final refinement stage, with core functionalities fully implemented. Recent updates focused on improving system consistency and user experience, including:
+
+Synchronization between Admin and Design Tool modules
+UI consistency across dashboards
+Standardized product rendering and attribute handling
 
 ---
 
 ## 🤝 Contributing
-This project is part of a Final Year Project (FYP). For inquiries regarding collaboration or deployment, please contact the repository owner.
+This project was developed as part of a Final Year Project (FYP) at NSBM Green University. For inquiries regarding collaboration or deployment, please contact the repository owner.
 
 ---
 
