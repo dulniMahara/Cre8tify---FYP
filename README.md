@@ -35,7 +35,7 @@ Cre8tify is a high-fidelity, full-stack marketplace designed for custom T-shirt 
 - **Frontend**: React.js, Vite, Vanilla CSS (Premium Dark Theme), html2canvas.
 - **Backend**: Node.js, Express.js.
 - **Database**: MongoDB with Mongoose ODM.
-- **AI Integration**: Hugging Face API (Gradio Client) for Virtual Try-On.
+- **AI Integration: Fashn.ai API (Virtual Try-On service) used for realistic apparel visualization.
 - **Authentication**: JWT-based secure session management.
 
 ---
@@ -45,8 +45,7 @@ Cre8tify is a high-fidelity, full-stack marketplace designed for custom T-shirt 
 ### Prerequisites
 - Node.js (v16+)
 - MongoDB (Local or Atlas)
-- Hugging Face API Token (for AI features)
-
+- Fashn.ai API Token (for AI virtual try-on features)
 ### Installation
 
 1. **Clone the repository**:
