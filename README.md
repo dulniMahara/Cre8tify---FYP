@@ -32,11 +32,11 @@ Cre8tify is a high-fidelity, full-stack marketplace designed for custom T-shirt 
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: React.js, Vite, Vanilla CSS (Premium Dark Theme), html2canvas.
-- **Backend**: Node.js, Express.js.
-- **Database**: MongoDB with Mongoose ODM.
--  **AI-Integration**: Fashn.ai API (Virtual Try-On service) used for realistic apparel visualization.
-- **Authentication**: JWT-based secure session management.
+Frontend: React.js, Vite, Vanilla CSS (Premium Dark Theme), html2canvas
+Backend: Node.js, Express.js
+Database: MongoDB with Mongoose ODM
+AI Integration: Fashn.ai API (Virtual Try-On service) used for realistic apparel visualization
+Authentication: JWT-based secure session management
 
 ---
 
